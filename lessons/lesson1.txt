@@ -1,0 +1,32 @@
+High level breakdown
+
+Course goals
+ * A real C project
+ * Learn how programming languages work to better understand performance and runtime issues
+
+Designing
+ * BNF
+ * Example languages: lua, python, ruby, etc. -- recommend reading wikipedia entries to learn more
+
+Compilation
+ * tokenizer
+ * lexical analyzer
+ * compiler
+
+Virtual Machine
+ * byte code
+ * runtime
+ * FFI (foreign function interface)
+
+Base Project Overview
+ * c code
+ * class-less
+ * reference counted
+ * FFI
+ * leak free
+ * use to build asteroids game
+
+Bonus features
+ * classes (actual, not prototype based)
+ * async / await w/ thread pool
+ * bytecode size optimization and cache

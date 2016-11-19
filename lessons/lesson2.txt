@@ -1,0 +1,9 @@
+BNF for language
+
+ * Describe the structure of BNF, history, etc.
+ * Show an example BNF and walk through how it works, what it means
+ * Work with people to start crafting their BNF in class
+ * The BNF will be a living document, it will most likely have bugs
+
+HW:
+ * Finish your BNF and update your test code 
