@@ -1,3 +1,18 @@
+# Phase 1: Designing the language
+
+Base Project Overview
+* c code
+* class-less
+* reference counted
+* FFI
+* leak free
+* use to build asteroids game
+
+Bonus features
+* classes (actual, not prototype based)
+* async / await w/ thread pool
+* bytecode size optimization and cache
+
 BNF for language
 
  * Describe the structure of BNF, history, etc.

@@ -142,12 +142,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="..\lessons\lesson1.txt" />
-    <Text Include="..\lessons\lesson2.txt" />
-    <Text Include="..\lessons\lesson3.txt" />
-    <Text Include="..\lessons\lesson4.txt" />
-    <Text Include="..\lessons\lesson5.txt" />
-    <Text Include="..\lessons\lesson6.txt" />
     <Text Include="bnf.txt" />
   </ItemGroup>
   <ItemGroup>
