@@ -6,7 +6,8 @@ Course goals
 
 Designing
  * BNF
- * Example languages: lua, python, ruby, etc. -- recommend reading wikipedia entries to learn more
+ * Example languages: lua, python, ruby, etc. -- recommend reading wikipedia entries to learn 
+ * Features: typed vs untyped, syntactic sugar
 
 Compilation
  * tokenizer

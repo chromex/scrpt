@@ -1,0 +1,10 @@
+void main()
+{
+	print("hello world");
+	test1();
+}
+
+void test1()
+{
+	
+}
