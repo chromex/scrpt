@@ -1,0 +1,56 @@
+Language Features:
+* Types: strings, numbers, lists, dictionaries, boolean
+* Control structures: if, while, for, do, switch
+* Functions
+
+
+all characters = ? all visible ansii characters ?;
+letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" 
+       | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" 
+       | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" | "A"
+       | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"
+       | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S"
+       | "T" | "U" | "V" | "W" | "X" | "Y" | "Z";
+terminal = '"', { all characters }, '"';
+
+digit excluding zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+digit = "0" | digit excluding zero;
+natural number = digit excluding zero, { digit };
+number = "0" | [ "-" ], natural number, [ ".", digit, { digit } ] | [ "-" ], "0", ".", digit, { digit };
+
+bool = "true" | "false";
+
+constant = terminal | number | bool | list | dict;
+
+ident = ( letter | "_" ), { letter, digit, "_" };
+
+key value pair = terminal, ":", expression;
+dict = "{", [ key value pair, { ",", key value pair }, [ "," ] ], "}";
+list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
+indexing = expression, "[", [ expression ], [ ":", [ expression ] ], "]";
+
+block = "{", { statement }, "}";
+
+do loop = "do", block, "while", "(", expression, ")", ";"
+while loop = "while", "(", expression, ")", statement;
+for loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
+if = "if", "(", expression, ")", statement;
+case = ( "case", constant | "default" ), ":", { statement }, [ "break", ";" ];
+switch = "switch", "(", expression, ")", "{", { case }, "}";
+
+assignment = ident, "=", expression;
+call = ident, "(", [ expression, { ",", expression } ], ")";
+compare = expression, ( "==" | "!=" | "<" | ">" | "<=" | ">=" ), expression;
+return = "return", [ expression ], ";";
+
+math = expression, ( "*" | "/" | "+" | "-" ), expression;
+self math = ident, ( "*=" | "/=" | "+=" | "-=" ), expression;
+
+expression = ident | constant | assignment | call | compare | math | self math | indexing;
+statement = [ expression ], ";" | block | do loop | while loop | for loop | if | switch | return;
+
+func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
+program = func, { func };
+
+// Missing !
+// Compare, math, indexing all introduce left recursion ... indexing is easy to fix... call should be in the same pattern then...

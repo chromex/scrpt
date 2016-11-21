@@ -8,3 +8,7 @@ Building a scripting language compiler and VM from scratch for educational purpo
 * [Lesson 4: Parser](lessons/lesson4.md)
 * [Lesson 5: Compiler](lessons/lesson5.md)
 * [Lesson 6: Virtual Machine](lessons/lesson6.md)
+* [Lesson 7: Standard Library & Tests](lessons/lesson7.md)
+* [Lesson 8: FFI](lessons/lesson8.md)
+* [Lesson 9: Game Engine](lessons/lesson9.md)
+* [Lesson 10: Game](lessons/lesson10.md)
