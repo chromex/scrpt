@@ -21,6 +21,8 @@
 * Enums
 * Tail recursion
 * Anonymous functions
+* Ranges
+* Pattern matching
 
 ## How languages work
 * Statements versus expressions

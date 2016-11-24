@@ -1,6 +1,7 @@
 Language Features:
 * Types: strings, numbers, lists, dictionaries, boolean
 * Control structures: if, while, for, do, switch
+* Operators: =, ==, <, >, <=, >=, *, /, +, -, *=, /=, +=, -=, !, !=
 * Functions
 
 
@@ -39,18 +40,24 @@ case = ( "case", constant | "default" ), ":", { statement }, [ "break", ";" ];
 switch = "switch", "(", expression, ")", "{", { case }, "}";
 
 assignment = ident, "=", expression;
-call = ident, "(", [ expression, { ",", expression } ], ")";
+call = ident, [ "(", [ expression, { ",", expression } ], ")" ];
 compare = expression, ( "==" | "!=" | "<" | ">" | "<=" | ">=" ), expression;
 return = "return", [ expression ], ";";
 
 math = expression, ( "*" | "/" | "+" | "-" ), expression;
 self math = ident, ( "*=" | "/=" | "+=" | "-=" ), expression;
+invert = "!", expression;
 
-expression = ident | constant | assignment | call | compare | math | self math | indexing;
+parens = "(", expression, ")";
+ident items = ident | call | assignment | self math;
+
+expression = constant | ident items | invert | parens | compare | math | indexing;
 statement = [ expression ], ";" | block | do loop | while loop | for loop | if | switch | return;
 
 func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
 program = func, { func };
 
-// Missing !
-// Compare, math, indexing all introduce left recursion ... indexing is easy to fix... call should be in the same pattern then...
+// Expression led things: indexing, math, compare
+// Indexing can be fixed by updating the LHS to limit types that can fill that role and then satisfy it w/ look ahead
+// Math can be fixed with: http://www.gamedev.net/topic/416784-recursive-descent-parsing-handling-left-associativity/
+// Compare :/
