@@ -142,10 +142,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="bnf.txt" />
+    <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp" />
+    <ClCompile Include="..\..\scrpt\src\main.cpp" />
+    <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
+    <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="testcode.scrpt" />
+    <ClInclude Include="..\..\scrpt\src\compiler\lexer.h" />
+    <ClInclude Include="..\..\scrpt\src\scrpt.h" />
+    <ClInclude Include="..\..\scrpt\src\util\fileio.h" />
+    <ClInclude Include="..\..\scrpt\src\util\trace.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\scrpt\grammer.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
