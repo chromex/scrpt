@@ -23,6 +23,8 @@
 * Anonymous functions
 * Ranges
 * Pattern matching
+* Exceptions
+* Dead code removal
 
 ## How languages work
 * Statements versus expressions

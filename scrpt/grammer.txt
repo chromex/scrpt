@@ -2,7 +2,7 @@ Language Features:
 * Types: strings, numbers, lists, dictionaries, boolean
 * Control structures: if, while, for, do, switch
 * Operators: =, ==, <, >, <=, >=, *, /, +, -, *=, /=, +=, -=, !, !=
-* Functions
+* Features: indexing, slices, functions
 
 
 all characters = ? all visible ansii characters ?;
@@ -28,28 +28,29 @@ ident = ( letter | "_" ), { letter, digit, "_" };
 key value pair = terminal, ":", expression;
 dict = "{", [ key value pair, { ",", key value pair }, [ "," ] ], "}";
 list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
-indexing = expression, "[", [ expression ], [ ":", [ expression ] ], "]";
+indexing = (ident | parens | call | constant), "[", [ expression ], [ ":", [ expression ] ], "]", { "[", [ expression ], [ ":", [ expression ] ], "]" };
 
 block = "{", { statement }, "}";
 
 do loop = "do", block, "while", "(", expression, ")", ";"
 while loop = "while", "(", expression, ")", statement;
 for loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
-if = "if", "(", expression, ")", statement;
+if = "if", "(", expression, ")", statement, [ "else", statement ];
 case = ( "case", constant | "default" ), ":", { statement }, [ "break", ";" ];
 switch = "switch", "(", expression, ")", "{", { case }, "}";
 
 assignment = ident, "=", expression;
-call = ident, [ "(", [ expression, { ",", expression } ], ")" ];
-compare = expression, ( "==" | "!=" | "<" | ">" | "<=" | ">=" ), expression;
+call = ident, "(", [ expression, { ",", expression } ], ")";
+basecompare = expression, ( "<", ">" ), expression;
+compare = expression, ( "==" | "!=" | "<=" | ">=" ), expression | basecompare;
 return = "return", [ expression ], ";";
 
 math = expression, ( "*" | "/" | "+" | "-" ), expression;
-self math = ident, ( "*=" | "/=" | "+=" | "-=" ), expression;
+selfmath = ident, ( "*=" | "/=" | "+=" | "-=" ), expression;
 invert = "!", expression;
 
 parens = "(", expression, ")";
-ident items = ident | call | assignment | self math;
+ident items = ident | call | assignment | selfmath;
 
 expression = constant | ident items | invert | parens | compare | math | indexing;
 statement = [ expression ], ";" | block | do loop | while loop | for loop | if | switch | return;
@@ -57,7 +58,6 @@ statement = [ expression ], ";" | block | do loop | while loop | for loop | if |
 func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
 program = func, { func };
 
-// Expression led things: indexing, math, compare
-// Indexing can be fixed by updating the LHS to limit types that can fill that role and then satisfy it w/ look ahead
+// Expression led things: math, compare
 // Math can be fixed with: http://www.gamedev.net/topic/416784-recursive-descent-parsing-handling-left-associativity/
-// Compare :/
+// Compare LHS: ident, parens, call, constant, index
