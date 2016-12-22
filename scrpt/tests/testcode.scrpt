@@ -1,10 +1,27 @@
-void main()
+func main()
 {
 	print("hello world");
-	test1();
+	while (true)
+	{
+		foo("noob");
+	}
+
+	for (count = 0; count < 10; count += 1)
+	{
+		switch (count)
+		{
+		case 0: "bug";
+		default: 123.903482;
+		}
+	}
+
+	num = 0.123;
 }
 
-void test1()
-{
-	
+func foo(bar) 
+{ 
+	a = "whut"; 
+	b = 123; 
+
+	return a + b / bar; 
 }

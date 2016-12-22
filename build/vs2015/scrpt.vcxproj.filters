@@ -52,4 +52,9 @@
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\scrpt\tests\testcode.scrpt">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

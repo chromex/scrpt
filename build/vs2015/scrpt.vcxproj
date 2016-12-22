@@ -156,6 +156,9 @@
   <ItemGroup>
     <Text Include="..\..\scrpt\grammer.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\scrpt\tests\testcode.scrpt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
