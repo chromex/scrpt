@@ -1,10 +1,14 @@
 func main()
 {
-	print("hello world");
+	print("hello\nworld");
 	while (true)
 	{
 		foo("noob");
 	}
+
+	emptyString = "";
+
+	if (count == 0) return "no";
 
 	for (count = 0; count < 10; count += 1)
 	{
@@ -16,6 +20,12 @@ func main()
 	}
 
 	num = 0.123;
+}
+
+func MathTest() // TODO
+{
+	// TODO
+	// Again
 }
 
 func foo(bar) 
