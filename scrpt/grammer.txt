@@ -61,3 +61,4 @@ program = func, { func };
 // Expression led things: math, compare
 // Math can be fixed with: http://www.gamedev.net/topic/416784-recursive-descent-parsing-handling-left-associativity/
 // Compare LHS: ident, parens, call, constant, index
+// Break needs to be a regular statement

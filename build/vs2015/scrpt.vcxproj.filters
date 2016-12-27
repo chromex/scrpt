@@ -18,6 +18,9 @@
     <Filter Include="Source Files\util">
       <UniqueIdentifier>{74d451ea-8d05-4ff6-9d38-cca004b7dd41}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\tests">
+      <UniqueIdentifier>{d4110772-f705-4cf1-84b1-166136d4d75d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\scrpt\src\main.cpp">
@@ -32,6 +35,9 @@
     <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\tests\tests.cpp">
+      <Filter>Source Files\tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">
@@ -45,6 +51,9 @@
     </ClInclude>
     <ClInclude Include="..\..\scrpt\src\scrpt.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\tests\tests.h">
+      <Filter>Source Files\tests</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

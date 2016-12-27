@@ -146,12 +146,14 @@
     <ClCompile Include="..\..\scrpt\src\main.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
+    <ClCompile Include="..\..\scrpt\src\tests\tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h" />
     <ClInclude Include="..\..\scrpt\src\scrpt.h" />
     <ClInclude Include="..\..\scrpt\src\util\fileio.h" />
     <ClInclude Include="..\..\scrpt\src\util\trace.h" />
+    <ClInclude Include="..\..\scrpt\src\tests\tests.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\scrpt\grammer.txt" />
