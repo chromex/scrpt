@@ -7,6 +7,6 @@ Tokenizer / lexical analyzer
 
 HW: 
  * console application that takes in sample code and outputs tokens w/ data
- * enable MSFT leak detection (no leaks)
+ * enable VS leak detection (no leaks)
  * needs to support comments
  * needs to support loading code from file

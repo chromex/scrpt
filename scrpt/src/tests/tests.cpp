@@ -12,7 +12,7 @@ func main(arg1, arg2)
 	// Values
 	strings = {"", "simple", "new\nline", "\"quote\" of doom", "\ttab\t\tmore"};
 	numbers = {0, 1, 0123, 0.1234, 19203.1};
-	booleans = {true, false};
+	_bo0leans = {true, false};
 
 	// Basic expressions
 	val = numbers[2];
@@ -25,15 +25,20 @@ func main(arg1, arg2)
 	t = a >= b;
 
 	// Math
-	v = 1 + 3.2 - 2.2 * 3.0 / 0.0;
+	v = 1 + 3.2 - 2.2 * 3.0 / 0.0 % 2;
 	v += 3;
 	v -= val;
 	v *= 5;
 	v /= 2;
+	v %= 2;
+	++a;
+	a++;
+	--a;
+	a--;
 
 	// Control flow
 	test(1, 0, "foo");
-	if (true == false)
+	if (true == false && true || false)
 	{
 		print("truth");
 	}

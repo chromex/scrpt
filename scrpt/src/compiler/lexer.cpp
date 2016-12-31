@@ -164,15 +164,20 @@ namespace scrpt
 		SINGLE_CHAR_SYM(';', Symbol::SemiColon)
 		SINGLE_CHAR_SYM(':', Symbol::Colon)
 		SINGLE_CHAR_SYM(',', Symbol::Comma)
-		#define DOUBLE_COMPLEX_SYM(C, V, SymC, SymV) else if (c == C && cn == V) { _token = SymV; _location += 2; } else if (c == C) { _token = SymC; _location += 1; }
+		#define DOUBLE_SIMPLE_SYM(C, V, Sym) else if (c == C && cn == V) { _token = Sym; _location += 2; }
+		DOUBLE_SIMPLE_SYM('&', '&', Symbol::And)
+		DOUBLE_SIMPLE_SYM('|', '|', Symbol::And)
+		#define DOUBLE_COMPLEX_SYM(C, V, SymC, SymV) else if (c == C && cn == V) { _token = SymV; _location += 2; } SINGLE_CHAR_SYM(C, SymC)
 		DOUBLE_COMPLEX_SYM('=', '=', Symbol::Assign, Symbol::Eq)
-		DOUBLE_COMPLEX_SYM('-', '=', Symbol::Minus, Symbol::MinusEq)
-		DOUBLE_COMPLEX_SYM('+', '=', Symbol::Plus, Symbol::PlusEq)
 		DOUBLE_COMPLEX_SYM('*', '=', Symbol::Mult, Symbol::MultEq)
 		DOUBLE_COMPLEX_SYM('/', '=', Symbol::Div, Symbol::DivEq)
 		DOUBLE_COMPLEX_SYM('!', '=', Symbol::Not, Symbol::NotEq)
 		DOUBLE_COMPLEX_SYM('<', '=', Symbol::LessThan, Symbol::LessThanEq)
 		DOUBLE_COMPLEX_SYM('>', '=', Symbol::GreaterThan, Symbol::GreaterThanEq)
+		DOUBLE_COMPLEX_SYM('%', '=', Symbol::Modulo, Symbol::ModuloEq)
+		#define TRIPLE_COMPLEX_SYM(C, V, Z, SymC, SymV, SymZ) else if (c == C && cn == Z) { _token = SymZ; _location += 2; } DOUBLE_COMPLEX_SYM(C, V, SymC, SymV)
+		TRIPLE_COMPLEX_SYM('-', '=', '-', Symbol::Minus, Symbol::MinusEq, Symbol::MinusMinus)
+		TRIPLE_COMPLEX_SYM('+', '=', '+', Symbol::Plus, Symbol::PlusEq, Symbol::PlusPlus)
 
 		_err = _token != Symbol::Error ? LexErr::NoError : _err;
 	}
@@ -371,14 +376,20 @@ namespace scrpt
 			SYMBOL_CASE_STRING(Symbol::GreaterThan)
 			SYMBOL_CASE_STRING(Symbol::GreaterThanEq)
 			SYMBOL_CASE_STRING(Symbol::Plus)
+			SYMBOL_CASE_STRING(Symbol::PlusPlus)
 			SYMBOL_CASE_STRING(Symbol::Minus)
+			SYMBOL_CASE_STRING(Symbol::MinusMinus)
 			SYMBOL_CASE_STRING(Symbol::Mult)
 			SYMBOL_CASE_STRING(Symbol::Div)
+			SYMBOL_CASE_STRING(Symbol::Modulo)
 			SYMBOL_CASE_STRING(Symbol::PlusEq)
 			SYMBOL_CASE_STRING(Symbol::MinusEq)
 			SYMBOL_CASE_STRING(Symbol::MultEq)
 			SYMBOL_CASE_STRING(Symbol::DivEq)
+			SYMBOL_CASE_STRING(Symbol::ModuloEq)
 			SYMBOL_CASE_STRING(Symbol::Not)
+			SYMBOL_CASE_STRING(Symbol::And)
+			SYMBOL_CASE_STRING(Symbol::Or)
 			SYMBOL_CASE_STRING(Symbol::SemiColon)
 			SYMBOL_CASE_STRING(Symbol::Func)
 			SYMBOL_CASE_STRING(Symbol::End)
@@ -389,6 +400,7 @@ namespace scrpt
 
 		return nullptr;
 	}
+
 	const char* LexErrToString(LexErr err)
 	{
 		switch (err)

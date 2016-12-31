@@ -12,6 +12,14 @@
 * Functions as first class objects
 * Standard library
 
+## Core Required Features
+* Built in types: string, number, boolean, list, dictionary
+* Control flow: if, for, while, switch
+* Functions
+* Math: + - * / % 
+* Comparison: < > <= >= != ==
+* Boolean ops: && || 
+
 ## Potential Bonus Features
 * Classes 
 * Modules
@@ -20,17 +28,18 @@
 * Atoms
 * Enums
 * Tail recursion
-* Anonymous functions
+* Anonymous functions / functions as first class types
+* Type type
 * Ranges
-* Pattern matching
-* Exceptions
+* Pattern matching (esp for switch )
+* Exceptions or error system
 * Dead code removal
 
 ## How languages work
 * Statements versus expressions
 * Functions as units
 
-## BNF for language
+## EBNF for language
 * https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 * Goal is to create a context free grammer that can define all possible input strings
 * The more specific the BNF, the easier it is to find errors in syntax while parsing
@@ -40,7 +49,11 @@
 * The BNF will be a living document, it will most likely have bugs and be updated
 * Expression is-a statement, statement is-not-a expression
 * Left recursion
+* Order of operations
+* Expression tree versus statement list
+* Grammer can allow code that won't compile such as allowing "string" / "string" -- goal is restrictiveness but it isn't always possible
 
 ## Homework:
 * Start with writing out some example code for your hypothetical language. Be sure to include function calls, variable use, math, etc. Recommend implementing some known algorithsm such as sorting functions to fully flesh it out. Think about syntax features like array splits, implicit return values, etc.
-* Implement your BNF. Try to test your code against it manually, make sure that especially complex math scenarios work. Bring this to the next class.
+* Document (briefly) your exact language feature set
+* Implement your EBNF. Try to test your code against it manually, make sure that especially complex math scenarios work. Bring this to the next class. Think about what the relationships between the rules are. 
