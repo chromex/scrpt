@@ -22,10 +22,37 @@ namespace scrpt
 		_lineStart = _location = _sourceData.get();
 	}
 
-	Symbol Lexer::Next()
+	Symbol Lexer::Current() const
 	{
-		this->Advance();
 		return _token;
+	}
+
+	bool Lexer::Accept(Symbol sym)
+	{
+		if (_token == sym)
+		{
+			this->Advance();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Lexer::Test(Symbol sym) const
+	{
+		return sym == _token;
+	}
+
+	bool Lexer::Expect(Symbol sym)
+	{
+		if (this->Accept(sym))
+		{
+			return true;
+		}
+
+		// TODO: This is a compiler message rather than a system error
+		TraceWarning("Expected symbol " << SymbolToString(sym) << " but encountered symbol " << SymbolToString(_token));
+		return false;
 	}
 
 	size_t Lexer::GetLine() const { return _line; }

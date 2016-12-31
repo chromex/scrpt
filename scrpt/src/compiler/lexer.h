@@ -72,7 +72,12 @@ namespace scrpt
 	public:
 		Lexer(std::unique_ptr<char[]> sourceData);
 
-		Symbol Next();
+		Symbol Current() const;
+		void Advance();
+		bool Accept(Symbol sym);
+		bool Test(Symbol sym) const;
+		bool Expect(Symbol sym);
+
 		size_t GetLine() const;
 		size_t GetPosition() const;
 		const char* GetIdent() const;
@@ -82,7 +87,6 @@ namespace scrpt
 		std::string GetErrorString() const;
 
 	private:
-		void Advance();
 		void ConsumeWhitespace();
 		bool IsIdentCharacter(char c, bool firstChar) const;
 		size_t GetIdentLength(const char* c) const;

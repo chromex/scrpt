@@ -88,6 +88,11 @@ func main() {
 }
 )testCode";
 
+static const char* parserTest = R"testCode(
+func main(p1, _p2,) {
+}
+)testCode";
+
 void scrpt::RunTests()
 {
 	int passed = 0;
@@ -101,6 +106,10 @@ void scrpt::RunTests()
 	ACCUMTEST(TestLexFile(unsupportedEscape, "Unknown escape", scrpt::LexErr::UnknownStringEscape));
 
 	std::cout << passed << " passed and " << failed << " failed" << std::endl;
+
+	Parser parser;
+	Lexer lexer(DuplicateSource(parserTest));
+	parser.Consume(&lexer);
 }
 
 bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr)
@@ -111,7 +120,8 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
 	scrpt::Symbol token;
 	do
 	{
-		token = lexer.Next();
+		lexer.Advance();
+		token = lexer.Current();
 	} while (token != scrpt::Symbol::End && token != scrpt::Symbol::Error);
 
 	bool passed = false;
