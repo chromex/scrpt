@@ -72,7 +72,8 @@ namespace scrpt
 		while (*start != '\0' && isspace(*start)) ++start;
 		if (start == '\0')
 		{
-			return "Lexer failure to compute failure line!";
+			TraceWarning("Failed to compute error message");
+			return "";
 		}
 
 		// Trim newline
@@ -443,5 +444,42 @@ namespace scrpt
 		}
 
 		return nullptr;
+	}
+	
+	Token::Token(
+		Symbol sym, 
+		std::shared_ptr<const char> sourceData, 
+		const char* symLocation, 
+		const char* symLineStart, 
+		size_t lineNumber, 
+		size_t linePosition, 
+		LexErr err, 
+		std::unique_ptr<const char> string, 
+		double number) 
+		: _sym(sym)
+		, _sourceData(sourceData)
+		, _symLocation(symLocation)
+		, _symLineStart(symLineStart)
+		, _lineNumber(lineNumber)
+		, _linePosition(linePosition)
+		, _err(err)
+		, _string(nullptr)
+		, _number(number)
+	{
+		string.swap(_string);
+		AssertNotNull(_sourceData.lock());
+		AssertNotNull(_symLocation);
+		AssertNotNull(_symLineStart);
+		AssertNotNull(_string.get());
+	}
+	
+	Symbol Token::GetSym() const { return _sym; }
+	const char * Token::GetString() const { return _string.get(); }
+	double Token::GetNumber() const { return _number; }
+	LexErr Token::GetLexError() const { return _err; }
+	
+	std::string Token::GetFormattedTokenCode() const
+	{
+		return std::string();
 	}
 }

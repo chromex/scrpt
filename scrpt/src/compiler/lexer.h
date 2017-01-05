@@ -54,6 +54,7 @@ namespace scrpt
 		Func, 
 		End,
 	};
+	const char* SymbolToString(Symbol sym);
 
 	enum class LexErr
 	{
@@ -63,9 +64,39 @@ namespace scrpt
 		NonTerminatedString,
 		InvalidNumber,
 	};
-
-	const char* SymbolToString(Symbol sym);
 	const char* LexErrToString(LexErr err);
+
+	class Token
+	{
+	public:
+		Token(
+			Symbol sym,
+			std::shared_ptr<const char> sourceData,
+			const char* symLocation,
+			const char* symLineStart,
+			size_t lineNumber,
+			size_t linePosition,
+			LexErr err,
+			std::unique_ptr<const char> string,
+			double number);
+
+		Symbol GetSym() const;
+		const char* GetString() const;
+		double GetNumber() const;
+		LexErr GetLexError() const;
+		std::string GetFormattedTokenCode() const;
+
+	private:
+		Symbol _sym;
+		std::weak_ptr<const char> _sourceData;
+		const char* _symLocation;
+		const char* _symLineStart;
+		size_t _lineNumber;
+		size_t _linePosition;
+		LexErr _err;
+		std::unique_ptr<const char> _string;
+		double _number;
+	};
 
 	class Lexer
 	{

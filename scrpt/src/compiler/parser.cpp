@@ -39,13 +39,16 @@ namespace scrpt
 					_lexer->Advance();
 					if (_lexer->Accept(Symbol::Comma))
 					{
-						// TODO: Error if the current token isn't an ident
+						// TODO: IdentExpected
 					}
 				}
 
 				_lexer->Expect(Symbol::RParen);
 
-				this->ParseBlock();
+				if (!this->ParseBlock())
+				{
+					// TODO: Throw no block
+				}
 			}
 			else
 			{
@@ -56,15 +59,50 @@ namespace scrpt
 		_lexer->Expect(Symbol::End);
 	}
 
-	void Parser::ParseBlock()
+	bool Parser::ParseBlock()
 	{
-		_lexer->Expect(Symbol::LBracket);
-		while (this->ParseStatement()) {}
-		_lexer->Expect(Symbol::RBracket);
+		if (_lexer->Accept(Symbol::LBracket))
+		{
+			while (this->ParseStatement()) {}
+			_lexer->Expect(Symbol::RBracket);
+			return true;
+		}
+
+		return false;
 	}
 
 	bool Parser::ParseStatement()
 	{
+		if (this->ParseBlock()) return true;
+		else if (this->ParseWhileLoop()) return true;
+		
+		return false;
+	}
+
+	bool Parser::ParseExpression()
+	{
+		return true;
+	}
+
+	bool Parser::ParseWhileLoop()
+	{
+		if (_lexer->Accept(Symbol::While))
+		{
+			_lexer->Expect(Symbol::LParen);
+			if (!this->ParseExpression())
+			{
+				// TODO: Throw no expression 
+			}
+			_lexer->Expect(Symbol::RParen);
+
+			if (!this->ParseStatement())
+			{
+				// TODO: Throw statement expected
+			}
+
+			return true;
+		}
+
 		return false;
 	}
 }

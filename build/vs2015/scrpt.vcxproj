@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\scrpt\src\compiler\ast.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\main.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
@@ -150,6 +151,7 @@
     <ClCompile Include="..\..\scrpt\src\compiler\parser.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\scrpt\src\compiler\ast.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h" />
     <ClInclude Include="..\..\scrpt\src\scrpt.h" />
     <ClInclude Include="..\..\scrpt\src\util\fileio.h" />

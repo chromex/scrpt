@@ -3,6 +3,15 @@
 
 namespace scrpt
 {
+	enum class ParserErr
+	{
+		NoError,
+		ExpressionExpected,
+		StatementExpected,
+		IdentExpected,
+		BlockExpected,
+	};
+
 	class Parser
 	{
 	public:
@@ -14,8 +23,10 @@ namespace scrpt
 		Lexer* _lexer;
 
 		void ParseProgram();
-		void ParseBlock();
+		bool ParseBlock();
 		bool ParseStatement();
+		bool ParseExpression();
+		bool ParseWhileLoop();
 	};
 }
 
