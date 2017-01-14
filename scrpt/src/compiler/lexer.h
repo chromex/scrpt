@@ -20,6 +20,8 @@ namespace scrpt
 		False, 
 		Colon,
 		Comma,
+		If,
+		Else,
 		Do, 
 		While, 
 		For, 

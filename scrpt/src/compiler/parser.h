@@ -27,6 +27,9 @@ namespace scrpt
 		bool ParseStatement();
 		bool ParseExpression();
 		bool ParseWhileLoop();
+		bool ParseDoLoop();
+		bool ParseForLoop();
+		bool ParseIf();
 	};
 }
 

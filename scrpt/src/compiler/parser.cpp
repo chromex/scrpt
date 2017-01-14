@@ -63,6 +63,7 @@ namespace scrpt
 	{
 		if (_lexer->Accept(Symbol::LBracket))
 		{
+			TraceInfo("Parsing block");
 			while (this->ParseStatement()) {}
 			_lexer->Expect(Symbol::RBracket);
 			return true;
@@ -75,12 +76,16 @@ namespace scrpt
 	{
 		if (this->ParseBlock()) return true;
 		else if (this->ParseWhileLoop()) return true;
+		else if (this->ParseDoLoop()) return true;
+		else if (this->ParseForLoop()) return true;
+		else if (this->ParseIf()) return true;
 		
 		return false;
 	}
 
 	bool Parser::ParseExpression()
 	{
+		// TODO
 		return true;
 	}
 
@@ -88,6 +93,8 @@ namespace scrpt
 	{
 		if (_lexer->Accept(Symbol::While))
 		{
+			TraceInfo("Parsing while");
+
 			_lexer->Expect(Symbol::LParen);
 			if (!this->ParseExpression())
 			{
@@ -98,6 +105,69 @@ namespace scrpt
 			if (!this->ParseStatement())
 			{
 				// TODO: Throw statement expected
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Parser::ParseDoLoop()
+	{
+		if (_lexer->Accept(Symbol::Do))
+		{
+			TraceInfo("Parsing do");
+
+			_lexer->Expect(Symbol::LParen);
+			if (!this->ParseExpression())
+			{
+				// TODO: Throw no expression
+			}
+			_lexer->Expect(Symbol::RParen);
+
+			if (!this->ParseStatement())
+			{
+				// TODO: Throw statement expected
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Parser::ParseForLoop()
+	{
+		// TODO
+		return false;
+	}
+
+	bool Parser::ParseIf()
+	{
+		if (_lexer->Accept(Symbol::If))
+		{
+			TraceInfo("Parsing if");
+
+			_lexer->Expect(Symbol::LParen);
+			if (!this->ParseExpression())
+			{
+				// TODO: Throw no expression
+			}
+			_lexer->Expect(Symbol::RParen);
+
+			if (!this->ParseStatement())
+			{
+				// TODO: Throw statement expected
+			}
+
+			while (_lexer->Accept(Symbol::Else))
+			{
+				TraceInfo("Parsing else");
+				if (!this->ParseStatement())
+				{
+					// TODO: Throw statement expected
+				}
 			}
 
 			return true;
