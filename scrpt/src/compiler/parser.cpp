@@ -139,7 +139,26 @@ namespace scrpt
 
 	bool Parser::ParseForLoop()
 	{
-		// TODO
+		if (_lexer->Accept(Symbol::For))
+		{
+			TraceInfo("Parsing for");
+
+			_lexer->Expect(Symbol::LParen);
+			this->ParseExpression();
+			_lexer->Expect(Symbol::SemiColon);
+			this->ParseExpression();
+			_lexer->Expect(Symbol::SemiColon);
+			this->ParseExpression();
+			_lexer->Expect(Symbol::RParen);
+
+			if (!this->ParseStatement())
+			{
+				// TODO: Throw statement expected
+			}
+
+			return true;
+		}
+
 		return false;
 	}
 
