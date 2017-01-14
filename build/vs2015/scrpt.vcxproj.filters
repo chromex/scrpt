@@ -44,6 +44,9 @@
     <ClCompile Include="..\..\scrpt\src\compiler\ast.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\compiler\error.cpp">
+      <Filter>Source Files\compiler</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">
@@ -65,6 +68,9 @@
       <Filter>Source Files\compiler</Filter>
     </ClInclude>
     <ClInclude Include="..\..\scrpt\src\compiler\ast.h">
+      <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\compiler\error.h">
       <Filter>Source Files\compiler</Filter>
     </ClInclude>
   </ItemGroup>

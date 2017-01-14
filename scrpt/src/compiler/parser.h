@@ -1,17 +1,7 @@
-#ifndef PARSER_H
-#define PARSER_H
+#pragma once
 
 namespace scrpt
 {
-	enum class ParserErr
-	{
-		NoError,
-		ExpressionExpected,
-		StatementExpected,
-		IdentExpected,
-		BlockExpected,
-	};
-
 	class Parser
 	{
 	public:
@@ -22,15 +12,17 @@ namespace scrpt
 	private:
 		Lexer* _lexer;
 
+		bool Accept(Symbol sym);
+		bool Test(Symbol sym) const;
+		bool Expect(Symbol sym);
+
 		void ParseProgram();
-		bool ParseBlock();
-		bool ParseStatement();
-		bool ParseExpression();
+		bool ParseBlock(bool expect);
+		bool ParseStatement(bool expect);
+		bool ParseExpression(bool expect);
 		bool ParseWhileLoop();
 		bool ParseDoLoop();
 		bool ParseForLoop();
 		bool ParseIf();
 	};
 }
-
-#endif

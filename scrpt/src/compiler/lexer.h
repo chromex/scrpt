@@ -1,5 +1,4 @@
-#ifndef LEXER_H
-#define LEXER_H
+#pragma once
 
 namespace scrpt
 {
@@ -68,6 +67,16 @@ namespace scrpt
 	};
 	const char* LexErrToString(LexErr err);
 
+	enum class ParseErr
+	{
+		NoError,
+		UnexpectedSymbol,
+		BlockExpected,
+		ExpressionExpected,
+		StatementExpected,
+	};
+	const char* ParseErrToString(ParseErr err);
+
 	class Token
 	{
 	public:
@@ -78,7 +87,6 @@ namespace scrpt
 			const char* symLineStart,
 			size_t lineNumber,
 			size_t linePosition,
-			LexErr err,
 			std::unique_ptr<const char[]>&& string,
 			double number);
 
@@ -86,8 +94,6 @@ namespace scrpt
 		const char* SymToString() const;
 		const char* GetString() const;
 		double GetNumber() const;
-		LexErr GetLexError() const;
-		std::string GetLexErrString() const;
 		std::string GetFormattedTokenCode() const;
 
 	private:
@@ -97,7 +103,6 @@ namespace scrpt
 		const char* _symLineStart;
 		size_t _lineNumber;
 		size_t _linePosition;
-		LexErr _err;
 		std::unique_ptr<const char[]> _string;
 		double _number;
 	};
@@ -109,9 +114,6 @@ namespace scrpt
 
 		std::shared_ptr<Token> Current() const;
 		void Advance();
-		bool Accept(Symbol sym);
-		bool Test(Symbol sym) const;
-		bool Expect(Symbol sym);
 
 	private:
 		void ConsumeWhitespace();
@@ -132,5 +134,3 @@ namespace scrpt
 		size_t _position;
 	};
 }
-
-#endif

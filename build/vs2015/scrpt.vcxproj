@@ -149,6 +149,7 @@
     <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\parser.cpp" />
+    <ClCompile Include="..\..\scrpt\src\compiler\error.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\ast.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="..\..\scrpt\src\util\trace.h" />
     <ClInclude Include="..\..\scrpt\src\tests\tests.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\parser.h" />
+    <ClInclude Include="..\..\scrpt\src\compiler\error.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\scrpt\grammer.txt" />

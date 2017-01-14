@@ -23,37 +23,6 @@ namespace scrpt
 		return _token;
 	}
 
-	bool Lexer::Accept(Symbol sym)
-	{
-		AssertNotNull(_token);
-		if (_token->GetSym() == sym)
-		{
-			this->Advance();
-			return true;
-		}
-
-		return false;
-	}
-
-	bool Lexer::Test(Symbol sym) const
-	{
-		AssertNotNull(_token);
-		return _token->GetSym() == sym;
-	}
-
-	bool Lexer::Expect(Symbol sym)
-	{
-		AssertNotNull(_token);
-		if (this->Accept(sym))
-		{
-			return true;
-		}
-
-		// TODO: This is a compiler message rather than a system error
-		TraceWarning("Expected symbol " << SymbolToString(sym) << " but encountered symbol " << _token->SymToString());
-		return false;
-	}
-
 	void Lexer::Advance()
 	{
 		if (_token != nullptr && _token->GetSym() == Symbol::Error)
@@ -168,7 +137,11 @@ namespace scrpt
 		err = sym != Symbol::Error ? LexErr::NoError : err;
 
 		// Construct token
-		_token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, err, std::move(string), number);
+		_token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, std::move(string), number);
+		if (err != LexErr::NoError)
+		{
+			throw CreateLexerEx(err, _token);
+		}
 	}
 
 	void Lexer::ConsumeWhitespace()
@@ -410,14 +383,30 @@ namespace scrpt
 		return nullptr;
 	}
 
+	const char * ParseErrToString(ParseErr err)
+	{
+		switch (err)
+		{
+			SYMBOL_CASE_STRING(ParseErr::NoError)
+			SYMBOL_CASE_STRING(ParseErr::UnexpectedSymbol)
+			SYMBOL_CASE_STRING(ParseErr::BlockExpected)
+			SYMBOL_CASE_STRING(ParseErr::ExpressionExpected)
+			SYMBOL_CASE_STRING(ParseErr::StatementExpected)
+
+		default:
+			AssertFail("Missing case for ParseErr");
+		}
+
+		return nullptr;
+	}
+
 	Token::Token(
 		Symbol sym, 
 		std::shared_ptr<const char> sourceData, 
 		const char* symLocation, 
 		const char* symLineStart, 
 		size_t lineNumber, 
-		size_t linePosition, 
-		LexErr err, 
+		size_t linePosition,
 		std::unique_ptr<const char[]>&& string, 
 		double number) 
 		: _sym(sym)
@@ -426,7 +415,6 @@ namespace scrpt
 		, _symLineStart(symLineStart)
 		, _lineNumber(lineNumber)
 		, _linePosition(linePosition)
-		, _err(err)
 		, _string(std::move(string))
 		, _number(number)
 	{
@@ -439,16 +427,6 @@ namespace scrpt
 	const char * Token::SymToString() const { return SymbolToString(_sym); }
 	const char* Token::GetString() const { return _string.get(); }
 	double Token::GetNumber() const { return _number; }
-	LexErr Token::GetLexError() const { return _err; }
-
-	std::string Token::GetLexErrString() const
-	{
-		std::stringstream ss;
-		ss << "Lexical Analysis Failure: " << LexErrToString(_err) << std::endl;
-		ss << this->GetFormattedTokenCode();
-
-		return ss.str();
-	}
 	
 	std::string Token::GetFormattedTokenCode() const
 	{

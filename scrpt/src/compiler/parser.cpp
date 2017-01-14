@@ -4,6 +4,8 @@
 
 namespace scrpt
 {
+	static CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer);
+
 	Parser::Parser()
 		: _lexer(nullptr)
 	{
@@ -18,94 +20,112 @@ namespace scrpt
 		_lexer = nullptr;
 	}
 
-	// TODO: Expect should throw with sufficient detail -- may need data provided to it for context
-	// E.g.: "Expected Symbol::End but found Symbol::Ident\n<Code>\nPtr
-
-	void Parser::ParseProgram()
+	bool Parser::Accept(Symbol sym)
 	{
-		while (_lexer->Accept(Symbol::Func))
+		AssertNotNull(_lexer->Current());
+		if (_lexer->Current()->GetSym() == sym)
 		{
-			if (_lexer->Test(Symbol::Ident))
-			{
-				TraceInfo("Func found with ident: " << _lexer->Current()->GetString());
-
-				_lexer->Advance();
-				_lexer->Expect(Symbol::LParen);
-
-				while (_lexer->Test(Symbol::Ident))
-				{
-					TraceInfo("Found param: " << _lexer->Current()->GetString());
-
-					_lexer->Advance();
-					if (_lexer->Accept(Symbol::Comma))
-					{
-						// TODO: IdentExpected
-					}
-				}
-
-				_lexer->Expect(Symbol::RParen);
-
-				if (!this->ParseBlock())
-				{
-					// TODO: Throw no block
-				}
-			}
-			else
-			{
-				// TODO: Throw no ident
-			}
-		}
-
-		_lexer->Expect(Symbol::End);
-	}
-
-	bool Parser::ParseBlock()
-	{
-		if (_lexer->Accept(Symbol::LBracket))
-		{
-			TraceInfo("Parsing block");
-			while (this->ParseStatement()) {}
-			_lexer->Expect(Symbol::RBracket);
+			_lexer->Advance();
 			return true;
 		}
 
 		return false;
 	}
 
-	bool Parser::ParseStatement()
+	bool Parser::Test(Symbol sym) const
 	{
-		if (this->ParseBlock()) return true;
+		AssertNotNull(_lexer->Current());
+		return _lexer->Current()->GetSym() == sym;
+	}
+
+	bool Parser::Expect(Symbol sym)
+	{
+		AssertNotNull(_lexer->Current());
+		if (this->Accept(sym))
+		{
+			return true;
+		}
+
+		throw CreateExpectedSymEx(sym, _lexer);
+	}
+
+	void Parser::ParseProgram()
+	{
+		while (this->Accept(Symbol::Func))
+		{
+			if (this->Test(Symbol::Ident))
+			{
+				TraceInfo("Func found with ident: " << _lexer->Current()->GetString());
+
+				_lexer->Advance();
+				this->Expect(Symbol::LParen);
+
+				while (this->Test(Symbol::Ident))
+				{
+					TraceInfo("Found param: " << _lexer->Current()->GetString());
+
+					_lexer->Advance();
+					if (this->Accept(Symbol::Comma) && !this->Test(Symbol::Ident))
+					{
+						throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+					}
+				}
+
+				this->Expect(Symbol::RParen);
+				this->ParseBlock(true);
+			}
+			else
+			{
+				throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+			}
+		}
+
+		this->Expect(Symbol::End);
+	}
+
+	bool Parser::ParseBlock(bool expect)
+	{
+		if (this->Accept(Symbol::LBracket))
+		{
+			TraceInfo("Parsing block");
+			while (this->ParseStatement(false)) {}
+			this->Expect(Symbol::RBracket);
+			return true;
+		}
+
+		if (expect) throw CreateParseEx(ParseErr::BlockExpected, _lexer->Current());
+		return false;
+	}
+
+	bool Parser::ParseStatement(bool expect)
+	{
+		if (this->ParseBlock(false)) return true;
 		else if (this->ParseWhileLoop()) return true;
 		else if (this->ParseDoLoop()) return true;
 		else if (this->ParseForLoop()) return true;
 		else if (this->ParseIf()) return true;
 		
+		if (expect) throw CreateParseEx(ParseErr::StatementExpected, _lexer->Current());
 		return false;
 	}
 
-	bool Parser::ParseExpression()
+	bool Parser::ParseExpression(bool expect)
 	{
-		// TODO
+		// TODO: Parse
+		// TODO: Throw on expect
 		return true;
 	}
 
 	bool Parser::ParseWhileLoop()
 	{
-		if (_lexer->Accept(Symbol::While))
+		if (this->Accept(Symbol::While))
 		{
 			TraceInfo("Parsing while");
 
-			_lexer->Expect(Symbol::LParen);
-			if (!this->ParseExpression())
-			{
-				// TODO: Throw no expression 
-			}
-			_lexer->Expect(Symbol::RParen);
-
-			if (!this->ParseStatement())
-			{
-				// TODO: Throw statement expected
-			}
+			this->Expect(Symbol::LParen);
+			this->ParseExpression(true);
+			this->Expect(Symbol::RParen); 
+			this->ParseStatement(true);
 
 			return true;
 		}
@@ -115,21 +135,14 @@ namespace scrpt
 
 	bool Parser::ParseDoLoop()
 	{
-		if (_lexer->Accept(Symbol::Do))
+		if (this->Accept(Symbol::Do))
 		{
 			TraceInfo("Parsing do");
 
-			_lexer->Expect(Symbol::LParen);
-			if (!this->ParseExpression())
-			{
-				// TODO: Throw no expression
-			}
-			_lexer->Expect(Symbol::RParen);
-
-			if (!this->ParseStatement())
-			{
-				// TODO: Throw statement expected
-			}
+			this->Expect(Symbol::LParen);
+			this->ParseExpression(true);
+			this->Expect(Symbol::RParen);
+			this->ParseStatement(true);
 
 			return true;
 		}
@@ -139,22 +152,18 @@ namespace scrpt
 
 	bool Parser::ParseForLoop()
 	{
-		if (_lexer->Accept(Symbol::For))
+		if (this->Accept(Symbol::For))
 		{
 			TraceInfo("Parsing for");
 
-			_lexer->Expect(Symbol::LParen);
-			this->ParseExpression();
-			_lexer->Expect(Symbol::SemiColon);
-			this->ParseExpression();
-			_lexer->Expect(Symbol::SemiColon);
-			this->ParseExpression();
-			_lexer->Expect(Symbol::RParen);
-
-			if (!this->ParseStatement())
-			{
-				// TODO: Throw statement expected
-			}
+			this->Expect(Symbol::LParen);
+			this->ParseExpression(false);
+			this->Expect(Symbol::SemiColon);
+			this->ParseExpression(false);
+			this->Expect(Symbol::SemiColon);
+			this->ParseExpression(false);
+			this->Expect(Symbol::RParen);
+			this->ParseStatement(true);
 
 			return true;
 		}
@@ -164,34 +173,30 @@ namespace scrpt
 
 	bool Parser::ParseIf()
 	{
-		if (_lexer->Accept(Symbol::If))
+		if (this->Accept(Symbol::If))
 		{
 			TraceInfo("Parsing if");
 
-			_lexer->Expect(Symbol::LParen);
-			if (!this->ParseExpression())
-			{
-				// TODO: Throw no expression
-			}
-			_lexer->Expect(Symbol::RParen);
+			this->Expect(Symbol::LParen);
+			this->ParseExpression(true);
+			this->Expect(Symbol::RParen);
+			this->ParseStatement(true);
 
-			if (!this->ParseStatement())
-			{
-				// TODO: Throw statement expected
-			}
-
-			while (_lexer->Accept(Symbol::Else))
+			while (this->Accept(Symbol::Else))
 			{
 				TraceInfo("Parsing else");
-				if (!this->ParseStatement())
-				{
-					// TODO: Throw statement expected
-				}
+				this->ParseStatement(true);
 			}
 
 			return true;
 		}
 
 		return false;
+	}
+
+	CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer)
+	{
+		AssertNotNull(lexer);
+		return CreateParseEx(std::string("Expected symbol ") + SymbolToString(sym), ParseErr::UnexpectedSymbol, lexer->Current());
 	}
 }

@@ -1,5 +1,4 @@
-#ifndef AST_H
-#define AST_H
+#pragma once
 
 namespace scrpt
 {
@@ -18,5 +17,3 @@ namespace scrpt
 		const Symbol _sym;
 	};
 }
-
-#endif

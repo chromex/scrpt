@@ -89,11 +89,12 @@ func main() {
 )testCode";
 
 static const char* parserTest = R"testCode(
-func main(p1, _p2,) {
+func main(p1, _p2, p3) {
 	{}
 	while() {do() {}}
 	do() {}
 	if() {} else {} else {}
+	for(;;) {}
 }
 )testCode";
 
@@ -113,7 +114,14 @@ void scrpt::RunTests()
 
 	Parser parser;
 	Lexer lexer(DuplicateSource(parserTest));
-	parser.Consume(&lexer);
+	try
+	{
+		parser.Consume(&lexer);
+	}
+	catch (scrpt::CompilerException& ex)
+	{
+		std::cout << ex.what() << std::endl;
+	}
 }
 
 bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr)
@@ -122,18 +130,27 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
 
 	scrpt::Lexer lexer(DuplicateSource(source));
 	std::shared_ptr<scrpt::Token> token;
-	do
+	scrpt::LexErr err = scrpt::LexErr::NoError;
+	try
 	{
-		lexer.Advance();
-		token = lexer.Current();
-	} while (token->GetSym() != scrpt::Symbol::End && token->GetSym() != scrpt::Symbol::Error);
+		do
+		{
+			lexer.Advance();
+			token = lexer.Current();
+		} while (token->GetSym() != scrpt::Symbol::End && token->GetSym() != scrpt::Symbol::Error);
+	} 
+	catch (scrpt::CompilerException& ex)
+	{
+		std::cout << ex.what() << std::endl;
+		token = ex.GetToken();
+		err = ex.GetLexErr();
+	}
 
 	bool passed = false;
 	switch (token->GetSym())
 	{
 		case scrpt::Symbol::Error:
-			std::cout << token->GetLexErrString() << std::endl;
-			passed = expectedErr == token->GetLexError();
+			passed = expectedErr == err;
 			break;
 
 		case scrpt::Symbol::End:
