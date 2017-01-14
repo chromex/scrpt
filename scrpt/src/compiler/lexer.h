@@ -77,67 +77,57 @@ namespace scrpt
 			size_t lineNumber,
 			size_t linePosition,
 			LexErr err,
-			std::unique_ptr<const char> string,
+			std::unique_ptr<const char[]>&& string,
 			double number);
 
 		Symbol GetSym() const;
+		const char* SymToString() const;
 		const char* GetString() const;
 		double GetNumber() const;
 		LexErr GetLexError() const;
+		std::string GetLexErrString() const;
 		std::string GetFormattedTokenCode() const;
 
 	private:
 		Symbol _sym;
-		std::weak_ptr<const char> _sourceData;
+		std::shared_ptr<const char> _sourceData;
 		const char* _symLocation;
 		const char* _symLineStart;
 		size_t _lineNumber;
 		size_t _linePosition;
 		LexErr _err;
-		std::unique_ptr<const char> _string;
+		std::unique_ptr<const char[]> _string;
 		double _number;
 	};
 
 	class Lexer
 	{
 	public:
-		Lexer(std::unique_ptr<char[]> sourceData);
+		Lexer(std::shared_ptr<const char> sourceData);
 
-		Symbol Current() const;
+		std::shared_ptr<Token> Current() const;
 		void Advance();
 		bool Accept(Symbol sym);
 		bool Test(Symbol sym) const;
 		bool Expect(Symbol sym);
 
-		size_t GetLine() const;
-		size_t GetPosition() const;
-		const char* GetIdent() const;
-		const char* GetTerm() const;
-		double GetNumber() const;
-		LexErr GetError() const;
-		std::string GetErrorString() const;
-
 	private:
 		void ConsumeWhitespace();
 		bool IsIdentCharacter(char c, bool firstChar) const;
 		size_t GetIdentLength(const char* c) const;
-		std::unique_ptr<char[]> GetIdent(const char* c) const;
+		std::unique_ptr<const char[]> GetIdent(const char* c) const;
 		bool IsEndOfTerm(const char* c) const;
 		bool GetRawTermLength(const char* c, size_t* length) const;
 		size_t GetTermLength(const char* c) const;
-		std::unique_ptr<char[]> GetTerm(const char* c);
+		std::unique_ptr<const char[]> GetTerm(const char* c, LexErr* err);
 		double GetNumber(const char* c, size_t* rawLen) const;
 
-		std::unique_ptr<char[]> _sourceData;
+		std::shared_ptr<const char> _sourceData;
+		std::shared_ptr<Token> _token;
 		const char* _location;
 		const char* _lineStart;
-		std::unique_ptr<char[]> _ident;
-		std::unique_ptr<char[]> _term;
-		double _number;
 		size_t _line;
 		size_t _position;
-		Symbol _token;
-		LexErr _err;
 	};
 }
 

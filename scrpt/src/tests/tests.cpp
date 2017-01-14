@@ -3,7 +3,7 @@
 
 #define COMPONENTNAME "Tests"
 
-static std::unique_ptr<char[]> DuplicateSource(const char* source);
+static std::shared_ptr<const char> DuplicateSource(const char* source);
 static bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr);
 
 static const char* validSyntax = R"testCode(
@@ -119,19 +119,19 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
 	std::cout << "Lexer: " << testName << std::endl;
 
 	scrpt::Lexer lexer(DuplicateSource(source));
-	scrpt::Symbol token;
+	std::shared_ptr<scrpt::Token> token;
 	do
 	{
 		lexer.Advance();
 		token = lexer.Current();
-	} while (token != scrpt::Symbol::End && token != scrpt::Symbol::Error);
+	} while (token->GetSym() != scrpt::Symbol::End && token->GetSym() != scrpt::Symbol::Error);
 
 	bool passed = false;
-	switch (token)
+	switch (token->GetSym())
 	{
 		case scrpt::Symbol::Error:
-			std::cout << lexer.GetErrorString() << std::endl;
-			passed = expectedErr == lexer.GetError();
+			std::cout << token->GetLexErrString() << std::endl;
+			passed = expectedErr == token->GetLexError();
 			break;
 
 		case scrpt::Symbol::End:
@@ -152,11 +152,11 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
 	return passed;
 }
 
-std::unique_ptr<char[]> DuplicateSource(const char* source)
+std::shared_ptr<const char> DuplicateSource(const char* source)
 {
 	AssertNotNull(source);
 	size_t len = strlen(source);
-	std::unique_ptr<char[]> copy(new char[len + 1]);
-	strcpy_s(copy.get(), len+1, source);
-	return copy;
+	char* copy(new char[len + 1]);
+	strcpy_s(copy, len+1, source);
+	return std::shared_ptr<const char>(copy, std::default_delete<const char[]>());
 }

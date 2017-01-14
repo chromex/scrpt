@@ -5,31 +5,28 @@
 
 namespace scrpt
 {
-	Lexer::Lexer(std::unique_ptr<char[]> sourceData)
-		: _sourceData(nullptr)
+	Lexer::Lexer(std::shared_ptr<const char> sourceData)
+		: _sourceData(sourceData)
+		, _token(nullptr)
 		, _location(nullptr)
 		, _lineStart(nullptr)
-		, _ident(nullptr)
-		, _term(nullptr)
-		, _number(nan(nullptr))
 		, _line(1)
 		, _position(1)
-		, _token(Symbol::Start)
 	{
-		_sourceData.swap(sourceData);
-		AssertNotNull(_sourceData.get());
+		AssertNotNull(_sourceData);
 
 		_lineStart = _location = _sourceData.get();
 	}
 
-	Symbol Lexer::Current() const
+	std::shared_ptr<Token> Lexer::Current() const
 	{
 		return _token;
 	}
 
 	bool Lexer::Accept(Symbol sym)
 	{
-		if (_token == sym)
+		AssertNotNull(_token);
+		if (_token->GetSym() == sym)
 		{
 			this->Advance();
 			return true;
@@ -40,80 +37,39 @@ namespace scrpt
 
 	bool Lexer::Test(Symbol sym) const
 	{
-		return sym == _token;
+		AssertNotNull(_token);
+		return _token->GetSym() == sym;
 	}
 
 	bool Lexer::Expect(Symbol sym)
 	{
+		AssertNotNull(_token);
 		if (this->Accept(sym))
 		{
 			return true;
 		}
 
 		// TODO: This is a compiler message rather than a system error
-		TraceWarning("Expected symbol " << SymbolToString(sym) << " but encountered symbol " << SymbolToString(_token));
+		TraceWarning("Expected symbol " << SymbolToString(sym) << " but encountered symbol " << _token->SymToString());
 		return false;
-	}
-
-	size_t Lexer::GetLine() const { return _line; }
-	size_t Lexer::GetPosition() const { return _position; }
-	const char* Lexer::GetIdent() const { return _ident.get(); }
-	const char* Lexer::GetTerm() const { return _term.get(); }
-	double Lexer::GetNumber() const { return _number; }
-	LexErr Lexer::GetError() const { return _err; }
-
-	std::string Lexer::GetErrorString() const
-	{
-		std::stringstream ss;
-		ss << "Lexical Analysis Failure: " << LexErrToString(_err) << std::endl << _line << ":" << _position << "> ";
-		
-		// Trim leading whitespace
-		const char* start = _lineStart;
-		while (*start != '\0' && isspace(*start)) ++start;
-		if (start == '\0')
-		{
-			TraceWarning("Failed to compute error message");
-			return "";
-		}
-
-		// Trim newline
-		const char* end = strchr(start, '\r');
-		if (end == NULL) end = strchr(start, '\n');
-
-		// And add source
-		if (end == NULL)
-			ss << start;
-		else
-			ss << std::string(start, end);
-
-		// Start pointer line
-		ss << std::endl << _line << ":" << _position << "> ";
-		for (size_t pos = start - _lineStart; pos < _position-1; ++pos)
-		{
-			if (isspace(_lineStart[pos]))
-				ss << _lineStart[pos];
-			else
-				ss << ' ';
-		}
-		ss << '^';
-
-		return ss.str();
 	}
 
 	void Lexer::Advance()
 	{
-		if (_token == Symbol::Error)
+		if (_token != nullptr && _token->GetSym() == Symbol::Error)
 		{
 			AssertFail("Lexical analysis cannot continue once an error has been hit");
 			return;
 		}
 
 		// Reset
-		_token = Symbol::Error;
-		_err = LexErr::UnknownSymbol;
-		_ident.reset();
-		_term.reset();
-		_number = nan(nullptr);
+		_token = nullptr;
+
+		// Starting token properties
+		Symbol sym = Symbol::Error;
+		LexErr err = LexErr::UnknownSymbol;
+		std::unique_ptr<const char[]> string;
+		double number = nan(nullptr);
 
 		// Burn whitespace
 		this->ConsumeWhitespace();
@@ -125,28 +81,28 @@ namespace scrpt
 		char cn = *(_location + 1);
 		if (c == '\0')
 		{
-			_token = Symbol::End;
+			sym = Symbol::End;
 		}
 		else if (this->IsIdentCharacter(c, true))
 		{
-			std::unique_ptr<char[]> ident = this->GetIdent(_location);
+			std::unique_ptr<const char[]> ident(this->GetIdent(_location));
 			size_t len = strlen(ident.get());
 
-			if (strcmp(ident.get(), "do") == 0)				_token = Symbol::Do;
-			else if (strcmp(ident.get(), "for") == 0)		_token = Symbol::For;
-			else if (strcmp(ident.get(), "case") == 0)		_token = Symbol::Case;
-			else if (strcmp(ident.get(), "func") == 0)		_token = Symbol::Func;
-			else if (strcmp(ident.get(), "true") == 0)		_token = Symbol::True;
-			else if (strcmp(ident.get(), "break") == 0)		_token = Symbol::Break;
-			else if (strcmp(ident.get(), "false") == 0)		_token = Symbol::False;
-			else if (strcmp(ident.get(), "while") == 0)		_token = Symbol::While;
-			else if (strcmp(ident.get(), "return") == 0)	_token = Symbol::Return;
-			else if (strcmp(ident.get(), "switch") == 0)	_token = Symbol::Switch;
-			else if (strcmp(ident.get(), "default") == 0)	_token = Symbol::Default;
+			if (strcmp(ident.get(), "do") == 0)				sym = Symbol::Do;
+			else if (strcmp(ident.get(), "for") == 0)		sym = Symbol::For;
+			else if (strcmp(ident.get(), "case") == 0)		sym = Symbol::Case;
+			else if (strcmp(ident.get(), "func") == 0)		sym = Symbol::Func;
+			else if (strcmp(ident.get(), "true") == 0)		sym = Symbol::True;
+			else if (strcmp(ident.get(), "break") == 0)		sym = Symbol::Break;
+			else if (strcmp(ident.get(), "false") == 0)		sym = Symbol::False;
+			else if (strcmp(ident.get(), "while") == 0)		sym = Symbol::While;
+			else if (strcmp(ident.get(), "return") == 0)	sym = Symbol::Return;
+			else if (strcmp(ident.get(), "switch") == 0)	sym = Symbol::Switch;
+			else if (strcmp(ident.get(), "default") == 0)	sym = Symbol::Default;
 			else
 			{
-				_token = Symbol::Ident;
-				_ident.swap(ident);
+				sym = Symbol::Ident;
+				string.swap(ident);
 			}
 
 			_location += len;
@@ -154,15 +110,15 @@ namespace scrpt
 		else if (isdigit(c))
 		{
 			size_t rawLen = 0;
-			_number = this->GetNumber(_location, &rawLen);
-			if (!isnan(_number))
+			number = this->GetNumber(_location, &rawLen);
+			if (!isnan(number))
 			{
-				_token = Symbol::Number;
+				sym = Symbol::Number;
 				_location += rawLen;
 			}
 			else
 			{
-				_err = LexErr::InvalidNumber;
+				err = LexErr::InvalidNumber;
 			}
 		}
 		else if (c == '"')
@@ -170,19 +126,19 @@ namespace scrpt
 			size_t rawLen;
 			if (this->GetRawTermLength(_location, &rawLen))
 			{
-				_term = this->GetTerm(_location);
-				if (_term.get() != nullptr)
+				string = this->GetTerm(_location, &err);
+				if (string != nullptr)
 				{
-					_token = Symbol::Terminal;
+					sym = Symbol::Terminal;
 					_location += rawLen;
 				}
 			}
 			else
 			{
-				_err = LexErr::NonTerminatedString;
+				err = LexErr::NonTerminatedString;
 			}
 		}
-		#define SINGLE_CHAR_SYM(C, Sym) else if (c == C) { _token = Sym; _location += 1; }
+		#define SINGLE_CHAR_SYM(C, Sym) else if (c == C) { sym = Sym; _location += 1; }
 		SINGLE_CHAR_SYM('(', Symbol::LParen)
 		SINGLE_CHAR_SYM(')', Symbol::RParen)
 		SINGLE_CHAR_SYM('{', Symbol::LBracket)
@@ -192,10 +148,10 @@ namespace scrpt
 		SINGLE_CHAR_SYM(';', Symbol::SemiColon)
 		SINGLE_CHAR_SYM(':', Symbol::Colon)
 		SINGLE_CHAR_SYM(',', Symbol::Comma)
-		#define DOUBLE_SIMPLE_SYM(C, V, Sym) else if (c == C && cn == V) { _token = Sym; _location += 2; }
+		#define DOUBLE_SIMPLE_SYM(C, V, Sym) else if (c == C && cn == V) { sym = Sym; _location += 2; }
 		DOUBLE_SIMPLE_SYM('&', '&', Symbol::And)
 		DOUBLE_SIMPLE_SYM('|', '|', Symbol::And)
-		#define DOUBLE_COMPLEX_SYM(C, V, SymC, SymV) else if (c == C && cn == V) { _token = SymV; _location += 2; } SINGLE_CHAR_SYM(C, SymC)
+		#define DOUBLE_COMPLEX_SYM(C, V, SymC, SymV) else if (c == C && cn == V) { sym = SymV; _location += 2; } SINGLE_CHAR_SYM(C, SymC)
 		DOUBLE_COMPLEX_SYM('=', '=', Symbol::Assign, Symbol::Eq)
 		DOUBLE_COMPLEX_SYM('*', '=', Symbol::Mult, Symbol::MultEq)
 		DOUBLE_COMPLEX_SYM('/', '=', Symbol::Div, Symbol::DivEq)
@@ -203,11 +159,14 @@ namespace scrpt
 		DOUBLE_COMPLEX_SYM('<', '=', Symbol::LessThan, Symbol::LessThanEq)
 		DOUBLE_COMPLEX_SYM('>', '=', Symbol::GreaterThan, Symbol::GreaterThanEq)
 		DOUBLE_COMPLEX_SYM('%', '=', Symbol::Modulo, Symbol::ModuloEq)
-		#define TRIPLE_COMPLEX_SYM(C, V, Z, SymC, SymV, SymZ) else if (c == C && cn == Z) { _token = SymZ; _location += 2; } DOUBLE_COMPLEX_SYM(C, V, SymC, SymV)
+		#define TRIPLE_COMPLEX_SYM(C, V, Z, SymC, SymV, SymZ) else if (c == C && cn == Z) { sym = SymZ; _location += 2; } DOUBLE_COMPLEX_SYM(C, V, SymC, SymV)
 		TRIPLE_COMPLEX_SYM('-', '=', '-', Symbol::Minus, Symbol::MinusEq, Symbol::MinusMinus)
 		TRIPLE_COMPLEX_SYM('+', '=', '+', Symbol::Plus, Symbol::PlusEq, Symbol::PlusPlus)
 
-		_err = _token != Symbol::Error ? LexErr::NoError : _err;
+		err = sym != Symbol::Error ? LexErr::NoError : err;
+
+		// Construct token
+		_token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, err, std::move(string), number);
 	}
 
 	void Lexer::ConsumeWhitespace()
@@ -252,15 +211,15 @@ namespace scrpt
 		return len;
 	}
 
-	std::unique_ptr<char[]> Lexer::GetIdent(const char* c) const
+	std::unique_ptr<const char[]> Lexer::GetIdent(const char* c) const
 	{
 		size_t len = this->GetIdentLength(c);
 		Assert(len > 0, "GetIdent has zero length in ident lexer");
 
-		std::unique_ptr<char[]> ident(new char[len+1]);
-		strncpy_s(ident.get(), len+1, c, len);
+		char* ident(new char[len+1]);
+		strncpy_s(ident, len+1, c, len);
 
-		return ident;
+		return std::unique_ptr<const char[]>(ident);
 	}
 
 	bool Lexer::IsEndOfTerm(const char* c) const
@@ -298,11 +257,11 @@ namespace scrpt
 		return len;
 	}
 
-	std::unique_ptr<char[]> Lexer::GetTerm(const char* c)
+	std::unique_ptr<const char[]> Lexer::GetTerm(const char* c, LexErr* err)
 	{
 		size_t len = this->GetTermLength(c);
-		std::unique_ptr<char[]> term(new char[len+1]);
-		term.get()[len] = '\0';
+		char* term(new char[len+1]);
+		term[len] = '\0';
 		size_t pos = 0;
 		while (!this->IsEndOfTerm(++c))
 		{
@@ -311,24 +270,25 @@ namespace scrpt
 				++c;
 				switch (*c)
 				{
-				case 't': term.get()[pos] = '\t'; break;
-				case 'n': term.get()[pos] = '\n'; break;
-				case '\\': term.get()[pos] = '\\'; break;
-				case '"': term.get()[pos] = '\"'; break;
+				case 't': term[pos] = '\t'; break;
+				case 'n': term[pos] = '\n'; break;
+				case '\\': term[pos] = '\\'; break;
+				case '"': term[pos] = '\"'; break;
 				default: 
-					_err = LexErr::UnknownStringEscape;
+					delete[] term;
+					*err = LexErr::UnknownStringEscape;
 					return nullptr;
 				}
 			}
 			else
 			{
-				term.get()[pos] = *c;
+				term[pos] = *c;
 			}
 
 			++pos;
 		}
 		
-		return term;
+		return std::unique_ptr<const char[]>(term);
 	}
 
 	double Lexer::GetNumber(const char* c, size_t* rawLen) const
@@ -445,7 +405,7 @@ namespace scrpt
 
 		return nullptr;
 	}
-	
+
 	Token::Token(
 		Symbol sym, 
 		std::shared_ptr<const char> sourceData, 
@@ -454,7 +414,7 @@ namespace scrpt
 		size_t lineNumber, 
 		size_t linePosition, 
 		LexErr err, 
-		std::unique_ptr<const char> string, 
+		std::unique_ptr<const char[]>&& string, 
 		double number) 
 		: _sym(sym)
 		, _sourceData(sourceData)
@@ -463,23 +423,70 @@ namespace scrpt
 		, _lineNumber(lineNumber)
 		, _linePosition(linePosition)
 		, _err(err)
-		, _string(nullptr)
+		, _string(std::move(string))
 		, _number(number)
 	{
-		string.swap(_string);
-		AssertNotNull(_sourceData.lock());
+		AssertNotNull(_sourceData);
 		AssertNotNull(_symLocation);
 		AssertNotNull(_symLineStart);
-		AssertNotNull(_string.get());
 	}
 	
 	Symbol Token::GetSym() const { return _sym; }
-	const char * Token::GetString() const { return _string.get(); }
+	const char * Token::SymToString() const { return SymbolToString(_sym); }
+	const char* Token::GetString() const { return _string.get(); }
 	double Token::GetNumber() const { return _number; }
 	LexErr Token::GetLexError() const { return _err; }
+
+	std::string Token::GetLexErrString() const
+	{
+		std::stringstream ss;
+		ss << "Lexical Analysis Failure: " << LexErrToString(_err) << std::endl;
+		ss << this->GetFormattedTokenCode();
+
+		return ss.str();
+	}
 	
 	std::string Token::GetFormattedTokenCode() const
 	{
-		return std::string();
+		if (_sym == Symbol::Start)
+		{
+			AssertFail("No token data for Start token");
+			return "";
+		}
+
+		std::stringstream ss;
+		ss << _lineNumber << ":" << _linePosition << "> ";
+
+		// Trim leading whitespace
+		const char* start = _symLineStart;
+		while (*start != '\0' && isspace(*start)) ++start;
+		if (start == '\0')
+		{
+			TraceWarning("Failed to compute error message");
+			return "";
+		}
+
+		// Trim newline
+		const char* end = strchr(start, '\r');
+		if (end == NULL) end = strchr(start, '\n');
+
+		// And add source
+		if (end == NULL)
+			ss << start;
+		else
+			ss << std::string(start, end);
+
+		// Start pointer line
+		ss << std::endl << _lineNumber << ":" << _linePosition << "> ";
+		for (size_t pos = start - _symLineStart; pos < _linePosition - 1; ++pos)
+		{
+			if (isspace(_symLineStart[pos]))
+				ss << _symLineStart[pos];
+			else
+				ss << ' ';
+		}
+		ss << '^';
+
+		return ss.str();
 	}
 }

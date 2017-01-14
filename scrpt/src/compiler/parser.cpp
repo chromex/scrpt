@@ -27,14 +27,14 @@ namespace scrpt
 		{
 			if (_lexer->Test(Symbol::Ident))
 			{
-				TraceInfo("Func found with ident: " << _lexer->GetIdent());
+				TraceInfo("Func found with ident: " << _lexer->Current()->GetString());
 
 				_lexer->Advance();
 				_lexer->Expect(Symbol::LParen);
 
 				while (_lexer->Test(Symbol::Ident))
 				{
-					TraceInfo("Found param: " << _lexer->GetIdent());
+					TraceInfo("Found param: " << _lexer->Current()->GetString());
 
 					_lexer->Advance();
 					if (_lexer->Accept(Symbol::Comma))
