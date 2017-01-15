@@ -34,6 +34,9 @@ namespace scrpt
         bool ParseEx4(bool expect);
         bool ParseEx5(bool expect);
         bool ParseEx6(bool expect);
+        bool ParseEx7(bool expect);
+        bool ParseEx8(bool expect);
+        bool ParseEx9(bool expect);
         bool ParseWhileLoop();
         bool ParseDoLoop();
         bool ParseForLoop();
@@ -45,5 +48,6 @@ namespace scrpt
         bool ParseCase();
         bool ParseTerm();
         bool ParseConstant();
+        bool ParseParens();
     };
 }

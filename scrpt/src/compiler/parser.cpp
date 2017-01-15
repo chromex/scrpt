@@ -285,12 +285,41 @@ namespace scrpt
             this->PopNode();
             return true;
         }
-        else if (this->ParseTerm())
+        else if (this->ParseEx7(false))
         {
             return true;
         }
 
         if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
+
+    bool Parser::ParseEx7(bool expect)
+    {
+        if (this->ParseTerm())
+        {
+            // TODO: This is wrong... needs postfix flag but w/ parented insertion
+            // TODO: Annotate node w/ postfix flag needed? It having no children is implicit...
+            if (this->Accept(Symbol::PlusPlus, true) ||
+                this->Accept(Symbol::MinusMinus, true))
+            {
+                this->PopNode();
+            }
+
+            return true;
+        }
+
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
+
+    bool Parser::ParseEx8(bool expect)
+    {
+        return false;
+    }
+
+    bool Parser::ParseEx9(bool expect)
+    {
         return false;
     }
 
@@ -463,7 +492,8 @@ namespace scrpt
 
     bool Parser::ParseTerm()
     {
-        return this->ParseConstant();
+        return this->ParseConstant() ||
+            this->ParseParens();
     }
 
     bool Parser::ParseConstant()
@@ -489,6 +519,18 @@ namespace scrpt
         if (this->Accept(Symbol::Terminal, true))
         {
             this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseParens()
+    {
+        if (this->Accept(Symbol::LParen))
+        {
+            this->ParseExpression(true);
+            this->Expect(Symbol::RParen);
             return true;
         }
 

@@ -92,13 +92,8 @@ func main() {
 
 static const char* parserTest = R"testCode(
 func main(p1, _p2, p3) {
-	while (true) {
-        //print("I am the greatest");
-        if (!true || !false == !true) continue;
-        break;
-    }
-
-    return "wewt";
+    2 * 5++;
+	!false * 5 / 2 + 1 % (++2.212 && !true);
 }
 
 func f2() {}
