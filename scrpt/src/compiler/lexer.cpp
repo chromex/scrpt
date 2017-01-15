@@ -71,6 +71,7 @@ namespace scrpt
             else if (strcmp(ident.get(), "return") == 0)	sym = Symbol::Return;
             else if (strcmp(ident.get(), "switch") == 0)	sym = Symbol::Switch;
             else if (strcmp(ident.get(), "default") == 0)	sym = Symbol::Default;
+            else if (strcmp(ident.get(), "continue") == 0)  sym = Symbol::Continue;
             else
             {
                 sym = Symbol::Ident;
@@ -330,6 +331,7 @@ namespace scrpt
                 SYMBOL_CASE_STRING(Symbol::Do)
                 SYMBOL_CASE_STRING(Symbol::While)
                 SYMBOL_CASE_STRING(Symbol::For)
+                SYMBOL_CASE_STRING(Symbol::Continue)
                 SYMBOL_CASE_STRING(Symbol::Switch)
                 SYMBOL_CASE_STRING(Symbol::Case)
                 SYMBOL_CASE_STRING(Symbol::Break)

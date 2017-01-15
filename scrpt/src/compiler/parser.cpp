@@ -148,6 +148,7 @@ namespace scrpt
         else if (this->ParseIf()) return true;
         else if (this->ParseBreak()) return true;
         else if (this->ParseReturn()) return true;
+        else if (this->ParseContinue()) return true;
         else if (this->ParseSwitch()) return true;
         else if (this->ParseExpression(false))
         {
@@ -256,7 +257,7 @@ namespace scrpt
 
     bool Parser::ParseEx5(bool expect)
     {
-        if (this->ParseConstant())
+        if (this->ParseEx6(false))
         {
             std::shared_ptr<Token> token;
             if (this->Accept(Symbol::Mult, &token) ||
@@ -267,6 +268,25 @@ namespace scrpt
                 _currentNode->CondenseBinaryOp(token);
             }
 
+            return true;
+        }
+
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
+
+    bool Parser::ParseEx6(bool expect)
+    {
+        if (this->Accept(Symbol::Not, true) ||
+            this->Accept(Symbol::PlusPlus, true) ||
+            this->Accept(Symbol::MinusMinus, true))
+        {
+            this->ParseEx6(true);
+            this->PopNode();
+            return true;
+        }
+        else if (this->ParseTerm())
+        {
             return true;
         }
 
@@ -386,6 +406,18 @@ namespace scrpt
         return false;
     }
 
+    bool Parser::ParseContinue()
+    {
+        if (this->Accept(Symbol::Continue, true))
+        {
+            this->Expect(Symbol::SemiColon);
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
     bool Parser::ParseSwitch()
     {
         if (this->Accept(Symbol::Switch, true))
@@ -427,6 +459,11 @@ namespace scrpt
         }
 
         return false;
+    }
+
+    bool Parser::ParseTerm()
+    {
+        return this->ParseConstant();
     }
 
     bool Parser::ParseConstant()

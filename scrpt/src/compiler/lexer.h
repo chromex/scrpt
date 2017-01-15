@@ -25,6 +25,7 @@ namespace scrpt
         Do,
         While,
         For,
+        Continue,
         Switch,
         Case,
         Break,
