@@ -11,8 +11,14 @@ namespace scrpt
 
 	private:
 		Lexer* _lexer;
+		AstNode _program;
+		AstNode* _currentNode;
 
-		bool Accept(Symbol sym);
+		void PushNode();
+		void AddNode();
+		void PopNode();
+
+		bool Accept(Symbol sym, bool push = false);
 		bool Test(Symbol sym) const;
 		bool Expect(Symbol sym);
 

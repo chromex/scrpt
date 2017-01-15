@@ -7,13 +7,20 @@ namespace scrpt
 		typedef std::list<AstNode> ChildList;
 
 	public:
+		AstNode();
 
-		Symbol GetSym() const;
-		void AddChild(AstNode node);
+		AstNode* AddChild(std::shared_ptr<Token> token);
+		AstNode* GetParent() const;
+		std::shared_ptr<Token> GetToken() const;
+		const ChildList& GetChildren() const;
 
 	private:
-		AstNode(Symbol sym);
+		AstNode(AstNode* parent, std::shared_ptr<Token> token);
 
-		const Symbol _sym;
+		std::shared_ptr<Token> _token;
+		AstNode* _parent;
+		ChildList _children;
 	};
+
+	void DumpAst(const AstNode* node);
 }

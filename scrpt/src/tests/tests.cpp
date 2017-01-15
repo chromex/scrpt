@@ -93,9 +93,11 @@ func main(p1, _p2, p3) {
 	{}
 	while() {do() {}}
 	do() {}
-	if() {} else {} else {}
+	if() {} else {} 
 	for(;;) {}
 }
+
+func f2() {}
 )testCode";
 
 void scrpt::RunTests()

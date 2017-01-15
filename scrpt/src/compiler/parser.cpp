@@ -8,7 +8,9 @@ namespace scrpt
 
 	Parser::Parser()
 		: _lexer(nullptr)
+		, _currentNode(nullptr)
 	{
+		_currentNode = &_program;
 	}
 
 	void Parser::Consume(Lexer* lexer)
@@ -17,14 +19,32 @@ namespace scrpt
 		_lexer = lexer;
 		_lexer->Advance();
 		this->ParseProgram();
+		DumpAst(&_program);
+		Assert(_currentNode == &_program, "Tracking node must be root");
 		_lexer = nullptr;
 	}
 
-	bool Parser::Accept(Symbol sym)
+	void Parser::PushNode()
+	{
+		_currentNode = _currentNode->AddChild(_lexer->Current());
+	}
+
+	void Parser::AddNode()
+	{
+		_currentNode->AddChild(_lexer->Current());
+	}
+
+	void Parser::PopNode()
+	{
+		_currentNode = _currentNode->GetParent();
+	}
+
+	bool Parser::Accept(Symbol sym, bool push)
 	{
 		AssertNotNull(_lexer->Current());
 		if (_lexer->Current()->GetSym() == sym)
 		{
+			if (push) this->PushNode();
 			_lexer->Advance();
 			return true;
 		}
@@ -51,18 +71,18 @@ namespace scrpt
 
 	void Parser::ParseProgram()
 	{
-		while (this->Accept(Symbol::Func))
+		while (this->Accept(Symbol::Func, true))
 		{
 			if (this->Test(Symbol::Ident))
 			{
-				TraceInfo("Func found with ident: " << _lexer->Current()->GetString());
+				this->AddNode();
 
 				_lexer->Advance();
 				this->Expect(Symbol::LParen);
 
 				while (this->Test(Symbol::Ident))
 				{
-					TraceInfo("Found param: " << _lexer->Current()->GetString());
+					this->AddNode();
 
 					_lexer->Advance();
 					if (this->Accept(Symbol::Comma) && !this->Test(Symbol::Ident))
@@ -78,6 +98,8 @@ namespace scrpt
 			{
 				throw CreateExpectedSymEx(Symbol::Ident, _lexer);
 			}
+
+			this->PopNode();
 		}
 
 		this->Expect(Symbol::End);
@@ -85,11 +107,12 @@ namespace scrpt
 
 	bool Parser::ParseBlock(bool expect)
 	{
-		if (this->Accept(Symbol::LBracket))
+		if (this->Accept(Symbol::LBracket, true))
 		{
-			TraceInfo("Parsing block");
 			while (this->ParseStatement(false)) {}
 			this->Expect(Symbol::RBracket);
+
+			this->PopNode();
 			return true;
 		}
 
@@ -118,15 +141,14 @@ namespace scrpt
 
 	bool Parser::ParseWhileLoop()
 	{
-		if (this->Accept(Symbol::While))
+		if (this->Accept(Symbol::While, true))
 		{
-			TraceInfo("Parsing while");
-
 			this->Expect(Symbol::LParen);
 			this->ParseExpression(true);
 			this->Expect(Symbol::RParen); 
 			this->ParseStatement(true);
 
+			this->PopNode();
 			return true;
 		}
 
@@ -135,15 +157,16 @@ namespace scrpt
 
 	bool Parser::ParseDoLoop()
 	{
-		if (this->Accept(Symbol::Do))
+		if (this->Accept(Symbol::Do, true))
 		{
-			TraceInfo("Parsing do");
-
 			this->Expect(Symbol::LParen);
 			this->ParseExpression(true);
 			this->Expect(Symbol::RParen);
 			this->ParseStatement(true);
 
+			// TODO: Missing while
+
+			this->PopNode();
 			return true;
 		}
 
@@ -152,10 +175,8 @@ namespace scrpt
 
 	bool Parser::ParseForLoop()
 	{
-		if (this->Accept(Symbol::For))
+		if (this->Accept(Symbol::For, true))
 		{
-			TraceInfo("Parsing for");
-
 			this->Expect(Symbol::LParen);
 			this->ParseExpression(false);
 			this->Expect(Symbol::SemiColon);
@@ -165,6 +186,7 @@ namespace scrpt
 			this->Expect(Symbol::RParen);
 			this->ParseStatement(true);
 
+			this->PopNode();
 			return true;
 		}
 
@@ -173,7 +195,7 @@ namespace scrpt
 
 	bool Parser::ParseIf()
 	{
-		if (this->Accept(Symbol::If))
+		if (this->Accept(Symbol::If, true))
 		{
 			TraceInfo("Parsing if");
 
@@ -182,12 +204,17 @@ namespace scrpt
 			this->Expect(Symbol::RParen);
 			this->ParseStatement(true);
 
-			while (this->Accept(Symbol::Else))
+			// TODO: Missing else if
+
+			if (this->Accept(Symbol::Else, true))
 			{
 				TraceInfo("Parsing else");
 				this->ParseStatement(true);
+
+				this->PopNode();
 			}
 
+			this->PopNode();
 			return true;
 		}
 
