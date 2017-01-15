@@ -34,22 +34,23 @@ index = "[", [ expression ], [ ":", [ expression ] ], "]", { "[", [ expression ]
 *case = ( "case", constant | "default" ), ":", { statement };
 *switch = "switch", "(", expression, ")", "{", { case }, "}";
 
-assignment = ident, ( "=", "*=" | "/=" | "+=" | "-=" | "%=" ), expression; 
+assignment = ident, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression; 
 call = ident, "(", [ expression, { ",", expression } ], ")", [ index ];
 *return = "return", [ expression ], ";";
 *break = "break", ";";
 
-term = constant | ident_items | invert | parens | prefix;
-bool_comp = term, ( "&&" | "||" ), bool_comp | term
-comp = bool_comp, ( "<" | ">" | "==" | "!=" | "<=" | ">=" ), comp | bool_comp;
-factor = comp, ( "+" | "-" ), factor | comp;
-
 invert = "!", expression;
-
 parens = "(", expression, ")", [ index ];
 ident_items = ident | call | assignment;
 
-expression = factor, ( "*" | "/" | "%" ), expression | factor;
+term = constant | ident_items | invert | parens | prefix;
+ex5 = term, ( "*" | "/" | "%" ), ex5 | term;
+ex4 = ex5, ( "+" | "-" ), ex4 | ex5;
+ex3 = ex4, ( "<" | ">" | "<=" | ">=" ), ex3 | ex4;
+ex2 = ex3, ( "==" | "!=" ), ex2 | ex3;
+ex1 = ex2, "&&", ex1 | ex2;
+expression = ex1, "||", expression | ex1;
+
 statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
 
 *func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
