@@ -3,7 +3,7 @@
 
 namespace scrpt
 {
-	void RunTests();
+    void RunTests();
 }
 
 #endif

@@ -3,5 +3,5 @@
 
 void TraceMessage(const char* message)
 {
-	std::cout << message << std::endl;
+    std::cout << message << std::endl;
 }

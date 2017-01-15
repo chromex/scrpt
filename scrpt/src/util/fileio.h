@@ -3,9 +3,9 @@
 
 namespace scrpt
 {
-	std::unique_ptr<char[]> ReadFile(const fs::path& path);
+    std::unique_ptr<char[]> ReadFile(const fs::path& path);
 
-	void WriteFile(const fs::path& path, const char* content, size_t nBytes);
+    void WriteFile(const fs::path& path, const char* content, size_t nBytes);
 }
 
 #endif

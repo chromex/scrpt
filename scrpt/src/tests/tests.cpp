@@ -14,7 +14,7 @@ func main(arg1, arg2)
 	numbers = {0, 1, 0123, 0.1234, 19203.1};
 	_bo0leans = {true, false};
 
-	// Basic expressions
+    // Basic expressions
 	val = numbers[2];
 	slice = numbers[1:];
 	a = !b;
@@ -24,7 +24,7 @@ func main(arg1, arg2)
 	t = a <= b;
 	t = a >= b;
 
-	// Math
+    // Math
 	v = 1 + 3.2 - 2.2 * 3.0 / 0.0 % 2;
 	v += 3;
 	v -= val;
@@ -36,7 +36,7 @@ func main(arg1, arg2)
 	--a;
 	a--;
 
-	// Control flow
+    // Control flow
 	test(1, 0, "foo");
 	if (true == false && true || false)
 	{
@@ -101,83 +101,83 @@ func f2() {}
 
 void scrpt::RunTests()
 {
-	int passed = 0;
-	int failed = 0;
+    int passed = 0;
+    int failed = 0;
 
-	#define ACCUMTEST(T) T ? ++passed : ++failed
-	ACCUMTEST(TestLexFile(validSyntax, "All Valid Syntax", scrpt::LexErr::NoError));
-	ACCUMTEST(TestLexFile(illegalSymbol, "Illegal Symbol Test", scrpt::LexErr::UnknownSymbol));
-	ACCUMTEST(TestLexFile(nonTerminatedString, "Non Terminated String", scrpt::LexErr::NonTerminatedString));
-	ACCUMTEST(TestLexFile(illegalNumber1, "Missing digits after decimal", scrpt::LexErr::InvalidNumber));
-	ACCUMTEST(TestLexFile(unsupportedEscape, "Unknown escape", scrpt::LexErr::UnknownStringEscape));
+#define ACCUMTEST(T) T ? ++passed : ++failed
+    ACCUMTEST(TestLexFile(validSyntax, "All Valid Syntax", scrpt::LexErr::NoError));
+    ACCUMTEST(TestLexFile(illegalSymbol, "Illegal Symbol Test", scrpt::LexErr::UnknownSymbol));
+    ACCUMTEST(TestLexFile(nonTerminatedString, "Non Terminated String", scrpt::LexErr::NonTerminatedString));
+    ACCUMTEST(TestLexFile(illegalNumber1, "Missing digits after decimal", scrpt::LexErr::InvalidNumber));
+    ACCUMTEST(TestLexFile(unsupportedEscape, "Unknown escape", scrpt::LexErr::UnknownStringEscape));
 
-	std::cout << passed << " passed and " << failed << " failed" << std::endl;
+    std::cout << passed << " passed and " << failed << " failed" << std::endl;
 
-	Parser parser;
-	Lexer lexer(DuplicateSource(parserTest));
-	try
-	{
-		parser.Consume(&lexer);
-	}
-	catch (scrpt::CompilerException& ex)
-	{
-		std::cout << ex.what() << std::endl;
-	}
+    Parser parser;
+    Lexer lexer(DuplicateSource(parserTest));
+    try
+    {
+        parser.Consume(&lexer);
+    }
+    catch (scrpt::CompilerException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
     parser.DumpAst();
 }
 
 bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr)
 {
-	std::cout << "Lexer: " << testName << std::endl;
+    std::cout << "Lexer: " << testName << std::endl;
 
-	scrpt::Lexer lexer(DuplicateSource(source));
-	std::shared_ptr<scrpt::Token> token;
-	scrpt::LexErr err = scrpt::LexErr::NoError;
-	try
-	{
-		do
-		{
-			lexer.Advance();
-			token = lexer.Current();
-		} while (token->GetSym() != scrpt::Symbol::End && token->GetSym() != scrpt::Symbol::Error);
-	} 
-	catch (scrpt::CompilerException& ex)
-	{
-		std::cout << ex.what() << std::endl;
-		token = ex.GetToken();
-		err = ex.GetLexErr();
-	}
+    scrpt::Lexer lexer(DuplicateSource(source));
+    std::shared_ptr<scrpt::Token> token;
+    scrpt::LexErr err = scrpt::LexErr::NoError;
+    try
+    {
+        do
+        {
+            lexer.Advance();
+            token = lexer.Current();
+        } while (token->GetSym() != scrpt::Symbol::End && token->GetSym() != scrpt::Symbol::Error);
+    }
+    catch (scrpt::CompilerException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+        token = ex.GetToken();
+        err = ex.GetLexErr();
+    }
 
-	bool passed = false;
-	switch (token->GetSym())
-	{
-		case scrpt::Symbol::Error:
-			passed = expectedErr == err;
-			break;
+    bool passed = false;
+    switch (token->GetSym())
+    {
+    case scrpt::Symbol::Error:
+        passed = expectedErr == err;
+        break;
 
-		case scrpt::Symbol::End:
-			passed = expectedErr == scrpt::LexErr::NoError;
-			break;
-	}
+    case scrpt::Symbol::End:
+        passed = expectedErr == scrpt::LexErr::NoError;
+        break;
+    }
 
-	if (passed)
-	{
-		std::cout << "<<<Test Passed>>>" << std::endl;
-	}
-	else
-	{
-		std::cout << "<<<Test Failed>>>" << std::endl;
-	}
+    if (passed)
+    {
+        std::cout << "<<<Test Passed>>>" << std::endl;
+    }
+    else
+    {
+        std::cout << "<<<Test Failed>>>" << std::endl;
+    }
 
-	std::cout << std::endl;
-	return passed;
+    std::cout << std::endl;
+    return passed;
 }
 
 std::shared_ptr<const char> DuplicateSource(const char* source)
 {
-	AssertNotNull(source);
-	size_t len = strlen(source);
-	char* copy(new char[len + 1]);
-	strcpy_s(copy, len+1, source);
-	return std::shared_ptr<const char>(copy, std::default_delete<const char[]>());
+    AssertNotNull(source);
+    size_t len = strlen(source);
+    char* copy(new char[len + 1]);
+    strcpy_s(copy, len + 1, source);
+    return std::shared_ptr<const char>(copy, std::default_delete<const char[]>());
 }
