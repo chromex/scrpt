@@ -5,14 +5,14 @@ letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i"
       | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"
       | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S"
       | "T" | "U" | "V" | "W" | "X" | "Y" | "Z";
-terminal = '"', { all characters }, '"';
+*terminal = '"', { all characters }, '"';
 
 digit_excluding_zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 digit = "0" | digit_excluding_zero;
 natural_number = digit_excluding_zero, { digit };
-number = "0" | [ "-" ], natural_number, [ ".", digit, { digit } ] | [ "-" ], "0", ".", digit, { digit };
+*number = "0" | [ "-" ], natural_number, [ ".", digit, { digit } ] | [ "-" ], "0", ".", digit, { digit };
 
-bool = "true" | "false";
+*bool = "true" | "false";
 
 constant = terminal | number | bool | list | dict;
 
@@ -45,13 +45,13 @@ ident_items = ident | call | assignment;
 
 term = constant | ident_items | invert | parens | prefix;
 ex5 = term, ( "*" | "/" | "%" ), ex5 | term;
-ex4 = ex5, ( "+" | "-" ), ex4 | ex5;
-ex3 = ex4, ( "<" | ">" | "<=" | ">=" ), ex3 | ex4;
-ex2 = ex3, ( "==" | "!=" ), ex2 | ex3;
-ex1 = ex2, "&&", ex1 | ex2;
-expression = ex1, "||", expression | ex1;
+*ex4 = ex5, ( "+" | "-" ), ex4 | ex5;
+*ex3 = ex4, ( "<" | ">" | "<=" | ">=" ), ex3 | ex4;
+*ex2 = ex3, ( "==" | "!=" ), ex2 | ex3;
+*ex1 = ex2, "&&", ex1 | ex2;
+*expression = ex1, "||", expression | ex1;
 
-statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
+*statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
 
 *func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
 *program = { func };

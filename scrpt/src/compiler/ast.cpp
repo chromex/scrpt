@@ -24,9 +24,30 @@ namespace scrpt
 		return &_children.back();
 	}
 
+	AstNode* AstNode::AddChild(AstNode&& other)
+	{
+		_children.push_back(other);
+		return &_children.back();
+	}
+
 	AstNode* AstNode::GetParent() const
 	{
 		return _parent;
+	}
+
+	AstNode* AstNode::CondenseBinaryOp(std::shared_ptr<Token> token)
+	{
+		Assert(_children.size() >= 2, "Must have at least two children to perform binary op condense");
+
+		auto t2 = std::move(_children.back());
+		_children.pop_back();
+		auto t1 = std::move(_children.back());
+		_children.pop_back();
+
+		AstNode* newNode = this->AddChild(token);
+		newNode->AddChild(std::move(t1))->_parent = this;
+		newNode->AddChild(std::move(t2))->_parent = this;
+		return newNode;
 	}
 
 	std::shared_ptr<Token> AstNode::GetToken() const

@@ -92,19 +92,8 @@ func main() {
 
 static const char* parserTest = R"testCode(
 func main(p1, _p2, p3) {
-	{}
-	while() {do {break;} while();}
-	do {} while();
-	if() {} elif() {} elif() {} else {} 
-	for(;;) {}
-	switch()
-	{
-	case :
-	case : break;
-	default: { {} break; }
-	case : break;
-	}
-	return;
+	return 2 * 3 + 1 == false;
+    1 + 2 * 3 / 4;
 }
 
 func f2() {}
@@ -134,6 +123,7 @@ void scrpt::RunTests()
 	{
 		std::cout << ex.what() << std::endl;
 	}
+    parser.DumpAst();
 }
 
 bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr)

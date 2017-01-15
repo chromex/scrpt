@@ -122,7 +122,7 @@ namespace scrpt
 		SINGLE_CHAR_SYM(',', Symbol::Comma)
 		#define DOUBLE_SIMPLE_SYM(C, V, Sym) else if (c == C && cn == V) { sym = Sym; _location += 2; }
 		DOUBLE_SIMPLE_SYM('&', '&', Symbol::And)
-		DOUBLE_SIMPLE_SYM('|', '|', Symbol::And)
+		DOUBLE_SIMPLE_SYM('|', '|', Symbol::Or)
 		#define DOUBLE_COMPLEX_SYM(C, V, SymC, SymV) else if (c == C && cn == V) { sym = SymV; _location += 2; } SINGLE_CHAR_SYM(C, SymC)
 		DOUBLE_COMPLEX_SYM('=', '=', Symbol::Assign, Symbol::Eq)
 		DOUBLE_COMPLEX_SYM('*', '=', Symbol::Mult, Symbol::MultEq)

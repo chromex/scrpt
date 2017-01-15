@@ -4,303 +4,463 @@
 
 namespace scrpt
 {
-	static CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer);
+    static CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer);
 
-	Parser::Parser()
-		: _lexer(nullptr)
-		, _currentNode(nullptr)
-	{
-		_currentNode = &_program;
-	}
+    Parser::Parser()
+        : _lexer(nullptr)
+        , _currentNode(nullptr)
+    {
+        _currentNode = &_program;
+    }
 
-	void Parser::Consume(Lexer* lexer)
-	{
-		AssertNotNull(lexer);
-		_lexer = lexer;
-		_lexer->Advance();
-		this->ParseProgram();
-		DumpAst(&_program);
-		Assert(_currentNode == &_program, "Tracking node must be root");
-		_lexer = nullptr;
-	}
+    void Parser::Consume(Lexer* lexer)
+    {
+        AssertNotNull(lexer);
+        _lexer = lexer;
+        _lexer->Advance();
+        try
+        {
+            this->ParseProgram();
+            Assert(_currentNode == &_program, "Tracking node must be root");
+        }
+        catch (...)
+        {
+            _lexer = nullptr;
+            throw;
+        }
 
-	void Parser::PushNode()
-	{
-		_currentNode = _currentNode->AddChild(_lexer->Current());
-	}
+        _lexer = nullptr;
+    }
 
-	void Parser::AddNode()
-	{
-		_currentNode->AddChild(_lexer->Current());
-	}
+    void Parser::DumpAst()
+    {
+        scrpt::DumpAst(&_program);
+    }
 
-	void Parser::PopNode()
-	{
-		_currentNode = _currentNode->GetParent();
-	}
+    void Parser::PushNode()
+    {
+        _currentNode = _currentNode->AddChild(_lexer->Current());
+    }
 
-	bool Parser::Accept(Symbol sym, bool push)
-	{
-		AssertNotNull(_lexer->Current());
-		if (_lexer->Current()->GetSym() == sym)
-		{
-			if (push) this->PushNode();
-			_lexer->Advance();
-			return true;
-		}
+    void Parser::AddNode()
+    {
+        _currentNode->AddChild(_lexer->Current());
+    }
 
-		return false;
-	}
+    void Parser::PopNode()
+    {
+        _currentNode = _currentNode->GetParent();
+    }
 
-	bool Parser::Test(Symbol sym) const
-	{
-		AssertNotNull(_lexer->Current());
-		return _lexer->Current()->GetSym() == sym;
-	}
+    bool Parser::Accept(Symbol sym, bool push)
+    {
+        return this->Accept(sym, nullptr, push);
+    }
 
-	bool Parser::Expect(Symbol sym)
-	{
-		AssertNotNull(_lexer->Current());
-		if (this->Accept(sym))
-		{
-			return true;
-		}
+    bool Parser::Accept(Symbol sym, std::shared_ptr<Token>* token, bool push)
+    {
+        AssertNotNull(_lexer->Current());
+        if (_lexer->Current()->GetSym() == sym)
+        {
+            if (token != nullptr) *token = _lexer->Current();
+            if (push) this->PushNode();
+            _lexer->Advance();
+            return true;
+        }
 
-		throw CreateExpectedSymEx(sym, _lexer);
-	}
+        return false;
+    }
 
-	void Parser::ParseProgram()
-	{
-		while (this->Accept(Symbol::Func, true))
-		{
-			if (this->Test(Symbol::Ident))
-			{
-				this->AddNode();
+    bool Parser::Test(Symbol sym) const
+    {
+        AssertNotNull(_lexer->Current());
+        return _lexer->Current()->GetSym() == sym;
+    }
 
-				_lexer->Advance();
-				this->Expect(Symbol::LParen);
+    bool Parser::Expect(Symbol sym)
+    {
+        AssertNotNull(_lexer->Current());
+        if (this->Accept(sym))
+        {
+            return true;
+        }
 
-				while (this->Test(Symbol::Ident))
-				{
-					this->AddNode();
+        throw CreateExpectedSymEx(sym, _lexer);
+    }
 
-					_lexer->Advance();
-					if (this->Accept(Symbol::Comma) && !this->Test(Symbol::Ident))
-					{
-						throw CreateExpectedSymEx(Symbol::Ident, _lexer);
-					}
-				}
+    void Parser::ParseProgram()
+    {
+        while (this->Accept(Symbol::Func, true))
+        {
+            if (this->Test(Symbol::Ident))
+            {
+                this->AddNode();
 
-				this->Expect(Symbol::RParen);
-				this->ParseBlock(true);
-			}
-			else
-			{
-				throw CreateExpectedSymEx(Symbol::Ident, _lexer);
-			}
+                _lexer->Advance();
+                this->Expect(Symbol::LParen);
 
-			this->PopNode();
-		}
+                while (this->Test(Symbol::Ident))
+                {
+                    this->AddNode();
 
-		this->Expect(Symbol::End);
-	}
+                    _lexer->Advance();
+                    if (this->Accept(Symbol::Comma) && !this->Test(Symbol::Ident))
+                    {
+                        throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+                    }
+                }
 
-	bool Parser::ParseBlock(bool expect)
-	{
-		if (this->Accept(Symbol::LBracket, true))
-		{
-			while (this->ParseStatement(false)) {}
-			this->Expect(Symbol::RBracket);
+                this->Expect(Symbol::RParen);
+                this->ParseBlock(true);
+            }
+            else
+            {
+                throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+            }
 
-			this->PopNode();
-			return true;
-		}
+            this->PopNode();
+        }
 
-		if (expect) throw CreateParseEx(ParseErr::BlockExpected, _lexer->Current());
-		return false;
-	}
+        this->Expect(Symbol::End);
+    }
 
-	bool Parser::ParseStatement(bool expect)
-	{
-		if (this->ParseBlock(false)) return true;
-		else if (this->ParseWhileLoop()) return true;
-		else if (this->ParseDoLoop()) return true;
-		else if (this->ParseForLoop()) return true;
-		else if (this->ParseIf()) return true;
-		else if (this->ParseBreak()) return true;
-		else if (this->ParseReturn()) return true;
-		else if (this->ParseSwitch()) return true;
-		
-		if (expect) throw CreateParseEx(ParseErr::StatementExpected, _lexer->Current());
-		return false;
-	}
+    bool Parser::ParseBlock(bool expect)
+    {
+        if (this->Accept(Symbol::LBracket, true))
+        {
+            while (this->ParseStatement(false)) {}
+            this->Expect(Symbol::RBracket);
 
-	bool Parser::ParseExpression(bool expect)
-	{
-		// TODO: Parse
-		// TODO: Throw on expect
-		return true;
-	}
+            this->PopNode();
+            return true;
+        }
 
-	bool Parser::ParseWhileLoop()
-	{
-		if (this->Accept(Symbol::While, true))
-		{
-			this->Expect(Symbol::LParen);
-			this->ParseExpression(true);
-			this->Expect(Symbol::RParen); 
-			this->ParseStatement(true);
+        if (expect) throw CreateParseEx(ParseErr::BlockExpected, _lexer->Current());
+        return false;
+    }
 
-			this->PopNode();
-			return true;
-		}
+    bool Parser::ParseStatement(bool expect)
+    {
+        if (this->ParseBlock(false)) return true;
+        else if (this->ParseWhileLoop()) return true;
+        else if (this->ParseDoLoop()) return true;
+        else if (this->ParseForLoop()) return true;
+        else if (this->ParseIf()) return true;
+        else if (this->ParseBreak()) return true;
+        else if (this->ParseReturn()) return true;
+        else if (this->ParseSwitch()) return true;
+        else if (this->ParseExpression(false))
+        {
+            this->Expect(Symbol::SemiColon);
+            return true;
+        }
 
-		return false;
-	}
+        if (expect) throw CreateParseEx(ParseErr::StatementExpected, _lexer->Current());
+        return false;
+    }
 
-	bool Parser::ParseDoLoop()
-	{
-		if (this->Accept(Symbol::Do, true))
-		{
-			this->ParseStatement(true);
+    bool Parser::ParseExpression(bool expect)
+    {
+        if (this->ParseEx1(false))
+        {
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::Or, &token))
+            {
+                this->ParseExpression(true);
+                _currentNode->CondenseBinaryOp(token);
+            }
 
-			this->Expect(Symbol::While);
-			this->Expect(Symbol::LParen);
-			this->ParseExpression(true);
-			this->Expect(Symbol::RParen);
-			// TODO: Is this necessary for parsing?
-			this->Expect(Symbol::SemiColon);
+            return true;
+        }
 
-			this->PopNode();
-			return true;
-		}
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
 
-		return false;
-	}
+    bool Parser::ParseEx1(bool expect)
+    {
+        if (this->ParseEx2(false))
+        {
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::And, &token))
+            {
+                this->ParseEx1(true);
+                _currentNode->CondenseBinaryOp(token);
+            }
 
-	bool Parser::ParseForLoop()
-	{
-		if (this->Accept(Symbol::For, true))
-		{
-			this->Expect(Symbol::LParen);
-			this->ParseExpression(false);
-			this->Expect(Symbol::SemiColon);
-			this->ParseExpression(false);
-			this->Expect(Symbol::SemiColon);
-			this->ParseExpression(false);
-			this->Expect(Symbol::RParen);
-			this->ParseStatement(true);
+            return true;
+        }
 
-			this->PopNode();
-			return true;
-		}
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
 
-		return false;
-	}
+    bool Parser::ParseEx2(bool expect)
+    {
+        if (this->ParseEx3(false))
+        {
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::Eq, &token) ||
+                this->Accept(Symbol::NotEq, &token))
+            {
+                this->ParseEx2(true);
+                _currentNode->CondenseBinaryOp(token);
+            }
 
-	bool Parser::ParseIf()
-	{
-		if (this->Accept(Symbol::If, true))
-		{
-			this->Expect(Symbol::LParen);
-			this->ParseExpression(true);
-			this->Expect(Symbol::RParen);
-			this->ParseStatement(true);
+            return true;
+        }
 
-			while (this->Accept(Symbol::ElseIf, true))
-			{
-				this->Expect(Symbol::LParen);
-				this->ParseExpression(true);
-				this->Expect(Symbol::RParen);
-				this->ParseStatement(true);
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
 
-				this->PopNode();
-			}
+    bool Parser::ParseEx3(bool expect)
+    {
+        if (this->ParseEx4(false))
+        {
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::LessThan, &token) ||
+                this->Accept(Symbol::GreaterThan, &token) ||
+                this->Accept(Symbol::LessThanEq, &token) ||
+                this->Accept(Symbol::GreaterThanEq, &token))
+            {
+                this->ParseEx3(true);
+                _currentNode->CondenseBinaryOp(token);
+            }
 
-			if (this->Accept(Symbol::Else, true))
-			{
-				this->ParseStatement(true);
-				this->PopNode();
-			}
+            return true;
+        }
 
-			this->PopNode();
-			return true;
-		}
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
 
-		return false;
-	}
+    bool Parser::ParseEx4(bool expect)
+    {
+        if (this->ParseEx5(false))
+        {
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::Plus, &token) ||
+                this->Accept(Symbol::Minus, &token))
+            {
+                this->ParseEx4(true);
+                _currentNode->CondenseBinaryOp(token);
+            }
 
-	bool Parser::ParseBreak()
-	{
-		if (this->Accept(Symbol::Break, true))
-		{
-			this->Expect(Symbol::SemiColon);
-			this->PopNode();
-			return true;
-		}
+            return true;
+        }
 
-		return false;
-	}
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
 
-	bool Parser::ParseReturn()
-	{
-		if (this->Accept(Symbol::Return, true))
-		{
-			this->ParseExpression(false);
-			this->Expect(Symbol::SemiColon);
-			this->PopNode();
-			return true;
-		}
+    bool Parser::ParseEx5(bool expect)
+    {
+        if (this->ParseConstant())
+        {
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::Mult, &token) ||
+                this->Accept(Symbol::Div, &token) ||
+                this->Accept(Symbol::Modulo, &token))
+            {
+                this->ParseEx5(true);
+                _currentNode->CondenseBinaryOp(token);
+            }
 
-		return false;
-	}
+            return true;
+        }
 
-	bool Parser::ParseSwitch()
-	{
-		if (this->Accept(Symbol::Switch, true))
-		{
-			this->Expect(Symbol::LParen);
-			this->ParseExpression(true);
-			this->Expect(Symbol::RParen);
-			this->Expect(Symbol::LBracket);
-			
-			while (this->ParseCase()) {}
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        return false;
+    }
 
-			if (this->Accept(Symbol::Default, true))
-			{
-				this->Expect(Symbol::Colon);
-				while (this->ParseStatement(false)) {}
-				this->PopNode();
-			}
+    bool Parser::ParseWhileLoop()
+    {
+        if (this->Accept(Symbol::While, true))
+        {
+            this->Expect(Symbol::LParen);
+            this->ParseExpression(true);
+            this->Expect(Symbol::RParen);
+            this->ParseStatement(true);
 
-			while (this->ParseCase()) {}
+            this->PopNode();
+            return true;
+        }
 
-			this->Expect(Symbol::RBracket);
+        return false;
+    }
 
-			this->PopNode();
-			return true;
-		}
+    bool Parser::ParseDoLoop()
+    {
+        if (this->Accept(Symbol::Do, true))
+        {
+            this->ParseStatement(true);
 
-		return false;
-	}
+            this->Expect(Symbol::While);
+            this->Expect(Symbol::LParen);
+            this->ParseExpression(true);
+            this->Expect(Symbol::RParen);
+            this->Expect(Symbol::SemiColon);
 
-	bool Parser::ParseCase()
-	{
-		if (this->Accept(Symbol::Case, true))
-		{
-			this->ParseExpression(true);
-			this->Expect(Symbol::Colon);
-			while (this->ParseStatement(false)) {}
-			this->PopNode();
-			return true;
-		}
+            this->PopNode();
+            return true;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer)
-	{
-		AssertNotNull(lexer);
-		return CreateParseEx(std::string("Expected symbol ") + SymbolToString(sym), ParseErr::UnexpectedSymbol, lexer->Current());
-	}
+    bool Parser::ParseForLoop()
+    {
+        if (this->Accept(Symbol::For, true))
+        {
+            this->Expect(Symbol::LParen);
+            this->ParseExpression(false);
+            this->Expect(Symbol::SemiColon);
+            this->ParseExpression(false);
+            this->Expect(Symbol::SemiColon);
+            this->ParseExpression(false);
+            this->Expect(Symbol::RParen);
+            this->ParseStatement(true);
+
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseIf()
+    {
+        if (this->Accept(Symbol::If, true))
+        {
+            this->Expect(Symbol::LParen);
+            this->ParseExpression(true);
+            this->Expect(Symbol::RParen);
+            this->ParseStatement(true);
+
+            while (this->Accept(Symbol::ElseIf, true))
+            {
+                this->Expect(Symbol::LParen);
+                this->ParseExpression(true);
+                this->Expect(Symbol::RParen);
+                this->ParseStatement(true);
+
+                this->PopNode();
+            }
+
+            if (this->Accept(Symbol::Else, true))
+            {
+                this->ParseStatement(true);
+                this->PopNode();
+            }
+
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseBreak()
+    {
+        if (this->Accept(Symbol::Break, true))
+        {
+            this->Expect(Symbol::SemiColon);
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseReturn()
+    {
+        if (this->Accept(Symbol::Return, true))
+        {
+            this->ParseExpression(false);
+            this->Expect(Symbol::SemiColon);
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseSwitch()
+    {
+        if (this->Accept(Symbol::Switch, true))
+        {
+            this->Expect(Symbol::LParen);
+            this->ParseExpression(true);
+            this->Expect(Symbol::RParen);
+            this->Expect(Symbol::LBracket);
+
+            while (this->ParseCase()) {}
+
+            if (this->Accept(Symbol::Default, true))
+            {
+                this->Expect(Symbol::Colon);
+                while (this->ParseStatement(false)) {}
+                this->PopNode();
+            }
+
+            while (this->ParseCase()) {}
+
+            this->Expect(Symbol::RBracket);
+
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseCase()
+    {
+        if (this->Accept(Symbol::Case, true))
+        {
+            this->ParseExpression(true);
+            this->Expect(Symbol::Colon);
+            while (this->ParseStatement(false)) {}
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseConstant()
+    {
+        if (this->Accept(Symbol::True, true))
+        {
+            this->PopNode();
+            return true;
+        }
+
+        if (this->Accept(Symbol::False, true))
+        {
+            this->PopNode();
+            return true;
+        }
+
+        if (this->Accept(Symbol::Number, true))
+        {
+            this->PopNode();
+            return true;
+        }
+
+        if (this->Accept(Symbol::Terminal, true))
+        {
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer)
+    {
+        AssertNotNull(lexer);
+        return CreateParseEx(std::string("Expected symbol ") + SymbolToString(sym), ParseErr::UnexpectedSymbol, lexer->Current());
+    }
 }
