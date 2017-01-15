@@ -42,6 +42,8 @@ func main(arg1, arg2)
 	{
 		print("truth");
 	}
+	elif (true) { print("maybe"); }
+	else { print("no"); }
 	switch(arg1)
 	{
 	case "yes": print("y"); break;
@@ -91,10 +93,18 @@ func main() {
 static const char* parserTest = R"testCode(
 func main(p1, _p2, p3) {
 	{}
-	while() {do {} while();}
+	while() {do {break;} while();}
 	do {} while();
 	if() {} elif() {} elif() {} else {} 
 	for(;;) {}
+	switch()
+	{
+	case :
+	case : break;
+	default: { {} break; }
+	case : break;
+	}
+	return;
 }
 
 func f2() {}

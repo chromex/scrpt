@@ -25,19 +25,19 @@ dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}", [ index ]
 list = "[", [ expression, { ",", expression }, [ "," ] ], "]", [ index ];
 index = "[", [ expression ], [ ":", [ expression ] ], "]", { "[", [ expression ], [ ":", [ expression ] ], "]" };
 
-block = "{", { statement }, "}";
+*block = "{", { statement }, "}";
 
-do_loop = "do", block, "while", "(", expression, ")", ";"
-while_loop = "while", "(", expression, ")", statement;
-for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
-if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
-case = ( "case", constant | "default" ), ":", { statement };
-switch = "switch", "(", expression, ")", "{", { case }, "}";
+*do_loop = "do", block, "while", "(", expression, ")", ";"
+*while_loop = "while", "(", expression, ")", statement;
+*for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
+*if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
+*case = ( "case", constant | "default" ), ":", { statement };
+*switch = "switch", "(", expression, ")", "{", { case }, "}";
 
 assignment = ident, ( "=", "*=" | "/=" | "+=" | "-=" | "%=" ), expression; 
 call = ident, "(", [ expression, { ",", expression } ], ")", [ index ];
-return = "return", [ expression ], ";";
-break = "break", ";";
+*return = "return", [ expression ], ";";
+*break = "break", ";";
 
 term = constant | ident_items | invert | parens | prefix;
 bool_comp = term, ( "&&" | "||" ), bool_comp | term
@@ -52,5 +52,5 @@ ident_items = ident | call | assignment;
 expression = factor, ( "*" | "/" | "%" ), expression | factor;
 statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
 
-func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
-program = { func };
+*func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
+*program = { func };

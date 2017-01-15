@@ -30,5 +30,9 @@ namespace scrpt
 		bool ParseDoLoop();
 		bool ParseForLoop();
 		bool ParseIf();
+		bool ParseBreak();
+		bool ParseReturn();
+		bool ParseSwitch();
+		bool ParseCase();
 	};
 }

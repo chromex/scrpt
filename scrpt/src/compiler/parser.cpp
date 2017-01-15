@@ -127,6 +127,9 @@ namespace scrpt
 		else if (this->ParseDoLoop()) return true;
 		else if (this->ParseForLoop()) return true;
 		else if (this->ParseIf()) return true;
+		else if (this->ParseBreak()) return true;
+		else if (this->ParseReturn()) return true;
+		else if (this->ParseSwitch()) return true;
 		
 		if (expect) throw CreateParseEx(ParseErr::StatementExpected, _lexer->Current());
 		return false;
@@ -220,6 +223,74 @@ namespace scrpt
 				this->PopNode();
 			}
 
+			this->PopNode();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Parser::ParseBreak()
+	{
+		if (this->Accept(Symbol::Break, true))
+		{
+			this->Expect(Symbol::SemiColon);
+			this->PopNode();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Parser::ParseReturn()
+	{
+		if (this->Accept(Symbol::Return, true))
+		{
+			this->ParseExpression(false);
+			this->Expect(Symbol::SemiColon);
+			this->PopNode();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Parser::ParseSwitch()
+	{
+		if (this->Accept(Symbol::Switch, true))
+		{
+			this->Expect(Symbol::LParen);
+			this->ParseExpression(true);
+			this->Expect(Symbol::RParen);
+			this->Expect(Symbol::LBracket);
+			
+			while (this->ParseCase()) {}
+
+			if (this->Accept(Symbol::Default, true))
+			{
+				this->Expect(Symbol::Colon);
+				while (this->ParseStatement(false)) {}
+				this->PopNode();
+			}
+
+			while (this->ParseCase()) {}
+
+			this->Expect(Symbol::RBracket);
+
+			this->PopNode();
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Parser::ParseCase()
+	{
+		if (this->Accept(Symbol::Case, true))
+		{
+			this->ParseExpression(true);
+			this->Expect(Symbol::Colon);
+			while (this->ParseStatement(false)) {}
 			this->PopNode();
 			return true;
 		}
