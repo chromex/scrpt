@@ -30,7 +30,7 @@ block = "{", { statement }, "}";
 do_loop = "do", block, "while", "(", expression, ")", ";"
 while_loop = "while", "(", expression, ")", statement;
 for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
-if = "if", "(", expression, ")", statement, [ "else", statement ];
+if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
 case = ( "case", constant | "default" ), ":", { statement };
 switch = "switch", "(", expression, ")", "{", { case }, "}";
 

@@ -21,6 +21,7 @@ namespace scrpt
 		Comma,
 		If,
 		Else,
+		ElseIf,
 		Do, 
 		While, 
 		For, 

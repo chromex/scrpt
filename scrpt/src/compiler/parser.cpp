@@ -159,12 +159,14 @@ namespace scrpt
 	{
 		if (this->Accept(Symbol::Do, true))
 		{
+			this->ParseStatement(true);
+
+			this->Expect(Symbol::While);
 			this->Expect(Symbol::LParen);
 			this->ParseExpression(true);
 			this->Expect(Symbol::RParen);
-			this->ParseStatement(true);
-
-			// TODO: Missing while
+			// TODO: Is this necessary for parsing?
+			this->Expect(Symbol::SemiColon);
 
 			this->PopNode();
 			return true;
@@ -197,20 +199,24 @@ namespace scrpt
 	{
 		if (this->Accept(Symbol::If, true))
 		{
-			TraceInfo("Parsing if");
-
 			this->Expect(Symbol::LParen);
 			this->ParseExpression(true);
 			this->Expect(Symbol::RParen);
 			this->ParseStatement(true);
 
-			// TODO: Missing else if
+			while (this->Accept(Symbol::ElseIf, true))
+			{
+				this->Expect(Symbol::LParen);
+				this->ParseExpression(true);
+				this->Expect(Symbol::RParen);
+				this->ParseStatement(true);
+
+				this->PopNode();
+			}
 
 			if (this->Accept(Symbol::Else, true))
 			{
-				TraceInfo("Parsing else");
 				this->ParseStatement(true);
-
 				this->PopNode();
 			}
 

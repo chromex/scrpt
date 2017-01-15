@@ -62,6 +62,7 @@ namespace scrpt
 			else if (strcmp(ident.get(), "for") == 0)		sym = Symbol::For;
 			else if (strcmp(ident.get(), "case") == 0)		sym = Symbol::Case;
 			else if (strcmp(ident.get(), "else") == 0)		sym = Symbol::Else;
+			else if (strcmp(ident.get(), "elif") == 0)		sym = Symbol::ElseIf;
 			else if (strcmp(ident.get(), "func") == 0)		sym = Symbol::Func;
 			else if (strcmp(ident.get(), "true") == 0)		sym = Symbol::True;
 			else if (strcmp(ident.get(), "break") == 0)		sym = Symbol::Break;
@@ -325,6 +326,7 @@ namespace scrpt
 			SYMBOL_CASE_STRING(Symbol::Comma)
 			SYMBOL_CASE_STRING(Symbol::If)
 			SYMBOL_CASE_STRING(Symbol::Else)
+			SYMBOL_CASE_STRING(Symbol::ElseIf)
 			SYMBOL_CASE_STRING(Symbol::Do)
 			SYMBOL_CASE_STRING(Symbol::While)
 			SYMBOL_CASE_STRING(Symbol::For)

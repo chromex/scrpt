@@ -91,9 +91,9 @@ func main() {
 static const char* parserTest = R"testCode(
 func main(p1, _p2, p3) {
 	{}
-	while() {do() {}}
-	do() {}
-	if() {} else {} 
+	while() {do {} while();}
+	do {} while();
+	if() {} elif() {} elif() {} else {} 
 	for(;;) {}
 }
 
