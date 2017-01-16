@@ -92,6 +92,8 @@ func main() {
 
 static const char* parserTest = R"testCode(
 func main(p1, _p2, p3) {
+    [1, false, "who", "no"];
+    {"whut": 123/213, "foo": true,};
     2 * --5++;
 	!false * 5 / 2 + 1 % (++2.212 && !true);
 }

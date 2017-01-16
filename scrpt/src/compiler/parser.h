@@ -48,5 +48,7 @@ namespace scrpt
         bool ParseCase();
         bool ParseConstant();
         bool ParseParens();
+        bool ParseList();
+        bool ParseDict();
     };
 }

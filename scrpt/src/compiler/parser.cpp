@@ -141,7 +141,11 @@ namespace scrpt
 
     bool Parser::ParseStatement(bool expect)
     {
-        if (this->ParseBlock(false)) return true;
+        if (this->ParseExpression(false))
+        {
+            this->Expect(Symbol::SemiColon);
+            return true;
+        }
         else if (this->ParseWhileLoop()) return true;
         else if (this->ParseDoLoop()) return true;
         else if (this->ParseForLoop()) return true;
@@ -150,11 +154,7 @@ namespace scrpt
         else if (this->ParseReturn()) return true;
         else if (this->ParseContinue()) return true;
         else if (this->ParseSwitch()) return true;
-        else if (this->ParseExpression(false))
-        {
-            this->Expect(Symbol::SemiColon);
-            return true;
-        }
+        else if (this->ParseBlock(false)) return true;
 
         if (expect) throw CreateParseEx(ParseErr::StatementExpected, _lexer->Current());
         return false;
@@ -493,27 +493,19 @@ namespace scrpt
 
     bool Parser::ParseConstant()
     {
-        if (this->Accept(Symbol::True, true))
+        if (this->Accept(Symbol::True, true) ||
+            this->Accept(Symbol::False, true) ||
+            this->Accept(Symbol::Number, true) ||
+            this->Accept(Symbol::Terminal, true))
         {
+            _currentNode->SetConstant();
             this->PopNode();
             return true;
         }
 
-        if (this->Accept(Symbol::False, true))
+        if (this->ParseList() || 
+            this->ParseDict())
         {
-            this->PopNode();
-            return true;
-        }
-
-        if (this->Accept(Symbol::Number, true))
-        {
-            this->PopNode();
-            return true;
-        }
-
-        if (this->Accept(Symbol::Terminal, true))
-        {
-            this->PopNode();
             return true;
         }
 
@@ -526,6 +518,47 @@ namespace scrpt
         {
             this->ParseExpression(true);
             this->Expect(Symbol::RParen);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseList()
+    {
+        if (this->Accept(Symbol::LSquare, true))
+        {
+            _currentNode->SetConstant();
+            bool allowMore = true;
+            while (this->ParseExpression(false) && allowMore)
+            {
+                allowMore = this->Accept(Symbol::Comma);
+            }
+            this->Expect(Symbol::RSquare);
+
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseDict()
+    {
+        if (this->Accept(Symbol::LBracket, true))
+        {
+            _currentNode->SetConstant();
+            bool allowMore = true;
+            while (this->Accept(Symbol::Terminal, true) && allowMore)
+            {
+                this->Expect(Symbol::Colon);
+                this->ParseExpression(true);
+                this->PopNode();
+                allowMore = this->Accept(Symbol::Comma);
+            }
+            this->Expect(Symbol::RBracket);
+
+            this->PopNode();
             return true;
         }
 

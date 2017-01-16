@@ -8,6 +8,7 @@ namespace scrpt
     AstNode::AstNode()
         : _parent(nullptr)
 		, _postfix(false)
+        , _constant(false)
     {
     }
 
@@ -15,6 +16,7 @@ namespace scrpt
         : _token(token)
         , _parent(parent)
 		, _postfix(false)
+        , _constant(false)
     {
         AssertNotNull(token);
         AssertNotNull(parent);
@@ -80,6 +82,16 @@ namespace scrpt
 		return _postfix;
 	}
 
+    void AstNode::SetConstant()
+    {
+        _constant = true;
+    }
+
+    bool AstNode::IsConstant() const
+    {
+        return _constant;
+    }
+
     static void DumpAst(const AstNode* node, unsigned int depth, std::stringstream& ss)
     {
         AssertNotNull(node);
@@ -98,6 +110,7 @@ namespace scrpt
         case Symbol::Number: ss << ": " << node->GetToken()->GetNumber(); break;
         }
 		if (node->IsPostfix()) ss << ": POSTFIX";
+        if (node->IsConstant()) ss << ": CONSTANT";
         ss << std::endl;
 
         for (const AstNode& child : node->GetChildren())

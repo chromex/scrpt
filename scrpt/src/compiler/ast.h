@@ -17,6 +17,8 @@ namespace scrpt
         std::shared_ptr<Token> GetToken() const;
         const ChildList& GetChildren() const;
 		bool IsPostfix() const;
+        void SetConstant();
+        bool IsConstant() const;
 
     private:
         AstNode(AstNode* parent, std::shared_ptr<Token> token);
@@ -25,6 +27,7 @@ namespace scrpt
         AstNode* _parent;
         ChildList _children;
 		bool _postfix;
+        bool _constant;
     };
 
     void DumpAst(const AstNode* node);
