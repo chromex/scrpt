@@ -13,8 +13,10 @@ namespace scrpt
         AstNode* AddChild(AstNode&& other);
         AstNode* GetParent() const;
         AstNode* CondenseBinaryOp(std::shared_ptr<Token> token);
+		AstNode* SwapUnaryOp(std::shared_ptr<Token> token, bool postfix);
         std::shared_ptr<Token> GetToken() const;
         const ChildList& GetChildren() const;
+		bool IsPostfix() const;
 
     private:
         AstNode(AstNode* parent, std::shared_ptr<Token> token);
@@ -22,6 +24,7 @@ namespace scrpt
         std::shared_ptr<Token> _token;
         AstNode* _parent;
         ChildList _children;
+		bool _postfix;
     };
 
     void DumpAst(const AstNode* node);

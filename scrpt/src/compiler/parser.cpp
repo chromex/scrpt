@@ -298,12 +298,11 @@ namespace scrpt
     {
         if (this->ParseTerm())
         {
-            // TODO: This is wrong... needs postfix flag but w/ parented insertion
-            // TODO: Annotate node w/ postfix flag needed? It having no children is implicit...
-            if (this->Accept(Symbol::PlusPlus, true) ||
-                this->Accept(Symbol::MinusMinus, true))
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::PlusPlus, &token) ||
+                this->Accept(Symbol::MinusMinus, &token))
             {
-                this->PopNode();
+				_currentNode->SwapUnaryOp(token, true);
             }
 
             return true;
