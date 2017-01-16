@@ -14,13 +14,13 @@ natural_number = digit_excluding_zero, { digit };
 
 *bool = "true" | "false";
 
-constant = terminal | number | bool | list | dict;
+*constant = terminal | number | bool | list | dict;
 
 ident = ( letter | "_" ), { letter, digit, "_" };
 
-key_value_pair = terminal, ":", expression;
-dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
-list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
+*key_value_pair = terminal, ":", expression;
+*dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
+*list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
 
 index = "[", [ expression ], [ ":", [ expression ] ], "]";
 call = "(", [ expression, { ",", expression } ], ")";

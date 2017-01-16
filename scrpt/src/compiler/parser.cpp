@@ -302,7 +302,7 @@ namespace scrpt
             if (this->Accept(Symbol::PlusPlus, &token) ||
                 this->Accept(Symbol::MinusMinus, &token))
             {
-				_currentNode->SwapUnaryOp(token, true);
+                _currentNode->SwapUnaryOp(token, true);
             }
 
             return true;
@@ -503,7 +503,7 @@ namespace scrpt
             return true;
         }
 
-        if (this->ParseList() || 
+        if (this->ParseList() ||
             this->ParseDict())
         {
             return true;
