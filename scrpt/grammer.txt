@@ -40,7 +40,7 @@ call = "(", [ expression, { ",", expression } ], ")";
 *parens = "(", expression, ")";
 
 ex9 = ident, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ident;
-ex8 = ex9 | constant | parens;
+*ex8 = ex9 | constant | parens;
 ex7 = ex8, { ( index | call | "++" | "--" ) } | ex8;
 *ex6 = ( "!" | "++" | "--" ), ex6 | ex7;
 *ex5 = ex6, ( "*" | "/" | "%" ), ex5 | ex6;

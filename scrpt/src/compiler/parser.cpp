@@ -296,7 +296,7 @@ namespace scrpt
 
     bool Parser::ParseEx7(bool expect)
     {
-        if (this->ParseTerm())
+        if (this->ParseEx8())
         {
             std::shared_ptr<Token> token;
             if (this->Accept(Symbol::PlusPlus, &token) ||
@@ -312,12 +312,14 @@ namespace scrpt
         return false;
     }
 
-    bool Parser::ParseEx8(bool expect)
+    bool Parser::ParseEx8()
     {
-        return false;
+        return this->ParseEx9() ||
+            this->ParseConstant() ||
+            this->ParseParens();
     }
 
-    bool Parser::ParseEx9(bool expect)
+    bool Parser::ParseEx9()
     {
         return false;
     }
@@ -487,12 +489,6 @@ namespace scrpt
         }
 
         return false;
-    }
-
-    bool Parser::ParseTerm()
-    {
-        return this->ParseConstant() ||
-            this->ParseParens();
     }
 
     bool Parser::ParseConstant()
