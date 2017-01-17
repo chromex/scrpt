@@ -321,6 +321,25 @@ namespace scrpt
 
     bool Parser::ParseEx9()
     {
+        if (this->Accept(Symbol::Ident, true))
+        {
+            this->PopNode();
+
+            std::shared_ptr<Token> token;
+            if (this->Accept(Symbol::Assign, &token) ||
+                this->Accept(Symbol::MultEq, &token) ||
+                this->Accept(Symbol::DivEq, &token) ||
+                this->Accept(Symbol::PlusEq, &token) ||
+                this->Accept(Symbol::MinusEq, &token) ||
+                this->Accept(Symbol::ModuloEq, &token))
+            {
+                this->ParseExpression(true);
+                _currentNode->CondenseBinaryOp(token);
+            }
+
+            return true;
+        }
+
         return false;
     }
 

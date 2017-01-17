@@ -92,10 +92,12 @@ func main() {
 
 static const char* parserTest = R"testCode(
 func main(p1, _p2, p3) {
-    [1, false, "who", "no"];
-    {"whut": 123/213, "foo": true,};
-    2 * --5++;
-	!false * 5 / 2 + 1 % (++2.212 && !true);
+    a += 1.23  * 2 / val;
+}
+
+func a()
+{
+    return ["foo"];
 }
 
 func f2() {}

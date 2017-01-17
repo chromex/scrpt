@@ -16,7 +16,7 @@ natural_number = digit_excluding_zero, { digit };
 
 *constant = terminal | number | bool | list | dict;
 
-ident = ( letter | "_" ), { letter, digit, "_" };
+*ident = ( letter | "_" ), { letter, digit, "_" };
 
 *key_value_pair = terminal, ":", expression;
 *dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
@@ -39,7 +39,7 @@ call = "(", [ expression, { ",", expression } ], ")";
 
 *parens = "(", expression, ")";
 
-ex9 = ident, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ident;
+*ex9 = ident, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ident;
 *ex8 = ex9 | constant | parens;
 ex7 = ex8, { ( index | call | "++" | "--" ) } | ex8;
 *ex6 = ( "!" | "++" | "--" ), ex6 | ex7;
@@ -54,7 +54,3 @@ ex7 = ex8, { ( index | call | "++" | "--" ) } | ex8;
 
 *func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
 *program = { func };
-
-// TWO open questions
-	// For primary ops of invoke, index, postfix ++ and --, how do they show up in the AST?
-	// Need postfix flag w/ prefix insertion
