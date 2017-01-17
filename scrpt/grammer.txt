@@ -23,7 +23,7 @@ natural_number = digit_excluding_zero, { digit };
 *list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
 
 index = "[", [ expression ], [ ":", [ expression ] ], "]";
-call = "(", [ expression, { ",", expression } ], ")";
+*call = "(", [ expression, { ",", expression } ], ")";
 
 *block = "{", { statement }, "}";
 

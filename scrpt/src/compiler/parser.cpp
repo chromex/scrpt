@@ -300,12 +300,20 @@ namespace scrpt
         if (this->ParseEx8())
         {
             std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::PlusPlus, &token) ||
-                this->Accept(Symbol::MinusMinus, &token) ||
-                this->ParseCall(&token))
-            {
-                _currentNode->SwapUnaryOp(token, true);
-            }
+			while (true)
+			{
+				if (this->Accept(Symbol::PlusPlus, &token) ||
+					this->Accept(Symbol::MinusMinus, &token))
+				{
+					_currentNode->SwapUnaryOp(token, true);
+				}
+				else if (this->ParseCall(&token))
+				{}
+				else
+				{
+					break;
+				}
+			}
 
             return true;
         }
@@ -347,18 +355,20 @@ namespace scrpt
 
     bool Parser::ParseCall(std::shared_ptr<Token>* token)
     {
-        // A call in the tree should be:
-        // LParen: POSTFIX
-        //   Expression for the callable value
-        //   Param expr 1
-        //   ...
-        //   Param expr n
-        // Gonna need a new swap...
-
         AssertNotNull(token);
         if (this->Accept(Symbol::LParen, token))
         {
+			_currentNode = _currentNode->SwapUnaryOp(*token, true);
+			bool expectExp = false;
+			while (this->ParseExpression(expectExp))
+			{
+				expectExp = this->Accept(Symbol::Comma);
+				if (!expectExp) break;
+			}
 
+			this->Expect(Symbol::RParen);
+			this->PopNode();
+			return true;
         }
 
         return false;
@@ -570,7 +580,7 @@ namespace scrpt
         {
             _currentNode->SetConstant();
             bool allowMore = true;
-            while (this->ParseExpression(false) && allowMore)
+            while (allowMore && this->ParseExpression(false))
             {
                 allowMore = this->Accept(Symbol::Comma);
             }
@@ -589,7 +599,7 @@ namespace scrpt
         {
             _currentNode->SetConstant();
             bool allowMore = true;
-            while (this->Accept(Symbol::Terminal, true) && allowMore)
+            while (allowMore && this->Accept(Symbol::Terminal, true))
             {
                 this->Expect(Symbol::Colon);
                 this->ParseExpression(true);

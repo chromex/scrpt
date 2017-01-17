@@ -92,8 +92,10 @@ func main() {
 
 static const char* parserTest = R"testCode(
 func main() {
-    list = ["hello", "world", 2];
     test("whoa");
+	test();
+	test(1.2*3,false);
+	table("foo")("whut");
 }
 )testCode";
 
