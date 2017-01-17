@@ -155,6 +155,7 @@ namespace scrpt
         else if (this->ParseContinue()) return true;
         else if (this->ParseSwitch()) return true;
         else if (this->ParseBlock(false)) return true;
+        else if (this->Accept(Symbol::SemiColon)) return true;
 
         if (expect) throw CreateParseEx(ParseErr::StatementExpected, _lexer->Current());
         return false;
@@ -300,7 +301,8 @@ namespace scrpt
         {
             std::shared_ptr<Token> token;
             if (this->Accept(Symbol::PlusPlus, &token) ||
-                this->Accept(Symbol::MinusMinus, &token))
+                this->Accept(Symbol::MinusMinus, &token) ||
+                this->ParseCall(&token))
             {
                 _currentNode->SwapUnaryOp(token, true);
             }
@@ -338,6 +340,25 @@ namespace scrpt
             }
 
             return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseCall(std::shared_ptr<Token>* token)
+    {
+        // A call in the tree should be:
+        // LParen: POSTFIX
+        //   Expression for the callable value
+        //   Param expr 1
+        //   ...
+        //   Param expr n
+        // Gonna need a new swap...
+
+        AssertNotNull(token);
+        if (this->Accept(Symbol::LParen, token))
+        {
+
         }
 
         return false;

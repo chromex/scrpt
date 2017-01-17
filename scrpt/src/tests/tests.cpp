@@ -91,16 +91,10 @@ func main() {
 )testCode";
 
 static const char* parserTest = R"testCode(
-func main(p1, _p2, p3) {
-    a += 1.23  * 2 / val;
+func main() {
+    list = ["hello", "world", 2];
+    test("whoa");
 }
-
-func a()
-{
-    return ["foo"];
-}
-
-func f2() {}
 )testCode";
 
 void scrpt::RunTests()

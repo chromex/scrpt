@@ -37,6 +37,7 @@ namespace scrpt
         bool ParseEx7(bool expect);
         bool ParseEx8();
         bool ParseEx9();
+        bool ParseCall(std::shared_ptr<Token>* token);
         bool ParseWhileLoop();
         bool ParseDoLoop();
         bool ParseForLoop();
