@@ -22,7 +22,7 @@ natural_number = digit_excluding_zero, { digit };
 *dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
 *list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
 
-index = "[", [ expression ], [ ":", [ expression ] ], "]";
+*index = "[", [ expression ], [ ":", [ expression ] ], "]";
 *call = "(", [ expression, { ",", expression } ], ")";
 
 *block = "{", { statement }, "}";

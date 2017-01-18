@@ -307,7 +307,8 @@ namespace scrpt
 				{
 					_currentNode->SwapUnaryOp(token, true);
 				}
-				else if (this->ParseCall(&token))
+				else if (this->ParseCall() ||
+                         this->ParseIndex())
 				{}
 				else
 				{
@@ -353,12 +354,12 @@ namespace scrpt
         return false;
     }
 
-    bool Parser::ParseCall(std::shared_ptr<Token>* token)
+    bool Parser::ParseCall()
     {
-        AssertNotNull(token);
-        if (this->Accept(Symbol::LParen, token))
+        std::shared_ptr<Token> token;
+        if (this->Accept(Symbol::LParen, &token))
         {
-			_currentNode = _currentNode->SwapUnaryOp(*token, true);
+			_currentNode = _currentNode->SwapUnaryOp(token, true);
 			bool expectExp = false;
 			while (this->ParseExpression(expectExp))
 			{
@@ -369,6 +370,27 @@ namespace scrpt
 			this->Expect(Symbol::RParen);
 			this->PopNode();
 			return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseIndex()
+    {
+        std::shared_ptr<Token> token;
+        if (this->Accept(Symbol::LSquare, &token))
+        {
+            _currentNode = _currentNode->SwapUnaryOp(token, true);
+            this->ParseExpression(false);
+            if (this->Accept(Symbol::Colon, true))
+            {
+                this->PopNode();
+                this->ParseExpression(false);
+            }
+
+            this->Expect(Symbol::RSquare);
+            this->PopNode();
+            return true;
         }
 
         return false;
