@@ -94,6 +94,7 @@ static const char* parserTest = R"testCode(
 func main() {
     list = [1, 2, "three"][2];
     first = list[foo()[3][1]];
+    last = console.trace.warning("whut");
 }
 )testCode";
 

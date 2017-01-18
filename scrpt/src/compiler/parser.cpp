@@ -308,7 +308,8 @@ namespace scrpt
 					_currentNode->SwapUnaryOp(token, true);
 				}
 				else if (this->ParseCall() ||
-                         this->ParseIndex())
+                         this->ParseIndex() ||
+                         this->ParseDotExpand())
 				{}
 				else
 				{
@@ -389,6 +390,25 @@ namespace scrpt
             }
 
             this->Expect(Symbol::RSquare);
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseDotExpand()
+    {
+        std::shared_ptr<Token> token;
+        if (this->Accept(Symbol::Dot, &token))
+        {
+            _currentNode = _currentNode->SwapUnaryOp(token, true);
+            if (!this->Accept(Symbol::Ident, true))
+            {
+                CreateExpectedSymEx(Symbol::Ident, _lexer);
+            }
+
+            this->PopNode();
             this->PopNode();
             return true;
         }

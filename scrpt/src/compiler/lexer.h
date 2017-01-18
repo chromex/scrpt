@@ -19,6 +19,7 @@ namespace scrpt
         False,
         Colon,
         Comma,
+        Dot,
         If,
         Else,
         ElseIf,

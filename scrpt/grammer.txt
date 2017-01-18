@@ -5,52 +5,53 @@ letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i"
       | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"
       | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S"
       | "T" | "U" | "V" | "W" | "X" | "Y" | "Z";
-*terminal = '"', { all characters }, '"';
+terminal = '"', { all characters }, '"';
 
 digit_excluding_zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 digit = "0" | digit_excluding_zero;
 natural_number = digit_excluding_zero, { digit };
-*number = "0" | [ "-" ], natural_number, [ ".", digit, { digit } ] | [ "-" ], "0", ".", digit, { digit };
+number = "0" | [ "-" ], natural_number, [ ".", digit, { digit } ] | [ "-" ], "0", ".", digit, { digit };
 
-*bool = "true" | "false";
+bool = "true" | "false";
 
-*constant = terminal | number | bool | list | dict;
+constant = terminal | number | bool | list | dict;
 
-*ident = ( letter | "_" ), { letter, digit, "_" };
+ident = ( letter | "_" ), { letter, digit, "_" };
 
-*key_value_pair = terminal, ":", expression;
-*dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
-*list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
+key_value_pair = terminal, ":", expression;
+dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
+list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
 
-*index = "[", [ expression ], [ ":", [ expression ] ], "]";
-*call = "(", [ expression, { ",", expression } ], ")";
+index = "[", [ expression ], [ ":", [ expression ] ], "]";
+call = "(", [ expression, { ",", expression } ], ")";
+dot_expand = ".", ident;
 
-*block = "{", { statement }, "}";
+block = "{", { statement }, "}";
 
-*do_loop = "do", block, "while", "(", expression, ")", ";"
-*while_loop = "while", "(", expression, ")", statement;
-*for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
-*if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
-*case = ( "case", constant | "default" ), ":", { statement };
-*switch = "switch", "(", expression, ")", "{", { case }, "}";
-*return = "return", [ expression ], ";";
-*break = "break", ";";
-*continue = "continue", ";";
+do_loop = "do", block, "while", "(", expression, ")", ";"
+while_loop = "while", "(", expression, ")", statement;
+for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
+if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
+case = ( "case", constant | "default" ), ":", { statement };
+switch = "switch", "(", expression, ")", "{", { case }, "}";
+return = "return", [ expression ], ";";
+break = "break", ";";
+continue = "continue", ";";
 
-*parens = "(", expression, ")";
+parens = "(", expression, ")";
 
-*ex9 = ident, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ident;
-*ex8 = ex9 | constant | parens;
-ex7 = ex8, { ( index | call | "++" | "--" ) } | ex8;
-*ex6 = ( "!" | "++" | "--" ), ex6 | ex7;
-*ex5 = ex6, ( "*" | "/" | "%" ), ex5 | ex6;
-*ex4 = ex5, ( "+" | "-" ), ex4 | ex5;
-*ex3 = ex4, ( "<" | ">" | "<=" | ">=" ), ex3 | ex4;
-*ex2 = ex3, ( "==" | "!=" ), ex2 | ex3;
-*ex1 = ex2, "&&", ex1 | ex2;
-*expression = ex1, "||", expression | ex1;
+ex9 = ident, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ident;
+ex8 = ex9 | constant | parens;
+ex7 = ex8, { ( index | call | dot_expand | "++" | "--" ) } | ex8;
+ex6 = ( "!" | "++" | "--" ), ex6 | ex7;
+ex5 = ex6, ( "*" | "/" | "%" ), ex5 | ex6;
+ex4 = ex5, ( "+" | "-" ), ex4 | ex5;
+ex3 = ex4, ( "<" | ">" | "<=" | ">=" ), ex3 | ex4;
+ex2 = ex3, ( "==" | "!=" ), ex2 | ex3;
+ex1 = ex2, "&&", ex1 | ex2;
+expression = ex1, "||", expression | ex1;
 
-*statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
+statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
 
-*func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
-*program = { func };
+func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
+program = { func };

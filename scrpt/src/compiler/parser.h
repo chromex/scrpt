@@ -39,6 +39,7 @@ namespace scrpt
         bool ParseEx9();
         bool ParseCall();
         bool ParseIndex();
+        bool ParseDotExpand();
         bool ParseWhileLoop();
         bool ParseDoLoop();
         bool ParseForLoop();
