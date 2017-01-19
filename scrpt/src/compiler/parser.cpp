@@ -32,6 +32,11 @@ namespace scrpt
         _lexer = nullptr;
     }
 
+    AstNode* Parser::GetAst()
+    {
+        return &_program;
+    }
+
     void Parser::DumpAst()
     {
         scrpt::DumpAst(&_program);
@@ -666,5 +671,22 @@ namespace scrpt
     {
         AssertNotNull(lexer);
         return CreateParseEx(std::string("Expected symbol ") + SymbolToString(sym), ParseErr::UnexpectedSymbol, lexer->Current());
+    }
+
+    const char * ParseErrToString(ParseErr err)
+    {
+        switch (err)
+        {
+            ENUM_CASE_TO_STRING(ParseErr::NoError);
+            ENUM_CASE_TO_STRING(ParseErr::UnexpectedSymbol);
+            ENUM_CASE_TO_STRING(ParseErr::BlockExpected);
+            ENUM_CASE_TO_STRING(ParseErr::ExpressionExpected);
+            ENUM_CASE_TO_STRING(ParseErr::StatementExpected);
+
+        default:
+            AssertFail("Missing case for ParseErr");
+        }
+
+        return nullptr;
     }
 }

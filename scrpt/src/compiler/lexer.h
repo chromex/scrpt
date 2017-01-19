@@ -70,16 +70,6 @@ namespace scrpt
     };
     const char* LexErrToString(LexErr err);
 
-    enum class ParseErr
-    {
-        NoError,
-        UnexpectedSymbol,
-        BlockExpected,
-        ExpressionExpected,
-        StatementExpected,
-    };
-    const char* ParseErrToString(ParseErr err);
-
     class Token
     {
     public:

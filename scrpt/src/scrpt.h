@@ -13,3 +13,7 @@ namespace fs = std::experimental::filesystem;
 #include "compiler/ast.h"
 #include "compiler/parser.h"
 #include "compiler/error.h"
+#include "compiler/bytecodegen.h"
+#include "vm/bytecode.h"
+
+#define ENUM_CASE_TO_STRING(s) case s: return #s

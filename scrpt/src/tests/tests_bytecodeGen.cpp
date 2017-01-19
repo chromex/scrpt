@@ -20,24 +20,23 @@ bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source
 
     std::cout << "Bytecode Gen: " << testName << std::endl;
 
-    //scrpt::ParseErr err = scrpt::ParseErr::NoError;
-    //scrpt::Parser parser;
-    //scrpt::Lexer lexer(scrpt::Tests::DuplicateSource(source));
-    //try
-    //{
-    //    parser.Consume(&lexer);
-    //    if (dumpAst) parser.DumpAst();
-    //}
-    //catch (scrpt::CompilerException& ex)
-    //{
-    //    std::cout << ex.what() << std::endl;
-    //    err = ex.GetParseErr();
-    //    parser.DumpAst();
-    //}
+    bool err = false;
+    scrpt::Lexer lexer(scrpt::Tests::DuplicateSource(source));
+    scrpt::Parser parser;
+    scrpt::BytecodeGen compiler;
+    try
+    {
+        parser.Consume(&lexer);
+        compiler.Consume(parser.GetAst());
+    }
+    catch (scrpt::CompilerException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+        err = true;
+        compiler.DumpBytecode();
+    }
 
-    bool passed = true;
-
-    if (passed)
+    if (!err)
     {
         std::cout << "<<<Test Passed>>>" << std::endl;
     }
@@ -47,5 +46,5 @@ bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source
     }
 
     std::cout << std::endl;
-    return passed;
+    return !err;
 }

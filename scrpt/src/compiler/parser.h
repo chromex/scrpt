@@ -2,12 +2,23 @@
 
 namespace scrpt
 {
+    enum class ParseErr
+    {
+        NoError,
+        UnexpectedSymbol,
+        BlockExpected,
+        ExpressionExpected,
+        StatementExpected,
+    };
+    const char* ParseErrToString(ParseErr err);
+
     class Parser
     {
     public:
         Parser();
 
         void Consume(Lexer* lexer);
+        AstNode* GetAst();
         void DumpAst();
 
     private:

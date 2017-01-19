@@ -143,6 +143,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\scrpt\src\compiler\ast.cpp" />
+    <ClCompile Include="..\..\scrpt\src\compiler\bytecodegen.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\main.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests_bytecodeGen.cpp" />
@@ -153,9 +154,11 @@
     <ClCompile Include="..\..\scrpt\src\tests\tests.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\parser.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\error.cpp" />
+    <ClCompile Include="..\..\scrpt\src\vm\bytecode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\ast.h" />
+    <ClInclude Include="..\..\scrpt\src\compiler\bytecodegen.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h" />
     <ClInclude Include="..\..\scrpt\src\scrpt.h" />
     <ClInclude Include="..\..\scrpt\src\util\fileio.h" />
@@ -163,6 +166,7 @@
     <ClInclude Include="..\..\scrpt\src\tests\tests.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\parser.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\error.h" />
+    <ClInclude Include="..\..\scrpt\src\vm\bytecode.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\scrpt\grammer.txt" />
