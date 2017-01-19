@@ -145,6 +145,7 @@
     <ClCompile Include="..\..\scrpt\src\compiler\ast.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\main.cpp" />
+    <ClCompile Include="..\..\scrpt\src\tests\tests_lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests_parser.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
@@ -164,9 +165,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\scrpt\grammer.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\scrpt\tests\testcode.scrpt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

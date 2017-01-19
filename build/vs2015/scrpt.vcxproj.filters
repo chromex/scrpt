@@ -50,6 +50,9 @@
     <ClCompile Include="..\..\scrpt\src\tests\tests_parser.cpp">
       <Filter>Source Files\tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\tests\tests_lexer.cpp">
+      <Filter>Source Files\tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">
@@ -81,10 +84,5 @@
     <Text Include="..\..\scrpt\grammer.txt">
       <Filter>Resource Files</Filter>
     </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\scrpt\tests\testcode.scrpt">
-      <Filter>Resource Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

@@ -9,6 +9,7 @@ namespace scrpt
     {
         std::shared_ptr<const char> DuplicateSource(const char* source);
         void RunTestsParser(unsigned int* passed, unsigned int* failed);
+        void RunTestsLexer(unsigned int* passed, unsigned int* failed);
     }
 }
 
