@@ -1,14 +1,23 @@
 # Course Overview
-True learning comes from projects, not presentations
 
 ## TODO
 * Show example languages
 * Talk about features
 * Give the why
 
-## Course goals
-* Build a custom scripting language using C and then use it to make a game
-* Develop an appreciation for language, tooling, performance, and runtime issues
+## Why? Why do this? 
+* True learning comes from projects, not presentations
+* Most engineers I've met still haven't done a large solo project
+* Poor treatment of languages and tooling in school leads understanding issues
+* Because existing literature focuses too much on theory (picture dumpster fire)
+* ... and not enough on reality (picture dumpster fire of a different color)
+
+## Course Work
+* Design and build a custom scripting language from the ground up
+** Lexer, parser, bytecode generation, virtual machine, FFI, etc.
+* Connect your shiny new language to a pre-built 2D game engine and build a game!
+* Or try...
+* And then go back and add some features... maybe some debugging systems... then game!
 
 ## How it Works
 * Making and using a language is a multi-phase and iterative project -- you won't get it righ the first time
