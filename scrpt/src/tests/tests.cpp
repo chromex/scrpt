@@ -1,9 +1,8 @@
-#include "tests.h"
 #include "../scrpt.h"
+#include "tests.h"
 
 #define COMPONENTNAME "Tests"
 
-static std::shared_ptr<const char> DuplicateSource(const char* source);
 static bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr);
 
 static const char* validSyntax = R"testCode(
@@ -11,7 +10,7 @@ func main(arg1, arg2)
 {
 	// Values
 	strings = {"", "simple", "new\nline", "\"quote\" of doom", "\ttab\t\tmore"};
-	numbers = {0, 1, 0123, 0.1234, 19203.1};
+	numbers = {0, 1, 0123, 0.1234, 19203.1, -1.23, -0};
 	_bo0leans = {true, false};
 
     // Basic expressions
@@ -90,18 +89,10 @@ func main() {
 }
 )testCode";
 
-static const char* parserTest = R"testCode(
-func main() {
-    list = [1, 2, "three"][2];
-    first = list[foo()[3][1]];
-    last = console.trace.warning("whut");
-}
-)testCode";
-
 void scrpt::RunTests()
 {
-    int passed = 0;
-    int failed = 0;
+    unsigned int passed = 0;
+    unsigned int failed = 0;
 
 #define ACCUMTEST(T) T ? ++passed : ++failed
     ACCUMTEST(TestLexFile(validSyntax, "All Valid Syntax", scrpt::LexErr::NoError));
@@ -110,26 +101,16 @@ void scrpt::RunTests()
     ACCUMTEST(TestLexFile(illegalNumber1, "Missing digits after decimal", scrpt::LexErr::InvalidNumber));
     ACCUMTEST(TestLexFile(unsupportedEscape, "Unknown escape", scrpt::LexErr::UnknownStringEscape));
 
-    std::cout << passed << " passed and " << failed << " failed" << std::endl;
+    Tests::RunTestsParser(&passed, &failed);
 
-    Parser parser;
-    Lexer lexer(DuplicateSource(parserTest));
-    try
-    {
-        parser.Consume(&lexer);
-    }
-    catch (scrpt::CompilerException& ex)
-    {
-        std::cout << ex.what() << std::endl;
-    }
-    parser.DumpAst();
+    std::cout << passed << " passed and " << failed << " failed" << std::endl;
 }
 
 bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr)
 {
     std::cout << "Lexer: " << testName << std::endl;
 
-    scrpt::Lexer lexer(DuplicateSource(source));
+    scrpt::Lexer lexer(scrpt::Tests::DuplicateSource(source));
     std::shared_ptr<scrpt::Token> token;
     scrpt::LexErr err = scrpt::LexErr::NoError;
     try
@@ -172,7 +153,7 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
     return passed;
 }
 
-std::shared_ptr<const char> DuplicateSource(const char* source)
+std::shared_ptr<const char> scrpt::Tests::DuplicateSource(const char* source)
 {
     AssertNotNull(source);
     size_t len = strlen(source);

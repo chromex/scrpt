@@ -21,8 +21,9 @@
 * Boolean ops: && || 
 
 ## Potential Bonus Features
-* Classes 
+* Classes (prototype, concrete, etc.)
 * Modules
+* Tuples
 * async / await with thread pool
 * Bytecode size optimization and cache
 * Atoms
@@ -31,7 +32,7 @@
 * Anonymous functions / functions as first class types
 * Type type
 * Ranges
-* Pattern matching (esp for switch )
+* Pattern matching (esp for switch)
 * Exceptions or error system
 * Dead code removal
 

@@ -4,6 +4,7 @@ Tokenizer / lexical analyzer
  * Peek, GetNext, etc.
  * Typed (string, token, etc.)
  * Debug info per token (filename, line, etc.)
+ * Tests
 
 HW: 
  * console application that takes in sample code and outputs tokens w/ data

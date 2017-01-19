@@ -145,6 +145,7 @@
     <ClCompile Include="..\..\scrpt\src\compiler\ast.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\main.cpp" />
+    <ClCompile Include="..\..\scrpt\src\tests\tests_parser.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests.cpp" />

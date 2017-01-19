@@ -47,6 +47,9 @@
     <ClCompile Include="..\..\scrpt\src\compiler\error.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\tests\tests_parser.cpp">
+      <Filter>Source Files\tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">

@@ -28,6 +28,7 @@ namespace scrpt
         bool ParseBlock(bool expect);
         bool ParseStatement(bool expect);
         bool ParseExpression(bool expect);
+        bool ParseEx0(bool expect);
         bool ParseEx1(bool expect);
         bool ParseEx2(bool expect);
         bool ParseEx3(bool expect);
@@ -36,7 +37,6 @@ namespace scrpt
         bool ParseEx6(bool expect);
         bool ParseEx7(bool expect);
         bool ParseEx8();
-        bool ParseEx9();
         bool ParseCall();
         bool ParseIndex();
         bool ParseDotExpand();

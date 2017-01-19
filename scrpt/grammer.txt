@@ -40,16 +40,16 @@ continue = "continue", ";";
 
 parens = "(", expression, ")";
 
-ex9 = ident, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ident;
-ex8 = ex9 | constant | parens;
+ex8 = ident | constant | parens;
 ex7 = ex8, { ( index | call | dot_expand | "++" | "--" ) } | ex8;
-ex6 = ( "!" | "++" | "--" ), ex6 | ex7;
+ex6 = ( "!" | "++" | "--" | "-" ), ex6 | ex7;
 ex5 = ex6, ( "*" | "/" | "%" ), ex5 | ex6;
 ex4 = ex5, ( "+" | "-" ), ex4 | ex5;
 ex3 = ex4, ( "<" | ">" | "<=" | ">=" ), ex3 | ex4;
 ex2 = ex3, ( "==" | "!=" ), ex2 | ex3;
 ex1 = ex2, "&&", ex1 | ex2;
-expression = ex1, "||", expression | ex1;
+ex0 = ex1, "||", ex0 | ex1;
+expression = ex0, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ex0;
 
 statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
 

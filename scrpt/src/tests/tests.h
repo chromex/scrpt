@@ -4,6 +4,12 @@
 namespace scrpt
 {
     void RunTests();
+
+    namespace Tests 
+    {
+        std::shared_ptr<const char> DuplicateSource(const char* source);
+        void RunTestsParser(unsigned int* passed, unsigned int* failed);
+    }
 }
 
 #endif
