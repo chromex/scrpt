@@ -461,9 +461,11 @@ namespace scrpt
         {
             this->Expect(Symbol::LParen);
             this->ParseExpression(false);
-            this->Expect(Symbol::SemiColon);
+            if (!this->Accept(Symbol::SemiColon, true)) CreateExpectedSymEx(Symbol::SemiColon, _lexer);
+            this->PopNode();
             this->ParseExpression(false);
-            this->Expect(Symbol::SemiColon);
+            if (!this->Accept(Symbol::SemiColon, true)) CreateExpectedSymEx(Symbol::SemiColon, _lexer);
+            this->PopNode();
             this->ParseExpression(false);
             this->Expect(Symbol::RParen);
             this->ParseStatement(true);

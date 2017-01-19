@@ -5,6 +5,7 @@ Tokenizer / lexical analyzer
  * Typed (string, token, etc.)
  * Debug info per token (filename, line, etc.)
  * Tests
+ * Can't catch everything
 
 HW: 
  * console application that takes in sample code and outputs tokens w/ data

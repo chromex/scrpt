@@ -42,16 +42,46 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestParse("Parse Loops", scrpt::ParseErr::NoError, false, R"testCode(
+    ACCUMTEST(TestParse("Control Flow", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
-    while (true) { a = 1; }
+    while (true) {}
+    while (true) 1 + 2;
     do {} while(true);
+    do 1 + 2; while(true);
     for (a = 0; a < 10; ++a) {}
-    while (true) { }
+    for (a = 0; a < 10; ++a) 1 + 2;
+    if (true) {}
+    if (false) {} elif (true) {};
+    if (false) {} elif (true) {} else {};
+    if (false) {} else {};
+    if (false) 1 + 2;
+    return;
+    return foo;
+    continue;
+    break;
+    switch (foo) {}
+    switch (foo) 
+    {
+    default: break;
+    }
+    switch (foo) 
+    {
+    case 0: break;
+    }
+    switch (foo) 
+    {
+    case "what":
+    case 0: break;
+    case 1: break;
+    }
+    switch (foo)
+    {  
+    case 0: { 1+2; ++bar; } break;
+    }
 }
 )testCode"));
 
-    ACCUMTEST(TestParse("Indexing Test", scrpt::ParseErr::NoError, false, R"testCode(
+    ACCUMTEST(TestParse("Indexing", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
     char = "str"[]; // Technically illegal
     char = "str"[0];
@@ -69,12 +99,47 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestParse("Dot Expand Test", scrpt::ParseErr::NoError, false, R"testCode(
+    ACCUMTEST(TestParse("Dot Expand", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
     console.trace("whut");
     console.trace.warningLevel = 2;
     dict.foo = "bar";
     dict.foo();
+}
+)testCode"));
+
+    ACCUMTEST(TestParse("Call Invocation", scrpt::ParseErr::NoError, false, R"testCode(
+func main() {
+    foo();
+    foo("test");
+    foo("test", 2);
+    foo(3, {"dict": true});
+    foo(3)(2);
+    foo[1](123)[1];
+    foo((bar()));
+    1+2("whut"); // Technically illegal
+}
+)testCode"));
+
+    ACCUMTEST(TestParse("Func Decl", scrpt::ParseErr::NoError, false, R"testCode(
+func main() {}
+func foo(var) {}
+func foo(var, var2) {}
+func foo(var, var2, var3) {}
+)testCode"));
+
+    ACCUMTEST(TestParse("Assignment", scrpt::ParseErr::NoError, false, R"testCode(
+func main() {
+    val = 1;
+    val += 2;
+    val -= 1;
+    val *= 3;
+    val /= 4;
+    val %= 2;
+    val = bar *= 3;
+    dict["whoa"] = true;
+    dict.whoa = true;
+    dict.whoa *= 4;
 }
 )testCode"));
 }

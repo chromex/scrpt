@@ -5,6 +5,7 @@ Parser
  * Ambiguous syntax
  * Keep grammer up to date
  * Order of operations
+ * Can't catch everything
 
 HW (phase 1)
  * Implement parser
