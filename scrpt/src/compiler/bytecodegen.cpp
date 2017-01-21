@@ -100,12 +100,12 @@ namespace scrpt
             if (node.GetChildren().size() == 1)
             {
                 this->CompileExpression(node.GetFirstChild());
-                TraceInfo("OP: Return Val");
             }
             else
             {
-                TraceInfo("OP: Return");
+                this->AddOp(OpCode::PushNull);
             }
+            this->AddOp(OpCode::Ret);
             break;
 
         case Symbol::LBracket:
@@ -119,7 +119,7 @@ namespace scrpt
         default:
             if (this->CompileExpression(node))
             {
-                TraceInfo("OP: Pop");
+                this->AddOp(OpCode::Pop);
             }
             else
             {
@@ -128,6 +128,7 @@ namespace scrpt
         }
     }
 
+    // TODO: Unary -
     // TODO: Need to special case all assignments when target operand is not an ident (including ++, --)
     bool BytecodeGen::CompileExpression(const AstNode& node)
     {
@@ -135,27 +136,29 @@ namespace scrpt
         switch (node.GetSym())
         {
         case Symbol::Int:
-            TraceInfo("OP: Push Int " << node.GetToken()->GetInt());
+            this->AddOp(OpCode::PushInt, node.GetToken()->GetInt());
             break;
 
         case Symbol::Float:
-            TraceInfo("OP: Push Float " << node.GetToken()->GetFloat());
+            this->AddOp(OpCode::PushFloat, node.GetToken()->GetFloat());
             break;
 
         case Symbol::Ident:
-            TraceInfo("OP: Push ident val: " << node.GetToken()->GetString());
+            // TODO: Need ident offset
+            this->AddOp(OpCode::PushIdent, int(0xFFFFFFFF));
             break;
 
         case Symbol::Terminal:
-            TraceInfo("OP: Push string: " << node.GetToken()->GetString());
+            // TODO: Need string table id
+            this->AddOp(OpCode::PushString, int(0xFFFFFFFF));
             break;
 
         case Symbol::True:
-            TraceInfo("OP: Push true");
+            this->AddOp(OpCode::PushTrue);
             break;
 
         case Symbol::False:
-            TraceInfo("OP: Push false");
+            this->AddOp(OpCode::PushFalse);
             break;
 
         case Symbol::Assign:
@@ -168,7 +171,8 @@ namespace scrpt
 
             Assert(node.GetChildren().size() == 2, "Unexpected number of children");
             this->CompileExpression(node.GetSecondChild());
-            TraceInfo("OP: " << SymbolToString(node.GetSym()) << " Store to ident: " << node.GetFirstChild().GetToken()->GetString());
+            // TODO: Need ident offset
+            this->AddOp(this->MapUnaryAssignOp(node.GetSym()), int(0xFFFFFFFF));
             break;
 
         case Symbol::Eq:
@@ -186,7 +190,7 @@ namespace scrpt
             Assert(node.GetChildren().size() == 2, "Unexpected number of children");
             this->CompileExpression(node.GetFirstChild());
             this->CompileExpression(node.GetSecondChild());
-            TraceInfo("OP: " << SymbolToString(node.GetSym()));
+            this->AddOp(this->MapBinaryOp(node.GetSym()));
             break;
 
         case Symbol::PlusPlus:
@@ -195,11 +199,13 @@ namespace scrpt
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
             if (node.IsPostfix())
             {
-                TraceInfo("OP: Postfix Increment: " << node.GetFirstChild().GetToken()->GetString());
+                // TODO: Ident offset
+                this->AddOp(OpCode::PostIncI, int(0xFFFFFFFF));
             }
             else
             {
-                TraceInfo("OP: Prefix Increment: " << node.GetFirstChild().GetToken()->GetString());
+                // TODO: Ident offset
+                this->AddOp(OpCode::IncI, int(0xFFFFFFFF));
             }
             break;
 
@@ -209,11 +215,13 @@ namespace scrpt
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
             if (node.IsPostfix())
             {
-                TraceInfo("OP: Postfix Decrement: " << node.GetFirstChild().GetToken()->GetString());
+                // TODO: Ident offset
+                this->AddOp(OpCode::PostDecI, int(0xFFFFFFFF));
             }
             else
             {
-                TraceInfo("OP: Prefix Decrement: " << node.GetFirstChild().GetToken()->GetString());
+                // TODO: Ident offset
+                this->AddOp(OpCode::DecI, int(0xFFFFFFFF));
             }
             break;
 
@@ -250,14 +258,14 @@ namespace scrpt
         auto blockStatement = node.GetLastChild();
 
         this->CompileExpression(beginExpr);
-        TraceInfo("OP: Pop");
-        // Record re-entry point
-        TraceInfo("<< for re-entry point >>");
+        this->AddOp(OpCode::Pop);
+        int reentry = _byteBuffer.size();
         this->CompileExpression(checkExpr);
-        TraceInfo("OP: Branch to end (if false)");
+        // TODO: Add ip operand (to end)
+        this->AddOp(OpCode::BrF, int(0xFFFFFFFF));
         this->CompileStatement(blockStatement);
         this->CompileExpression(endExpr);
-        TraceInfo("OP: Jump (to re-entry point");
+        this->AddOp(OpCode::Jmp, reentry);
     }
 
     void BytecodeGen::CompileWhile(const AstNode& node)
@@ -270,11 +278,12 @@ namespace scrpt
         auto checkExpr = node.GetFirstChild();
         auto blockStatement = node.GetLastChild();
 
-        TraceInfo("<< while re-entry point >>");
+        int reentry = _byteBuffer.size();
         this->CompileExpression(checkExpr);
-        TraceInfo("OP: BRF");
+        // TODO: Add ip operand (to end)
+        this->AddOp(OpCode::BrF, int(0xFFFFFFFF));
         this->CompileStatement(blockStatement);
-        TraceInfo("OP: Jump (to re-entry point)");
+        this->AddOp(OpCode::Jmp, reentry);
     }
 
     void BytecodeGen::CompileDo(const AstNode& node)
@@ -282,10 +291,10 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::Do, "Unexpected node");
         Assert(node.GetChildren().size() == 2, "Unexpected child count on Do node");
 
-        TraceInfo("<< do re-entry point >>");
+        int reentry = _byteBuffer.size();
         this->CompileStatement(node.GetFirstChild());
         this->CompileExpression(node.GetSecondChild());
-        TraceInfo("OP: BRT (to do re-entry point)");
+        this->AddOp(OpCode::BrT, reentry);
     }
 
     void BytecodeGen::CompileIf(const AstNode& node)
@@ -300,7 +309,8 @@ namespace scrpt
         auto blockStatement = node.GetSecondChild();
 
         this->CompileExpression(checkExpr);
-        TraceInfo("OP: Branch to end (if false)");
+        // TODO: Add ip operand (to end)
+        this->AddOp(OpCode::BrF, int(0xFFFFFFFF));
         this->CompileStatement(blockStatement);
     }
 
@@ -315,11 +325,89 @@ namespace scrpt
         TraceInfo("OP: Call " << node.GetFirstChild().GetToken()->GetString());
     }
 
+    size_t BytecodeGen::AddOp(OpCode op)
+    {
+        std::cout << std::setfill('0') << std::setw(4) << _byteBuffer.size();
+        _byteBuffer.push_back(static_cast<unsigned char>(op));
+        std::cout << ": " << std::string(OpCodeToString(op)).substr(8) << std::endl;
+        return _byteBuffer.size() - 1;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, int p0)
+    {
+        return this->AddOp(op, (unsigned char*)&p0);
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, float p0)
+    {
+        return this->AddOp(op, (unsigned char*)&p0);
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, unsigned char* p0)
+    {
+        size_t ret = _byteBuffer.size();
+
+        std::cout << std::setfill('0') << std::setw(4) << ret;
+        _byteBuffer.push_back(static_cast<unsigned char>(op));
+        _byteBuffer.push_back(p0[0]);
+        _byteBuffer.push_back(p0[1]);
+        _byteBuffer.push_back(p0[2]);
+        _byteBuffer.push_back(p0[3]);
+        Assert(*((unsigned int*)&(_byteBuffer[ret + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
+        std::cout << ": " << std::string(OpCodeToString(op)).substr(8);
+        std::cout << " " << std::hex << (int)p0[3];
+        std::cout << " " << std::hex << (int)p0[2];
+        std::cout << " " << std::hex << (int)p0[1];
+        std::cout << " " << std::hex << (int)p0[0] << std::endl;
+
+        return ret;
+    }
+
     void BytecodeGen::Verify(const AstNode& node, Symbol sym) const
     {
         if (node.GetSym() != sym)
         {
             throw CreateBytecodeGenEx(std::string("Expected token ") + SymbolToString(sym), BytecodeGenErr::UnexpectedToken, node.GetToken());
+        }
+    }
+
+    OpCode BytecodeGen::MapBinaryOp(Symbol sym) const
+    {
+        switch (sym)
+        {
+        case Symbol::Eq: return OpCode::Eq;
+        case Symbol::Or: return OpCode::Or;
+        case Symbol::And: return OpCode::Add;
+        case Symbol::Plus: return OpCode::Add;
+        case Symbol::Minus: return OpCode::Sub;
+        case Symbol::Mult: return OpCode::Mul;
+        case Symbol::Div: return OpCode::Div;
+        case Symbol::Modulo: return OpCode::Mod;
+        case Symbol::LessThan: return OpCode::LT;
+        case Symbol::LessThanEq: return OpCode::LTE;
+        case Symbol::GreaterThan: return OpCode::GT;
+        case Symbol::GreaterThanEq: return OpCode::GTE;
+        default:
+            AssertFail("Unmapped binary op: " << SymbolToString(sym));
+            // TODO: Compiler bug ex vs compilation bug ex?
+            return OpCode::Unknown;
+        }
+    }
+
+    OpCode BytecodeGen::MapUnaryAssignOp(Symbol sym) const
+    {
+        switch (sym)
+        {
+        case Symbol::Assign: return OpCode::AssignI;
+        case Symbol::PlusEq: return OpCode::PlusEqI;
+        case Symbol::MinusEq: return OpCode::MinusEqI;
+        case Symbol::MultEq: return OpCode::MultEqI;
+        case Symbol::DivEq: return OpCode::DivEqI;
+        case Symbol::ModuloEq: return OpCode::ModuloEqI;
+        default:
+            AssertFail("Unmapped unary assign op: " << SymbolToString(sym));
+            // TODO: Compiler bug ex vs compilation bug ex?
+            return OpCode::Unknown;
         }
     }
 

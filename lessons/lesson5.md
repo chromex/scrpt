@@ -8,6 +8,8 @@ Byte code
  * Arrity checks...
  * Use project euler or other puzzle sources to test out your bytecode gen
  * Start with just printing as you "compile" to work out what data you need to actually gen bytecode
+ 
+ * Skipping static analysis of the AST, depend on runtime instead (initially)
 
 HW:
  * Finish parser
