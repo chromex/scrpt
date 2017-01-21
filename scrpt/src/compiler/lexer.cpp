@@ -38,7 +38,8 @@ namespace scrpt
         Symbol sym = Symbol::Error;
         LexErr err = LexErr::UnknownSymbol;
         std::unique_ptr<const char[]> string;
-        double number = nan(nullptr);
+        int integer = 0;
+        float fp = nanf(nullptr);
 
         // Burn whitespace
         this->ConsumeWhitespace();
@@ -83,10 +84,9 @@ namespace scrpt
         else if (isdigit(c))
         {
             size_t rawLen = 0;
-            number = this->GetNumber(_location, &rawLen);
-            if (!isnan(number))
+            if (this->GetNumber(_location, &rawLen, &integer, &fp))
             {
-                sym = Symbol::Number;
+                sym = isnan(fp) ? Symbol::Int : Symbol::Float;
                 _location += rawLen;
             }
             else
@@ -143,7 +143,7 @@ namespace scrpt
         err = sym != Symbol::Error ? LexErr::NoError : err;
 
         // Construct token
-        _token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, std::move(string), number);
+        _token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, std::move(string), integer, fp);
         if (err != LexErr::NoError)
         {
             throw CreateLexerEx(err, _token);
@@ -272,19 +272,24 @@ namespace scrpt
         return std::unique_ptr<const char[]>(term);
     }
 
-    double Lexer::GetNumber(const char* c, size_t* rawLen) const
+    bool Lexer::GetNumber(const char* c, size_t* rawLen, int* integer, float* fp) const
     {
         AssertNotNull(c);
         AssertNotNull(rawLen);
+        AssertNotNull(integer);
+        AssertNotNull(fp);
+
+        *integer = 0;
+        *fp = nan(nullptr);
 
         const char* start = c;
-        double num = 0;
+        int iNum = 0;
 
         // Parse numerator
         do
         {
-            num *= 10.0;
-            num += *c - '0';
+            iNum *= 10;
+            iNum += *c - '0';
         } while (*++c != '\0' && isdigit(*c));
 
         // Parse denominator
@@ -292,20 +297,26 @@ namespace scrpt
         {
             if (!isdigit(*++c))
             {
-                // error!
-                return nan(nullptr);
+                return false;
             }
 
+            float fNum = (float)iNum;
             unsigned int div = 1;
             do
             {
                 div *= 10;
-                num += (*c - '0') / (double)div;
+                fNum += (*c - '0') / (double)div;
             } while (*++c != '\0' && isdigit(*c));
+
+            *fp = fNum;
+        }
+        else
+        {
+            *integer = iNum;
         }
 
         *rawLen = c - start;
-        return num;
+        return true;
     }
 
     const char* SymbolToString(Symbol sym)
@@ -320,7 +331,8 @@ namespace scrpt
             ENUM_CASE_TO_STRING(Symbol::RBracket);
             ENUM_CASE_TO_STRING(Symbol::LSquare);
             ENUM_CASE_TO_STRING(Symbol::RSquare);
-            ENUM_CASE_TO_STRING(Symbol::Number);
+            ENUM_CASE_TO_STRING(Symbol::Int);
+            ENUM_CASE_TO_STRING(Symbol::Float);
             ENUM_CASE_TO_STRING(Symbol::Terminal);
             ENUM_CASE_TO_STRING(Symbol::Ident);
             ENUM_CASE_TO_STRING(Symbol::True);
@@ -398,7 +410,8 @@ namespace scrpt
         size_t lineNumber,
         size_t linePosition,
         std::unique_ptr<const char[]>&& string,
-        double number)
+        int integer,
+        float fp)
         : _sym(sym)
         , _sourceData(sourceData)
         , _symLocation(symLocation)
@@ -406,7 +419,8 @@ namespace scrpt
         , _lineNumber(lineNumber)
         , _linePosition(linePosition)
         , _string(std::move(string))
-        , _number(number)
+        , _int(integer)
+        , _float(fp)
     {
         AssertNotNull(_sourceData);
         AssertNotNull(_symLocation);
@@ -416,7 +430,8 @@ namespace scrpt
     Symbol Token::GetSym() const { return _sym; }
     const char * Token::SymToString() const { return SymbolToString(_sym); }
     const char* Token::GetString() const { return _string.get(); }
-    double Token::GetNumber() const { return _number; }
+    int Token::GetInt() const { return _int; }
+    float Token::GetFloat() const { return _float; }
 
     std::string Token::GetFormattedTokenCode() const
     {

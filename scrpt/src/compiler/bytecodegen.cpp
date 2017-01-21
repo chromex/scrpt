@@ -129,8 +129,12 @@ namespace scrpt
         bool success = true;
         switch (node.GetSym())
         {
-        case Symbol::Number:
-            TraceInfo("OP: Push " << node.GetToken()->GetNumber());
+        case Symbol::Int:
+            TraceInfo("OP: Push Int " << node.GetToken()->GetInt());
+            break;
+
+        case Symbol::Float:
+            TraceInfo("OP: Push Float " << node.GetToken()->GetFloat());
             break;
 
         case Symbol::Ident:

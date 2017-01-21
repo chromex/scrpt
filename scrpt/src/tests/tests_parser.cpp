@@ -15,6 +15,8 @@ void scrpt::Tests::RunTestsParser(unsigned int* passed, unsigned int* failed)
     ACCUMTEST(TestParse("Parse Constants", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
     num = 0;
+    num = 1234;
+    num = -4321;
     num = 0.1;
     num = 1.2;
     num = -2.5;

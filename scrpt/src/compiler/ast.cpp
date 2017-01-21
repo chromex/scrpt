@@ -150,7 +150,8 @@ namespace scrpt
             {
             case Symbol::Ident:
             case Symbol::Terminal: ss << ": '" << node->GetToken()->GetString() << "' "; break;
-            case Symbol::Number: ss << ": " << node->GetToken()->GetNumber(); break;
+            case Symbol::Int: ss << ": " << node->GetToken()->GetInt(); break;
+            case Symbol::Float: ss << ": " << node->GetToken()->GetFloat(); break;
             }
             if (node->IsPostfix()) ss << ": POSTFIX";
             if (node->IsConstant()) ss << ": CONSTANT";

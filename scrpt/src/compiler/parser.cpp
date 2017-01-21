@@ -596,7 +596,8 @@ namespace scrpt
     {
         if (this->Accept(Symbol::True, true) ||
             this->Accept(Symbol::False, true) ||
-            this->Accept(Symbol::Number, true) ||
+            this->Accept(Symbol::Int, true) ||
+            this->Accept(Symbol::Float, true) ||
             this->Accept(Symbol::Terminal, true))
         {
             _currentNode->SetConstant();
