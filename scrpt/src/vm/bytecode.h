@@ -2,9 +2,22 @@
 
 namespace scrpt
 {
-    enum Bytecode
+    enum OpCode
     {
+        Push,
+        Pop,
+        Load,
+        Call,
+        Assign,
         Unknown,
     };
-    const char* BytecodeToString(Bytecode code);
+    const char* OpCodeToString(OpCode code);
+
+    class Bytecode
+    {
+    public:
+
+    private:
+
+    };
 }

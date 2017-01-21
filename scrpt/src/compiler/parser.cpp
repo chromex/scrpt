@@ -465,13 +465,11 @@ namespace scrpt
         if (this->Accept(Symbol::For, true))
         {
             this->Expect(Symbol::LParen);
-            this->ParseExpression(false);
-            if (!this->Accept(Symbol::SemiColon, true)) CreateExpectedSymEx(Symbol::SemiColon, _lexer);
-            this->PopNode();
-            this->ParseExpression(false);
-            if (!this->Accept(Symbol::SemiColon, true)) CreateExpectedSymEx(Symbol::SemiColon, _lexer);
-            this->PopNode();
-            this->ParseExpression(false);
+            if (!this->ParseExpression(false)) _currentNode->AddEmptyChild();
+            this->Expect(Symbol::SemiColon);
+            if (!this->ParseExpression(false)) _currentNode->AddEmptyChild();
+            this->Expect(Symbol::SemiColon);
+            if (!this->ParseExpression(false)) _currentNode->AddEmptyChild();
             this->Expect(Symbol::RParen);
             this->ParseStatement(true);
 
@@ -673,7 +671,7 @@ namespace scrpt
         return CreateParseEx(std::string("Expected symbol ") + SymbolToString(sym), ParseErr::UnexpectedSymbol, lexer->Current());
     }
 
-    const char * ParseErrToString(ParseErr err)
+    const char* ParseErrToString(ParseErr err)
     {
         switch (err)
         {

@@ -34,6 +34,12 @@ namespace scrpt
         return &_children.back();
     }
 
+    AstNode* AstNode::AddEmptyChild()
+    {
+        _children.push_back(AstNode());
+        return &_children.back();
+    }
+
     AstNode* AstNode::GetParent() const
     {
         return _parent;
@@ -92,6 +98,41 @@ namespace scrpt
         return _constant;
     }
 
+    bool AstNode::IsEmpty() const
+    {
+        return _token == nullptr;
+    }
+
+    Symbol AstNode::GetSym() const
+    {
+        AssertNotNull(_token);
+        return _token->GetSym();
+    }
+
+    const AstNode& AstNode::GetFirstChild() const
+    {
+        Assert(_children.size() > 0, "Cannot get first child");
+        return _children.front();
+    }
+
+    const AstNode& AstNode::GetSecondChild() const
+    {
+        Assert(_children.size() > 1, "Cannot get second child");
+        return *(++_children.begin());
+    }
+
+    const AstNode & AstNode::GetThirdChild() const
+    {
+        Assert(_children.size() > 2, "Cannot get third child");
+        return *(++++_children.begin());
+    }
+
+    const AstNode& AstNode::GetLastChild() const
+    {
+        Assert(_children.size() > 0, "Cannot get last child");
+        return _children.back();
+    }
+
     static void DumpAst(const AstNode* node, unsigned int depth, std::stringstream& ss)
     {
         AssertNotNull(node);
@@ -101,21 +142,28 @@ namespace scrpt
             ss << "  ";
         }
 
-        Symbol sym = node->GetToken()->GetSym();
-        ss << SymbolToString(sym);
-        switch (sym)
+        if (!node->IsEmpty())
         {
-        case Symbol::Ident:
-        case Symbol::Terminal: ss << ": '" << node->GetToken()->GetString() << "' "; break;
-        case Symbol::Number: ss << ": " << node->GetToken()->GetNumber(); break;
-        }
-		if (node->IsPostfix()) ss << ": POSTFIX";
-        if (node->IsConstant()) ss << ": CONSTANT";
-        ss << std::endl;
+            Symbol sym = node->GetToken()->GetSym();
+            ss << SymbolToString(sym);
+            switch (sym)
+            {
+            case Symbol::Ident:
+            case Symbol::Terminal: ss << ": '" << node->GetToken()->GetString() << "' "; break;
+            case Symbol::Number: ss << ": " << node->GetToken()->GetNumber(); break;
+            }
+            if (node->IsPostfix()) ss << ": POSTFIX";
+            if (node->IsConstant()) ss << ": CONSTANT";
+            ss << std::endl;
 
-        for (const AstNode& child : node->GetChildren())
+            for (const AstNode& child : node->GetChildren())
+            {
+                DumpAst(&child, depth + 1, ss);
+            }
+        }
+        else
         {
-            DumpAst(&child, depth + 1, ss);
+            ss << "EMTPY" << std::endl;
         }
     }
 

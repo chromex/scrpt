@@ -62,6 +62,9 @@
     <ClCompile Include="..\..\scrpt\src\compiler\bytecodegen.cpp">
       <Filter>Source Files\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\vm\vm.cpp">
+      <Filter>Source Files\vm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">
@@ -93,6 +96,9 @@
     </ClInclude>
     <ClInclude Include="..\..\scrpt\src\compiler\bytecodegen.h">
       <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\vm\vm.h">
+      <Filter>Source Files\vm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

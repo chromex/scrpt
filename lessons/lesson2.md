@@ -6,17 +6,17 @@
 * Imperitive style language
 * Reference counted memory management
 * Untyped 
-* Value types: number, string, list, dictionary, etc.
+* Value types: number, string, list, etc.
 * Foreign Function Interface 
 * Leak free
 * Functions as first class objects
 * Standard library
 
-## Core Required Features
+## Core Required Features (self note, don't make this too perscriptive)
 * Built in types: string, number, boolean, list, dictionary
-* Control flow: if, for, while, switch
+* Control flow: if, for, while, do, switch, break, continue
 * Functions
-* Math: + - * / % 
+* Math: + - * / % ++ -- !
 * Comparison: < > <= >= != ==
 * Boolean ops: && || 
 
@@ -39,6 +39,7 @@
 ## How languages work
 * Statements versus expressions
 * Functions as units
+* What runtime looks like
 
 ## EBNF for language
 * https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form

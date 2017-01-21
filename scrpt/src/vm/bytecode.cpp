@@ -2,14 +2,14 @@
 
 #define COMPONENTNAME "Bytecode"
 
-const char* scrpt::BytecodeToString(Bytecode code)
+const char* scrpt::OpCodeToString(OpCode code)
 {
     switch (code)
     {
-        ENUM_CASE_TO_STRING(Bytecode::Unknown);
+        ENUM_CASE_TO_STRING(OpCode::Unknown);
 
     default:
-        AssertFail("Missing case for Bytecode");
+        AssertFail("Missing case for OpCode");
     }
 
     return nullptr;

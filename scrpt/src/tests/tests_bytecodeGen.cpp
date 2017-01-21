@@ -11,6 +11,35 @@ void scrpt::Tests::RunTestsBytecodeGen(unsigned int* passed, unsigned int* faile
     AssertNotNull(failed);
 
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
+    ACCUMTEST(TestBytecodeGen("Hello World", true, R"testCode(
+func main() {
+    sum = 0;
+    for (i = 0; i < 1000; ++i)
+        if (test(i))
+            sum += i;
+    return sum;
+}
+
+func test(val) { return i % 5 == 0 || i % 3 == 0; }
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Hello World2", true, R"testCode(
+func main() {
+    sum = 0;
+    val1 = 1;
+    val2 = 2;
+
+    while (val2 < 4000000)
+    {
+         if (val2 % 2 == 0) sum += val2;
+         t = val2;
+         val2 += val1;
+         val1 = t;
+    }
+
+    return sum;
+}
+)testCode"));
 }
 
 bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source)
@@ -27,7 +56,7 @@ bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source
     try
     {
         parser.Consume(&lexer);
-        compiler.Consume(parser.GetAst());
+        compiler.Consume(*parser.GetAst());
     }
     catch (scrpt::CompilerException& ex)
     {

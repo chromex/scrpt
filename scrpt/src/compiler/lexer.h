@@ -8,9 +8,9 @@ namespace scrpt
         Start,
         LParen,
         RParen,
-        LBracket,
+        LBracket,//
         RBracket,
-        LSquare,
+        LSquare,//
         RSquare,
         Number,
         Terminal,
@@ -19,23 +19,23 @@ namespace scrpt
         False,
         Colon,
         Comma,
-        Dot,
+        Dot,//
         If,
-        Else,
-        ElseIf,
-        Do,
+        Else,//
+        ElseIf,//
+        Do,//
         While,
         For,
-        Continue,
-        Switch,
-        Case,
-        Break,
-        Default,
+        Continue,//
+        Switch,//
+        Case,//
+        Break,//
+        Default,//
         Return,
         Eq,
         Assign,
-        Not,
-        NotEq,
+        Not,//
+        NotEq,//
         LessThan,
         LessThanEq,
         GreaterThan,

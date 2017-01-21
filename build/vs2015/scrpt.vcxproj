@@ -155,6 +155,7 @@
     <ClCompile Include="..\..\scrpt\src\compiler\parser.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\error.cpp" />
     <ClCompile Include="..\..\scrpt\src\vm\bytecode.cpp" />
+    <ClCompile Include="..\..\scrpt\src\vm\vm.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\ast.h" />
@@ -167,6 +168,7 @@
     <ClInclude Include="..\..\scrpt\src\compiler\parser.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\error.h" />
     <ClInclude Include="..\..\scrpt\src\vm\bytecode.h" />
+    <ClInclude Include="..\..\scrpt\src\vm\vm.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\scrpt\grammer.txt" />

@@ -50,6 +50,7 @@ func main() {
     do 1 + 2; while(true);
     for (a = 0; a < 10; ++a) {}
     for (a = 0; a < 10; ++a) 1 + 2;
+    for (;;) {}
     if (true) {}
     if (false) {} elif (true) {};
     if (false) {} elif (true) {} else {};
@@ -126,6 +127,8 @@ func main() {}
 func foo(var) {}
 func foo(var, var2) {}
 func foo(var, var2, var3) {}
+func foo() { return; }
+func foo() { return 1 + 2; }
 )testCode"));
 
     ACCUMTEST(TestParse("Assignment", scrpt::ParseErr::NoError, false, R"testCode(
