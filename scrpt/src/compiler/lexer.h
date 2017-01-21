@@ -24,7 +24,7 @@ namespace scrpt
         If,
         Else,//
         ElseIf,//
-        Do,//
+        Do,
         While,
         For,
         Continue,//

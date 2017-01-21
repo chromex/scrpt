@@ -2,8 +2,7 @@
 
 #define COMPONENTNAME "BytecodeGen"
 
-// Optimizations
-// Ident assignment different than expr assignment (don't push ident handle)
+// TODO: For the loops, don't use the Statement parse block since we need to supress scope push
 
 // TODO: for decl line has a new scope, for block ALSO has a new scope... same for if's and everything else
 // TODO: Only need to push a scope if it has new locals
@@ -72,6 +71,8 @@ namespace scrpt
         {
             this->CompileStatement(statement);
         }
+
+        // TODO: If no return added, add one
     }
 
     void BytecodeGen::CompileStatement(const AstNode& node)

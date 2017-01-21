@@ -280,7 +280,7 @@ namespace scrpt
         AssertNotNull(fp);
 
         *integer = 0;
-        *fp = nan(nullptr);
+        *fp = nanf(nullptr);
 
         const char* start = c;
         int iNum = 0;
@@ -305,7 +305,7 @@ namespace scrpt
             do
             {
                 div *= 10;
-                fNum += (*c - '0') / (double)div;
+                fNum += (*c - '0') / (float)div;
             } while (*++c != '\0' && isdigit(*c));
 
             *fp = fNum;
