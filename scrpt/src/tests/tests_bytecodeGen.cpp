@@ -40,6 +40,17 @@ func main() {
     return sum;
 }
 )testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Basic Do", true, R"testCode(
+func main() {
+    sum = 0;
+    do
+    {
+        ++sum;
+    } while(sum < 100000);
+    return sum;
+}
+)testCode"));
 }
 
 bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source)

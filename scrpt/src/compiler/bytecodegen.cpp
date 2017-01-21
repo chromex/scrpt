@@ -86,6 +86,10 @@ namespace scrpt
             this->CompileWhile(node);
             break;
 
+        case Symbol::Do:
+            this->CompileDo(node);
+            break;
+
         case Symbol::If:
             this->CompileIf(node);
             break;
@@ -270,6 +274,17 @@ namespace scrpt
         TraceInfo("OP: BRF");
         this->CompileStatement(blockStatement);
         TraceInfo("OP: Jump (to re-entry point)");
+    }
+
+    void BytecodeGen::CompileDo(const AstNode& node)
+    {
+        Assert(node.GetSym() == Symbol::Do, "Unexpected node");
+        Assert(node.GetChildren().size() == 2, "Unexpected child count on Do node");
+
+        TraceInfo("<< do re-entry point >>");
+        this->CompileStatement(node.GetFirstChild());
+        this->CompileExpression(node.GetSecondChild());
+        TraceInfo("OP: BRT (to do re-entry point)");
     }
 
     void BytecodeGen::CompileIf(const AstNode& node)

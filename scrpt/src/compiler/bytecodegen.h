@@ -20,6 +20,7 @@ namespace scrpt
         bool CompileExpression(const AstNode& node);
         void CompileFor(const AstNode& node);
         void CompileWhile(const AstNode& node);
+        void CompileDo(const AstNode& node);
         void CompileIf(const AstNode& node);
         void CompileCall(const AstNode& node);
         inline void Verify(const AstNode& node, Symbol sym) const;
