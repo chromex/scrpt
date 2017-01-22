@@ -68,6 +68,7 @@ bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source
     {
         parser.Consume(&lexer);
         compiler.Consume(*parser.GetAst());
+        if (dumpBytecode) compiler.DumpBytecode();
     }
     catch (scrpt::CompilerException& ex)
     {

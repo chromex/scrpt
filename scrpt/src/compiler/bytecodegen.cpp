@@ -37,6 +37,11 @@ namespace scrpt
 
     void BytecodeGen::DumpBytecode()
     {
+        Bytecode bytecode;
+        bytecode.data = &_byteBuffer[0];
+        bytecode.len = (unsigned int)_byteBuffer.size();
+        Decompile(&bytecode);
+
         // Dump function table
         // Dump string table
         // Dump byte code
@@ -150,7 +155,7 @@ namespace scrpt
 
         case Symbol::Terminal:
             // TODO: Need string table id
-            this->AddOp(OpCode::PushString, int(0xFFFFFFFF));
+            this->AddOp(OpCode::PushString, unsigned int(0xFFFFFFFF));
             break;
 
         case Symbol::True:
@@ -259,13 +264,13 @@ namespace scrpt
 
         this->CompileExpression(beginExpr);
         this->AddOp(OpCode::Pop);
-        int reentry = _byteBuffer.size();
+        unsigned int reentry = (unsigned int)_byteBuffer.size();
         this->CompileExpression(checkExpr);
-        // TODO: Add ip operand (to end)
-        this->AddOp(OpCode::BrF, int(0xFFFFFFFF));
+        size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
         this->CompileStatement(blockStatement);
         this->CompileExpression(endExpr);
         this->AddOp(OpCode::Jmp, reentry);
+        this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
     }
 
     void BytecodeGen::CompileWhile(const AstNode& node)
@@ -278,12 +283,12 @@ namespace scrpt
         auto checkExpr = node.GetFirstChild();
         auto blockStatement = node.GetLastChild();
 
-        int reentry = _byteBuffer.size();
+        unsigned int reentry = (unsigned int)_byteBuffer.size();
         this->CompileExpression(checkExpr);
-        // TODO: Add ip operand (to end)
-        this->AddOp(OpCode::BrF, int(0xFFFFFFFF));
+        size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
         this->CompileStatement(blockStatement);
         this->AddOp(OpCode::Jmp, reentry);
+        this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
     }
 
     void BytecodeGen::CompileDo(const AstNode& node)
@@ -291,7 +296,7 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::Do, "Unexpected node");
         Assert(node.GetChildren().size() == 2, "Unexpected child count on Do node");
 
-        int reentry = _byteBuffer.size();
+        unsigned int reentry = (unsigned int)_byteBuffer.size();
         this->CompileStatement(node.GetFirstChild());
         this->CompileExpression(node.GetSecondChild());
         this->AddOp(OpCode::BrT, reentry);
@@ -309,9 +314,9 @@ namespace scrpt
         auto blockStatement = node.GetSecondChild();
 
         this->CompileExpression(checkExpr);
-        // TODO: Add ip operand (to end)
-        this->AddOp(OpCode::BrF, int(0xFFFFFFFF));
+        size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
         this->CompileStatement(blockStatement);
+        this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
     }
 
     void BytecodeGen::CompileCall(const AstNode& node)
@@ -322,18 +327,22 @@ namespace scrpt
         // TODO: Push params
         // TODO: Need to be able to revisit this bytecode...
         // TODO: Arrity check... push nArgs in stack frame? 
-        TraceInfo("OP: Call " << node.GetFirstChild().GetToken()->GetString());
+        // TODO: Need func id
+        this->AddOp(OpCode::Call, unsigned int(0xFFFFFFFF));
     }
 
     size_t BytecodeGen::AddOp(OpCode op)
     {
-        std::cout << std::setfill('0') << std::setw(4) << _byteBuffer.size();
         _byteBuffer.push_back(static_cast<unsigned char>(op));
-        std::cout << ": " << std::string(OpCodeToString(op)).substr(8) << std::endl;
         return _byteBuffer.size() - 1;
     }
 
     size_t BytecodeGen::AddOp(OpCode op, int p0)
+    {
+        return this->AddOp(op, (unsigned char*)&p0);
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, unsigned int p0)
     {
         return this->AddOp(op, (unsigned char*)&p0);
     }
@@ -347,20 +356,30 @@ namespace scrpt
     {
         size_t ret = _byteBuffer.size();
 
-        std::cout << std::setfill('0') << std::setw(4) << ret;
         _byteBuffer.push_back(static_cast<unsigned char>(op));
         _byteBuffer.push_back(p0[0]);
         _byteBuffer.push_back(p0[1]);
         _byteBuffer.push_back(p0[2]);
         _byteBuffer.push_back(p0[3]);
         Assert(*((unsigned int*)&(_byteBuffer[ret + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
-        std::cout << ": " << std::string(OpCodeToString(op)).substr(8);
-        std::cout << " " << std::hex << (int)p0[3];
-        std::cout << " " << std::hex << (int)p0[2];
-        std::cout << " " << std::hex << (int)p0[1];
-        std::cout << " " << std::hex << (int)p0[0] << std::endl;
 
         return ret;
+    }
+
+    void BytecodeGen::SetOpOperand(size_t opIdx, unsigned int p0)
+    {
+        this->SetOpOperand(opIdx, (unsigned char*)&p0);
+    }
+
+    void BytecodeGen::SetOpOperand(size_t opIdx, unsigned char* p0)
+    {
+        Assert(_byteBuffer.size() > opIdx, "Index out of bounds");
+
+        _byteBuffer[opIdx + 1] = p0[0];
+        _byteBuffer[opIdx + 2] = p0[1];
+        _byteBuffer[opIdx + 3] = p0[2];
+        _byteBuffer[opIdx + 4] = p0[3];
+        Assert(*((unsigned int*)&(_byteBuffer[opIdx + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
     }
 
     void BytecodeGen::Verify(const AstNode& node, Symbol sym) const

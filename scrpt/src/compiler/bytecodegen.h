@@ -25,8 +25,11 @@ namespace scrpt
         void CompileCall(const AstNode& node);
         size_t AddOp(OpCode op);
         size_t AddOp(OpCode op, int p0);
+        size_t AddOp(OpCode op, unsigned int p0);
         size_t AddOp(OpCode op, float p0);
         size_t AddOp(OpCode op, unsigned char* p0);
+        void SetOpOperand(size_t opIdx, unsigned int p0);
+        void SetOpOperand(size_t opIdx, unsigned char* p0);
         inline void Verify(const AstNode& node, Symbol sym) const;
         OpCode MapBinaryOp(Symbol sym) const;
         OpCode MapUnaryAssignOp(Symbol sym) const;

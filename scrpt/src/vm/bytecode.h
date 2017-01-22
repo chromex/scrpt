@@ -6,20 +6,20 @@ namespace scrpt
     {
         Unknown,
         PushNull, 
-        PushInt, // val
-        PushFloat, // val
-        PushString, // string id
+        PushInt, // int val
+        PushFloat, // float val
+        PushString, // unsigned int string id
         PushTrue, 
         PushFalse,
-        PushIdent, // ident offset
+        PushIdent, // int ident offset
         Pop, 
-        Call, // function offset, n params
-        AssignI, // ident offset
-        PlusEqI, // ident offset
-        MinusEqI, // ident offset
-        MultEqI, // ident offset
-        DivEqI, // ident offset
-        ModuloEqI, // ident offset
+        Call, // unsigned int function offset
+        AssignI, // int ident offset
+        PlusEqI, // int ident offset
+        MinusEqI, // int ident offset
+        MultEqI, // int ident offset
+        DivEqI, // int ident offset
+        ModuloEqI, // int ident offset
         Eq,
         Or,
         And,
@@ -32,22 +32,26 @@ namespace scrpt
         GT,
         LTE,
         GTE,
-        IncI,
-        DecI,
-        PostIncI,
-        PostDecI,
-        BrT, // bytecode location
-        BrF, // bytecode location
-        Jmp, // bytecode locaiton
+        IncI, // int ident offset
+        DecI, // int ident offset
+        PostIncI, // int ident offset
+        PostDecI, // int ident offset
+        BrT, // unsigned int bytecode location
+        BrF, // unsigned int bytecode location
+        Jmp, // unsigned int bytecode locaiton
         Ret,
+        __Num,
     };
     const char* OpCodeToString(OpCode code);
 
-    class Bytecode
+    struct Bytecode
     {
-    public:
-
-    private:
-
+        unsigned char* data;
+        unsigned int len;
+        // function table
+        // string table
+        
     };
+
+    void Decompile(Bytecode* bytecode);
 }

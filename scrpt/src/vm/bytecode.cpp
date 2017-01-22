@@ -49,3 +49,64 @@ const char* scrpt::OpCodeToString(OpCode code)
 
     return nullptr;
 }
+
+void scrpt::Decompile(Bytecode* bytecode)
+{
+    AssertNotNull(bytecode);
+
+    // TODO: Dump function table
+    // TODO: Dump string table
+    // TODO: Annotate when a new function starts
+
+    std::cout << "<< bytecode begin >>" << std::endl;
+    for (unsigned int idx = 0; idx < bytecode->len; ++idx)
+    {
+        std::cout << std::setfill('0') << std::setw(4) << idx << " ";
+
+        if (bytecode->data[idx] >= (unsigned char)OpCode::__Num)
+        {
+            std::cout << "<< invalid opcode >>" << std::endl;
+            continue;
+        }
+
+        OpCode op = (OpCode)(bytecode->data[idx]);
+
+        std::cout << std::string(OpCodeToString(op)).substr(8);
+
+        switch (op)
+        {
+        case OpCode::PushFloat:
+            std::cout << " " << *(float *)(bytecode->data + idx + 1);
+            idx += 4;
+            break;
+
+        case OpCode::PushInt:
+        case OpCode::PushIdent:
+        case OpCode::AssignI:
+        case OpCode::PlusEqI:
+        case OpCode::MinusEqI:
+        case OpCode::MultEqI:
+        case OpCode::DivEqI:
+        case OpCode::ModuloEqI:
+        case OpCode::IncI:
+        case OpCode::DecI:
+        case OpCode::PostIncI:
+        case OpCode::PostDecI:
+            std::cout << " " << *(int *)(bytecode->data + idx + 1);
+            idx += 4;
+            break;
+
+        case OpCode::PushString:
+        case OpCode::Call:
+        case OpCode::BrT:
+        case OpCode::BrF:
+        case OpCode::Jmp:
+            std::cout << " " << *(unsigned int *)(bytecode->data + idx + 1);
+            idx += 4;
+            break;
+        }
+
+        std::cout << std::endl;
+    }
+    std::cout << "<< bytecode end >>" << std::endl;
+}
