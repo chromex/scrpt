@@ -8,9 +8,12 @@
 // TODO: Only need to push a scope if it has new locals
 // TODO: Need to sum locals 
 
+// TODO: More scopes! for, if, block, while, do, etc.
+
 namespace scrpt
 {
     BytecodeGen::BytecodeGen()
+        : _fd(nullptr)
     {
     }
 
@@ -54,28 +57,17 @@ namespace scrpt
         auto ident = children.front();
         this->Verify(ident, Symbol::Ident);
 
-        // Get the params
-        std::vector<std::string> params;
-        for (auto paramIter = ++children.begin(); paramIter != children.end(); ++paramIter)
-        {
-            // LBracket is the actual function impl node 
-            if (paramIter->GetSym() == Symbol::LBracket) break;
+        // TODO: Check for redefinition of function name
 
-            this->Verify(*paramIter, Symbol::Ident);
-            params.push_back(paramIter->GetToken()->GetString());
-        }
-        Assert(params.size() == children.size() - 2, "Function child nodes don't compute");
-
-        if (params.size() > 255)
+        size_t nParam = children.size() - 2;
+        if (nParam > 255)
         {
             // TODO: Check param count (255 max)
             AssertFail("Need a real error here");
         }
 
-        // TODO: Check for redefinition of function name
-
         _functionLookup[ident.GetToken()->GetString()] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)params.size(), 0xFFFFFFFF });
+        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0xFFFFFFFF });
     }
 
     void BytecodeGen::CompileFunction(const AstNode& node)
@@ -83,9 +75,23 @@ namespace scrpt
         auto ident = node.GetFirstChild();
 
         // Update function table with bytecode offset
-        _functions[_functionLookup[ident.GetToken()->GetString()]].entry = (unsigned int)_byteBuffer.size();
+        _fd = &_functions[_functionLookup[ident.GetToken()->GetString()]];
+        _fd->entry = (unsigned int)_byteBuffer.size();
 
-        // TODO: Record params / snap scope
+        // Start function scope
+        this->PushScope();
+
+        // Get the params
+        auto children = node.GetChildren();
+        size_t nParam = children.size() - 2;
+        size_t nParamAdded = 0;
+        for (auto paramIter = ++children.rbegin(); nParamAdded < nParam; ++paramIter)
+        {
+            this->Verify(*paramIter, Symbol::Ident);
+            int offset = this->AddParam(paramIter->GetToken()->GetString());
+            _fd->localLookup[offset] = paramIter->GetToken()->GetString();
+            ++nParamAdded;
+        }
         
         auto block = node.GetLastChild();
         this->Verify(block, Symbol::LBracket);
@@ -95,7 +101,16 @@ namespace scrpt
             this->CompileStatement(statement);
         }
 
-        // TODO: If no return added, add one
+        // Add an implicit return if none there was no explicit one
+        if ((OpCode)_byteBuffer.back() != OpCode::Ret)
+        {
+            this->AddOp(OpCode::PushNull);
+            this->AddOp(OpCode::Ret);
+        }
+
+        this->PopScope();
+
+        _fd = nullptr;
     }
 
     void BytecodeGen::CompileStatement(const AstNode& node)
@@ -167,8 +182,7 @@ namespace scrpt
             break;
 
         case Symbol::Ident:
-            // TODO: Need ident offset
-            this->AddOp(OpCode::PushIdent, int(0xFFFFFFFF));
+            this->AddOp(OpCode::PushIdent, this->LookupIdentOffset(node.GetToken()->GetString()));
             break;
 
         case Symbol::Terminal:
@@ -194,8 +208,7 @@ namespace scrpt
 
             Assert(node.GetChildren().size() == 2, "Unexpected number of children");
             this->CompileExpression(node.GetSecondChild());
-            // TODO: Need ident offset
-            this->AddOp(this->MapUnaryAssignOp(node.GetSym()), int(0xFFFFFFFF));
+            this->AddOp(this->MapUnaryAssignOp(node.GetSym()), this->AddLocal(node.GetFirstChild().GetToken()->GetString()));
             break;
 
         case Symbol::Eq:
@@ -220,32 +233,14 @@ namespace scrpt
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            if (node.IsPostfix())
-            {
-                // TODO: Ident offset
-                this->AddOp(OpCode::PostIncI, int(0xFFFFFFFF));
-            }
-            else
-            {
-                // TODO: Ident offset
-                this->AddOp(OpCode::IncI, int(0xFFFFFFFF));
-            }
+            this->AddOp(node.IsPostfix() ? OpCode::PostIncI : OpCode::IncI, this->LookupIdentOffset(node.GetFirstChild().GetToken()->GetString()));
             break;
 
         case Symbol::MinusMinus:
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            if (node.IsPostfix())
-            {
-                // TODO: Ident offset
-                this->AddOp(OpCode::PostDecI, int(0xFFFFFFFF));
-            }
-            else
-            {
-                // TODO: Ident offset
-                this->AddOp(OpCode::DecI, int(0xFFFFFFFF));
-            }
+            this->AddOp(node.IsPostfix() ? OpCode::PostDecI : OpCode::DecI, this->LookupIdentOffset(node.GetFirstChild().GetToken()->GetString()));
             break;
 
         case Symbol::LParen:
@@ -355,8 +350,14 @@ namespace scrpt
             AssertFail("Need a real error here");
         }
 
-        // TODO: Push params
+        auto children = node.GetChildren();
+        for (auto child = ++children.begin(); child != children.end(); ++child)
+        {
+            this->CompileExpression(*child);
+        }
         this->AddOp(OpCode::Call, funcId);
+        for (int count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
+        this->AddOp(OpCode::RestoreRet);
     }
 
     size_t BytecodeGen::AddOp(OpCode op)
@@ -456,6 +457,89 @@ namespace scrpt
             // TODO: Compiler bug ex vs compilation bug ex?
             return OpCode::Unknown;
         }
+    }
+
+    void BytecodeGen::PushScope()
+    {
+        _scopeStack.push_back(std::map<std::string, int>());
+        if (_scopeStack.size() == 1)
+        {
+            _paramOffset = -1;
+            _localOffset = 0;
+        }
+    }
+
+    void BytecodeGen::PopScope()
+    {
+        Assert(_scopeStack.size() > 0, "Can't pop an empty stack");
+        _scopeStack.pop_back();
+    }
+
+    int BytecodeGen::AddParam(const char* ident)
+    {
+        AssertNotNull(ident);
+        Assert(_scopeStack.size() == 1, "Params can only be added at root scope");
+
+        int offset;
+        if (this->LookupIdentOffset(ident, &offset))
+        {
+            // TODO
+            AssertFail("Real error");
+            //CreateBytecodeGenEx("Duplicate function parameter name", BytecodeGenErr::DuplicateParam, )
+        }
+
+        offset = _paramOffset--;
+        _scopeStack.back()[ident] = offset;
+        return offset;
+    }
+
+    int BytecodeGen::AddLocal(const char* ident)
+    {
+        AssertNotNull(ident);
+
+        int offset;
+        if (!this->LookupIdentOffset(ident, &offset))
+        {
+            offset = _localOffset++;
+            _scopeStack.back()[ident] = offset; 
+            _fd->localLookup[offset] = ident;
+        }
+
+        return offset;
+    }
+
+    int BytecodeGen::LookupIdentOffset(const char* ident) const
+    {
+        int offset;
+        if (!this->LookupIdentOffset(ident, &offset))
+        {
+            // TODO: Throw a real error
+            AssertFail("Real error");
+        }
+
+        return offset;
+    }
+
+    bool BytecodeGen::LookupIdentOffset(const char* ident, int* id) const
+    {
+        AssertNotNull(ident);
+        AssertNotNull(id);
+
+        size_t idx = _scopeStack.size();
+        if (idx == 0) return false;
+
+        do
+        {
+            --idx;
+            auto entry = _scopeStack[idx].find(ident);
+            if (entry != _scopeStack[idx].end())
+            {
+                *id = entry->second;
+                return true;
+            }
+        } while (idx > 0);
+
+        return false;
     }
 
     const char* BytecodeGenErrToString(BytecodeGenErr err)

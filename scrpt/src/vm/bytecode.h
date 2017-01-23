@@ -40,6 +40,7 @@ namespace scrpt
         BrF, // unsigned int bytecode location
         Jmp, // unsigned int bytecode locaiton
         Ret,
+        RestoreRet,
         __Num,
     };
     const char* OpCodeToString(OpCode code);
@@ -49,6 +50,7 @@ namespace scrpt
         std::string name;
         unsigned char nParam;
         unsigned int entry;
+        std::map<int, std::string> localLookup;
     };
 
     struct Bytecode

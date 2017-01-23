@@ -15,12 +15,11 @@ void scrpt::Tests::RunTestsBytecodeGen(unsigned int* passed, unsigned int* faile
 func main() {
     sum = 0;
     for (i = 0; i < 1000; ++i)
-        if (test(i))
+        if (test(i, 5, 3))
             sum += i;
-    return sum;
 }
 
-func test(val) { return i % 5 == 0 || i % 3 == 0; }
+func test(val, m, v) { return val % m == 0 || val % v == 0; }
 )testCode"));
 
     ACCUMTEST(TestBytecodeGen("Hello World2", true, R"testCode(

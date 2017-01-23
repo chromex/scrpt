@@ -10,10 +10,6 @@ namespace scrpt
         void Consume(const AstNode& ast);
         void DumpBytecode();
 
-        // Add string
-        // Add func: name, n args
-        // Add instr
-
     private:
         void RecordFunction(const AstNode& node);
         void CompileFunction(const AstNode& node);
@@ -35,9 +31,20 @@ namespace scrpt
         OpCode MapBinaryOp(Symbol sym) const;
         OpCode MapUnaryAssignOp(Symbol sym) const;
 
+        void PushScope();
+        void PopScope();
+        int AddParam(const char* ident);
+        int AddLocal(const char* ident);
+        bool LookupIdentOffset(const char* ident, int* id) const;
+        int LookupIdentOffset(const char* ident) const;
+
         std::vector<unsigned char> _byteBuffer;
         std::vector<FunctionData> _functions;
         std::map<std::string, unsigned int> _functionLookup;
+        std::vector< std::map<std::string, int> > _scopeStack;
+        int _paramOffset;
+        int _localOffset;
+        FunctionData* _fd;
     };
 
     enum class BytecodeGenErr
