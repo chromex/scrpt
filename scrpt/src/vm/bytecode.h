@@ -44,13 +44,18 @@ namespace scrpt
     };
     const char* OpCodeToString(OpCode code);
 
+    struct FunctionData
+    {
+        std::string name;
+        unsigned char nParam;
+        unsigned int entry;
+    };
+
     struct Bytecode
     {
-        unsigned char* data;
-        unsigned int len;
-        // function table
+        std::vector<unsigned char> data;
+        std::vector<FunctionData> functions;
         // string table
-        
     };
 
     void Decompile(Bytecode* bytecode);

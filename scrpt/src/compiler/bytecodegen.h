@@ -15,6 +15,7 @@ namespace scrpt
         // Add instr
 
     private:
+        void RecordFunction(const AstNode& node);
         void CompileFunction(const AstNode& node);
         void CompileStatement(const AstNode& node);
         bool CompileExpression(const AstNode& node);
@@ -35,6 +36,8 @@ namespace scrpt
         OpCode MapUnaryAssignOp(Symbol sym) const;
 
         std::vector<unsigned char> _byteBuffer;
+        std::vector<FunctionData> _functions;
+        std::map<std::string, unsigned int> _functionLookup;
     };
 
     enum class BytecodeGenErr

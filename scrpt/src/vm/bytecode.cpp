@@ -54,12 +54,18 @@ void scrpt::Decompile(Bytecode* bytecode)
 {
     AssertNotNull(bytecode);
 
-    // TODO: Dump function table
     // TODO: Dump string table
     // TODO: Annotate when a new function starts
 
-    std::cout << "<< bytecode begin >>" << std::endl;
-    for (unsigned int idx = 0; idx < bytecode->len; ++idx)
+    std::cout << "[FUNCTIONS]" << std::endl;
+    for (const FunctionData& func : bytecode->functions)
+    {
+        std::cout << func.name << "/" << (int)func.nParam << " entry: " << func.entry << std::endl;
+    }
+
+    std::cout << "[BYTECODE]" << std::endl;
+    unsigned char* data = &bytecode->data[0];
+    for (unsigned int idx = 0; idx < bytecode->data.size(); ++idx)
     {
         std::cout << std::setfill('0') << std::setw(4) << idx << " ";
 
@@ -76,7 +82,7 @@ void scrpt::Decompile(Bytecode* bytecode)
         switch (op)
         {
         case OpCode::PushFloat:
-            std::cout << " " << *(float *)(bytecode->data + idx + 1);
+            std::cout << " " << *(float *)(data + idx + 1);
             idx += 4;
             break;
 
@@ -92,7 +98,7 @@ void scrpt::Decompile(Bytecode* bytecode)
         case OpCode::DecI:
         case OpCode::PostIncI:
         case OpCode::PostDecI:
-            std::cout << " " << *(int *)(bytecode->data + idx + 1);
+            std::cout << " " << *(int *)(data + idx + 1);
             idx += 4;
             break;
 
@@ -101,12 +107,16 @@ void scrpt::Decompile(Bytecode* bytecode)
         case OpCode::BrT:
         case OpCode::BrF:
         case OpCode::Jmp:
-            std::cout << " " << *(unsigned int *)(bytecode->data + idx + 1);
+            std::cout << " " << *(unsigned int *)(data + idx + 1);
             idx += 4;
             break;
         }
 
+        if (op == OpCode::Call)
+        {
+            std::cout << " ; " << bytecode->functions[*(unsigned int *)(data + idx - 3)].name;
+        }
+
         std::cout << std::endl;
     }
-    std::cout << "<< bytecode end >>" << std::endl;
 }

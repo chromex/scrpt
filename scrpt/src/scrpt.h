@@ -6,6 +6,7 @@
 #include <list>
 #include <stdexcept>
 #include <vector>
+#include <map>
 #include <iomanip>
 namespace fs = std::experimental::filesystem;
 

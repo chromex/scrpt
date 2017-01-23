@@ -18,16 +18,15 @@ namespace scrpt
     {
         for (auto node : ast.GetChildren())
         {
+            this->RecordFunction(node);
+        }
+
+        for (auto node : ast.GetChildren())
+        {
             this->CompileFunction(node);
         }
 
-        // Loop over root level nodes and call compile function
-        // Accumulate intermediate bytecode
-        // Create table of functions
         // Build final bytecode with function instruction offsets
-
-        // Question: do we need an intermediate byte?
-        // What about functions we can't map? 
 
         // Compile time arrity check
         // Runtime arrity check
@@ -37,25 +36,26 @@ namespace scrpt
 
     void BytecodeGen::DumpBytecode()
     {
+        _byteBuffer.resize(_byteBuffer.size());
         Bytecode bytecode;
-        bytecode.data = &_byteBuffer[0];
-        bytecode.len = (unsigned int)_byteBuffer.size();
+        bytecode.data = std::move(_byteBuffer);
+        bytecode.functions = std::move(_functions);
         Decompile(&bytecode);
-
-        // Dump function table
-        // Dump string table
-        // Dump byte code
     }
 
-    void BytecodeGen::CompileFunction(const AstNode& node)
+    void BytecodeGen::RecordFunction(const AstNode& node)
     {
+        // Check the node
         this->Verify(node, Symbol::Func);
         auto children = node.GetChildren();
         Assert(children.size() >= 2, "Func node is missing minimum children of ident and block");
+
+        // Get the name
         auto ident = children.front();
         this->Verify(ident, Symbol::Ident);
+
+        // Get the params
         std::vector<std::string> params;
-        TraceInfo("Func: " << ident.GetToken()->GetString());
         for (auto paramIter = ++children.begin(); paramIter != children.end(); ++paramIter)
         {
             // LBracket is the actual function impl node 
@@ -63,13 +63,31 @@ namespace scrpt
 
             this->Verify(*paramIter, Symbol::Ident);
             params.push_back(paramIter->GetToken()->GetString());
-            TraceInfo("Param: " << params.back());
         }
         Assert(params.size() == children.size() - 2, "Function child nodes don't compute");
 
+        if (params.size() > 255)
+        {
+            // TODO: Check param count (255 max)
+            AssertFail("Need a real error here");
+        }
+
+        // TODO: Check for redefinition of function name
+
+        _functionLookup[ident.GetToken()->GetString()] = (unsigned int)_functions.size();
+        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)params.size(), 0xFFFFFFFF });
+    }
+
+    void BytecodeGen::CompileFunction(const AstNode& node)
+    {
+        auto ident = node.GetFirstChild();
+
+        // Update function table with bytecode offset
+        _functions[_functionLookup[ident.GetToken()->GetString()]].entry = (unsigned int)_byteBuffer.size();
+
         // TODO: Record params / snap scope
         
-        auto block = children.back();
+        auto block = node.GetLastChild();
         this->Verify(block, Symbol::LBracket);
 
         for (auto statement : block.GetChildren())
@@ -324,11 +342,21 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::LParen, "Unexpected node");
         Assert(node.GetChildren().size() >= 1, "Unexpected child count on Call node");
 
+        auto ident = node.GetFirstChild();
+        this->Verify(ident, Symbol::Ident);
+        size_t nParam = node.GetChildren().size() - 1;
+
+        // TODO: Check too many params (> 255)
+        unsigned int funcId = _functionLookup[node.GetFirstChild().GetToken()->GetString()];
+
+        if ((unsigned char)nParam != _functions[funcId].nParam)
+        {
+            // TODO
+            AssertFail("Need a real error here");
+        }
+
         // TODO: Push params
-        // TODO: Need to be able to revisit this bytecode...
-        // TODO: Arrity check... push nArgs in stack frame? 
-        // TODO: Need func id
-        this->AddOp(OpCode::Call, unsigned int(0xFFFFFFFF));
+        this->AddOp(OpCode::Call, funcId);
     }
 
     size_t BytecodeGen::AddOp(OpCode op)
