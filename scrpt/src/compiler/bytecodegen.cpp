@@ -31,7 +31,6 @@ namespace scrpt
 
         // Build final bytecode with function instruction offsets
 
-        // Compile time arrity check
         // Runtime arrity check
 
         // String table
@@ -101,6 +100,7 @@ namespace scrpt
             this->CompileStatement(statement);
         }
 
+        // TODO: this is wrong
         // Add an implicit return if none there was no explicit one
         if ((OpCode)_byteBuffer.back() != OpCode::Ret)
         {
@@ -341,7 +341,6 @@ namespace scrpt
         this->Verify(ident, Symbol::Ident);
         size_t nParam = node.GetChildren().size() - 1;
 
-        // TODO: Check too many params (> 255)
         unsigned int funcId = _functionLookup[node.GetFirstChild().GetToken()->GetString()];
 
         if ((unsigned char)nParam != _functions[funcId].nParam)
