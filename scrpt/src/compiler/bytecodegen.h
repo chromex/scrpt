@@ -33,10 +33,10 @@ namespace scrpt
 
         void PushScope();
         void PopScope();
-        int AddParam(const char* ident);
+        int AddParam(const AstNode& node);
         int AddLocal(const char* ident);
         bool LookupIdentOffset(const char* ident, int* id) const;
-        int LookupIdentOffset(const char* ident) const;
+        int LookupIdentOffset(const AstNode& node) const;
 
         std::vector<unsigned char> _byteBuffer;
         std::vector<FunctionData> _functions;
@@ -51,6 +51,12 @@ namespace scrpt
     {
         NoError,
         UnexpectedToken,
+        FunctionRedefinition,
+        ParamCountExceeded,
+        NoSuchFunction,
+        IncorrectArity,
+        NoSuchIdent,
+        DuplicateParameter,
     };
     const char* BytecodeGenErrToString(BytecodeGenErr err);
 }

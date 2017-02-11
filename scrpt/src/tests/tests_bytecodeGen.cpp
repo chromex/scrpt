@@ -11,36 +11,7 @@ void scrpt::Tests::RunTestsBytecodeGen(unsigned int* passed, unsigned int* faile
     AssertNotNull(failed);
 
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
-    ACCUMTEST(TestBytecodeGen("Hello World", true, R"testCode(
-func main() {
-    sum = 0;
-    for (i = 0; i < 1000; ++i)
-        if (test(i, 5, 3))
-            sum += i;
-}
-
-func test(val, m, v) { return val % m == 0 || val % v == 0; }
-)testCode"));
-
-    ACCUMTEST(TestBytecodeGen("Hello World2", true, R"testCode(
-func main() {
-    sum = 0;
-    val1 = 1;
-    val2 = 2;
-
-    while (val2 < 4000000)
-    {
-         if (val2 % 2 == 0) sum += val2;
-         t = val2;
-         val2 += val1;
-         val1 = t;
-    }
-
-    return sum;
-}
-)testCode"));
-
-    ACCUMTEST(TestBytecodeGen("Basic Do", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Basic Do Loop", true, R"testCode(
 func main() {
     sum = 0;
     do
@@ -48,6 +19,15 @@ func main() {
         ++sum;
     } while(sum < 100000);
     return sum;
+}
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Basic For Loop", true, R"testCode(
+func main() {
+    for (sum = 0; sum < 10; sum += i)
+    {
+        i = 0;
+    }
 }
 )testCode"));
 }

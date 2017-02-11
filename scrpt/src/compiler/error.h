@@ -25,5 +25,6 @@ namespace scrpt
     CompilerException CreateLexerEx(LexErr err, std::shared_ptr<Token> token);
     CompilerException CreateParseEx(ParseErr err, std::shared_ptr<Token> token);
     CompilerException CreateParseEx(const std::string& message, ParseErr err, std::shared_ptr<Token> token);
+    CompilerException CreateBytecodeGenEx(BytecodeGenErr err, std::shared_ptr<Token> token);
     CompilerException CreateBytecodeGenEx(const std::string& message, BytecodeGenErr err, std::shared_ptr<Token> token);
 }

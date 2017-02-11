@@ -80,6 +80,17 @@ namespace scrpt
         return CompilerException(ss.str(), token, err, LexErr::NoError, BytecodeGenErr::NoError);
     }
 
+    CompilerException CreateBytecodeGenEx(BytecodeGenErr err, std::shared_ptr<Token> token)
+    {
+        AssertNotNull(token);
+
+        std::stringstream ss;
+        ss << "Bytecode Gen Failure: " << BytecodeGenErrToString(err) << std::endl;
+        ss << token->GetFormattedTokenCode();
+
+        return CompilerException(ss.str(), token, ParseErr::NoError, LexErr::NoError, err);
+    }
+
     CompilerException CreateBytecodeGenEx(const std::string& message, BytecodeGenErr err, std::shared_ptr<Token> token)
     {
         AssertNotNull(token);

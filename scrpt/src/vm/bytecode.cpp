@@ -67,87 +67,90 @@ void scrpt::Decompile(Bytecode* bytecode)
     }
 
     std::cout << "[BYTECODE]" << std::endl;
-    unsigned char* data = &bytecode->data[0];
-    unsigned int currentFunction = -1;
-    for (unsigned int idx = 0; idx < bytecode->data.size(); ++idx)
+    if (bytecode->data.size() > 0)
     {
-        auto entry = functionEntryMap.find(idx);
-        if (entry != functionEntryMap.end())
+        unsigned char* data = &bytecode->data[0];
+        unsigned int currentFunction = -1;
+        for (unsigned int idx = 0; idx < bytecode->data.size(); ++idx)
         {
-            currentFunction = entry->second;
-            std::cout << "; begin " << bytecode->functions[entry->second].name << std::endl;
+            auto entry = functionEntryMap.find(idx);
+            if (entry != functionEntryMap.end())
+            {
+                currentFunction = entry->second;
+                std::cout << "; begin " << bytecode->functions[entry->second].name << std::endl;
+            }
+
+            std::cout << std::setfill('0') << std::setw(4) << idx << " ";
+
+            if (bytecode->data[idx] >= (unsigned char)OpCode::__Num)
+            {
+                std::cout << "<< invalid opcode >>" << std::endl;
+                continue;
+            }
+
+            OpCode op = (OpCode)(bytecode->data[idx]);
+
+            std::cout << std::string(OpCodeToString(op)).substr(8);
+
+            float floatVal = *(float *)(data + idx + 1);
+            int intVal = *(int *)(data + idx + 1);
+            unsigned int uintVal = *(unsigned int *)(data + idx + 1);
+
+            switch (op)
+            {
+            case OpCode::PushFloat:
+                std::cout << " " << floatVal;
+                idx += 4;
+                break;
+
+            case OpCode::PushInt:
+            case OpCode::PushIdent:
+            case OpCode::AssignI:
+            case OpCode::PlusEqI:
+            case OpCode::MinusEqI:
+            case OpCode::MultEqI:
+            case OpCode::DivEqI:
+            case OpCode::ModuloEqI:
+            case OpCode::IncI:
+            case OpCode::DecI:
+            case OpCode::PostIncI:
+            case OpCode::PostDecI:
+                std::cout << " " << intVal;
+                idx += 4;
+                break;
+
+            case OpCode::PushString:
+            case OpCode::Call:
+            case OpCode::BrT:
+            case OpCode::BrF:
+            case OpCode::Jmp:
+                std::cout << " " << uintVal;
+                idx += 4;
+                break;
+            }
+
+            switch (op)
+            {
+            case OpCode::Call:
+                std::cout << " ; " << bytecode->functions[uintVal].name;
+                break;
+
+            case OpCode::PushIdent:
+            case OpCode::AssignI:
+            case OpCode::PlusEqI:
+            case OpCode::MinusEqI:
+            case OpCode::MultEqI:
+            case OpCode::DivEqI:
+            case OpCode::ModuloEqI:
+            case OpCode::IncI:
+            case OpCode::DecI:
+            case OpCode::PostIncI:
+            case OpCode::PostDecI:
+                std::cout << " ; " << bytecode->functions[currentFunction].localLookup[intVal];
+                break;
+            }
+
+            std::cout << std::endl;
         }
-
-        std::cout << std::setfill('0') << std::setw(4) << idx << " ";
-
-        if (bytecode->data[idx] >= (unsigned char)OpCode::__Num)
-        {
-            std::cout << "<< invalid opcode >>" << std::endl;
-            continue;
-        }
-
-        OpCode op = (OpCode)(bytecode->data[idx]);
-
-        std::cout << std::string(OpCodeToString(op)).substr(8);
-
-        float floatVal = *(float *)(data + idx + 1);
-        int intVal = *(int *)(data + idx + 1);
-        unsigned int uintVal = *(unsigned int *)(data + idx + 1);
-
-        switch (op)
-        {
-        case OpCode::PushFloat:
-            std::cout << " " << floatVal;
-            idx += 4;
-            break;
-
-        case OpCode::PushInt:
-        case OpCode::PushIdent:
-        case OpCode::AssignI:
-        case OpCode::PlusEqI:
-        case OpCode::MinusEqI:
-        case OpCode::MultEqI:
-        case OpCode::DivEqI:
-        case OpCode::ModuloEqI:
-        case OpCode::IncI:
-        case OpCode::DecI:
-        case OpCode::PostIncI:
-        case OpCode::PostDecI:
-            std::cout << " " << intVal;
-            idx += 4;
-            break;
-
-        case OpCode::PushString:
-        case OpCode::Call:
-        case OpCode::BrT:
-        case OpCode::BrF:
-        case OpCode::Jmp:
-            std::cout << " " << uintVal;
-            idx += 4;
-            break;
-        }
-        
-        switch (op)
-        {
-        case OpCode::Call:
-            std::cout << " ; " << bytecode->functions[uintVal].name;
-            break;
-
-        case OpCode::PushIdent:
-        case OpCode::AssignI:
-        case OpCode::PlusEqI:
-        case OpCode::MinusEqI:
-        case OpCode::MultEqI:
-        case OpCode::DivEqI:
-        case OpCode::ModuloEqI:
-        case OpCode::IncI:
-        case OpCode::DecI:
-        case OpCode::PostIncI:
-        case OpCode::PostDecI:
-            std::cout << " ; " << bytecode->functions[currentFunction].localLookup[intVal];
-            break;
-        }
-
-        std::cout << std::endl;
     }
 }

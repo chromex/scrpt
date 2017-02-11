@@ -2,11 +2,8 @@
 
 #define COMPONENTNAME "BytecodeGen"
 
-// TODO: For the loops, don't use the Statement parse block since we need to supress scope push
-
-// TODO: for decl line has a new scope, for block ALSO has a new scope... same for if's and everything else
+// TODO: Loops decl share scope w/ the associated block
 // TODO: Only need to push a scope if it has new locals
-// TODO: Need to sum locals 
 
 // TODO: More scopes! for, if, block, while, do, etc.
 
@@ -28,12 +25,6 @@ namespace scrpt
         {
             this->CompileFunction(node);
         }
-
-        // Build final bytecode with function instruction offsets
-
-        // Runtime arrity check
-
-        // String table
     }
 
     void BytecodeGen::DumpBytecode()
@@ -55,17 +46,20 @@ namespace scrpt
         // Get the name
         auto ident = children.front();
         this->Verify(ident, Symbol::Ident);
+        std::string name = ident.GetToken()->GetString();
 
-        // TODO: Check for redefinition of function name
+        if (_functionLookup.find(name) != _functionLookup.end())
+        {
+            CreateBytecodeGenEx(BytecodeGenErr::FunctionRedefinition, ident.GetToken());
+        }
 
         size_t nParam = children.size() - 2;
         if (nParam > 255)
         {
-            // TODO: Check param count (255 max)
-            AssertFail("Need a real error here");
+            CreateBytecodeGenEx(BytecodeGenErr::ParamCountExceeded, ident.GetToken());
         }
 
-        _functionLookup[ident.GetToken()->GetString()] = (unsigned int)_functions.size();
+        _functionLookup[name] = (unsigned int)_functions.size();
         _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0xFFFFFFFF });
     }
 
@@ -87,7 +81,7 @@ namespace scrpt
         for (auto paramIter = ++children.rbegin(); nParamAdded < nParam; ++paramIter)
         {
             this->Verify(*paramIter, Symbol::Ident);
-            int offset = this->AddParam(paramIter->GetToken()->GetString());
+            int offset = this->AddParam(*paramIter);
             _fd->localLookup[offset] = paramIter->GetToken()->GetString();
             ++nParamAdded;
         }
@@ -100,9 +94,8 @@ namespace scrpt
             this->CompileStatement(statement);
         }
 
-        // TODO: this is wrong
         // Add an implicit return if none there was no explicit one
-        if ((OpCode)_byteBuffer.back() != OpCode::Ret)
+        if (block.GetLastChild().GetSym() != Symbol::Return)
         {
             this->AddOp(OpCode::PushNull);
             this->AddOp(OpCode::Ret);
@@ -135,7 +128,7 @@ namespace scrpt
 
         case Symbol::Return:
             Assert(node.GetChildren().size() < 2, "Unexpected number of children");
-            if (node.GetChildren().size() == 1)
+            if (node.GetChildren().size() > 0)
             {
                 this->CompileExpression(node.GetFirstChild());
             }
@@ -182,7 +175,7 @@ namespace scrpt
             break;
 
         case Symbol::Ident:
-            this->AddOp(OpCode::PushIdent, this->LookupIdentOffset(node.GetToken()->GetString()));
+            this->AddOp(OpCode::PushIdent, this->LookupIdentOffset(node));
             break;
 
         case Symbol::Terminal:
@@ -233,14 +226,14 @@ namespace scrpt
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostIncI : OpCode::IncI, this->LookupIdentOffset(node.GetFirstChild().GetToken()->GetString()));
+            this->AddOp(node.IsPostfix() ? OpCode::PostIncI : OpCode::IncI, this->LookupIdentOffset(node.GetFirstChild()));
             break;
 
         case Symbol::MinusMinus:
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostDecI : OpCode::DecI, this->LookupIdentOffset(node.GetFirstChild().GetToken()->GetString()));
+            this->AddOp(node.IsPostfix() ? OpCode::PostDecI : OpCode::DecI, this->LookupIdentOffset(node.GetFirstChild()));
             break;
 
         case Symbol::LParen:
@@ -250,7 +243,7 @@ namespace scrpt
             }
             else
             {
-                // TODO ?
+                // TODO: tuples?
             }
             break;
 
@@ -262,28 +255,51 @@ namespace scrpt
         return success;
     }
 
-    // TODO: Support empty node
     void BytecodeGen::CompileFor(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::For, "Unexpected node");
         Assert(node.GetChildren().size() == 4, "Unexpected child count on For node");
-
-        // TODO: New scope
 
         auto beginExpr = node.GetFirstChild();
         auto checkExpr = node.GetSecondChild();
         auto endExpr = node.GetThirdChild();
         auto blockStatement = node.GetLastChild();
 
-        this->CompileExpression(beginExpr);
-        this->AddOp(OpCode::Pop);
+        this->PushScope();
+
+        // TODO: Add note to lessons about bytecode variety
+
+        // Begin
+        if (!beginExpr.IsEmpty())
+        {
+            this->CompileExpression(beginExpr);
+            this->AddOp(OpCode::Pop);
+        }
+
+        // Check
         unsigned int reentry = (unsigned int)_byteBuffer.size();
-        this->CompileExpression(checkExpr);
-        size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+        size_t brIdx = 0;
+        if (!checkExpr.IsEmpty())
+        {
+            this->CompileExpression(checkExpr);
+            brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+        }
+
+        // Block
         this->CompileStatement(blockStatement);
-        this->CompileExpression(endExpr);
+
+        // End 
+        if (!endExpr.IsEmpty())
+        {
+            this->CompileExpression(endExpr);
+        }
         this->AddOp(OpCode::Jmp, reentry);
-        this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+        if (!checkExpr.IsEmpty())
+        {
+            this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+        }
+
+        this->PopScope();
     }
 
     void BytecodeGen::CompileWhile(const AstNode& node)
@@ -308,6 +324,8 @@ namespace scrpt
     {
         Assert(node.GetSym() == Symbol::Do, "Unexpected node");
         Assert(node.GetChildren().size() == 2, "Unexpected child count on Do node");
+
+        // TODO: New scope
 
         unsigned int reentry = (unsigned int)_byteBuffer.size();
         this->CompileStatement(node.GetFirstChild());
@@ -341,12 +359,17 @@ namespace scrpt
         this->Verify(ident, Symbol::Ident);
         size_t nParam = node.GetChildren().size() - 1;
 
-        unsigned int funcId = _functionLookup[node.GetFirstChild().GetToken()->GetString()];
+        auto funcIter = _functionLookup.find(node.GetFirstChild().GetToken()->GetString());
+        if (funcIter == _functionLookup.end())
+        {
+            throw CreateBytecodeGenEx(BytecodeGenErr::NoSuchFunction, node.GetToken());
+        }
+
+        unsigned int funcId = funcIter->second;
 
         if ((unsigned char)nParam != _functions[funcId].nParam)
         {
-            // TODO
-            AssertFail("Need a real error here");
+            throw CreateBytecodeGenEx(BytecodeGenErr::IncorrectArity, node.GetToken());
         }
 
         auto children = node.GetChildren();
@@ -436,7 +459,6 @@ namespace scrpt
         case Symbol::GreaterThanEq: return OpCode::GTE;
         default:
             AssertFail("Unmapped binary op: " << SymbolToString(sym));
-            // TODO: Compiler bug ex vs compilation bug ex?
             return OpCode::Unknown;
         }
     }
@@ -453,7 +475,6 @@ namespace scrpt
         case Symbol::ModuloEq: return OpCode::ModuloEqI;
         default:
             AssertFail("Unmapped unary assign op: " << SymbolToString(sym));
-            // TODO: Compiler bug ex vs compilation bug ex?
             return OpCode::Unknown;
         }
     }
@@ -474,17 +495,16 @@ namespace scrpt
         _scopeStack.pop_back();
     }
 
-    int BytecodeGen::AddParam(const char* ident)
+    int BytecodeGen::AddParam(const AstNode& node)
     {
-        AssertNotNull(ident);
+        Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
         Assert(_scopeStack.size() == 1, "Params can only be added at root scope");
 
         int offset;
+        const char* ident = node.GetToken()->GetString();
         if (this->LookupIdentOffset(ident, &offset))
         {
-            // TODO
-            AssertFail("Real error");
-            //CreateBytecodeGenEx("Duplicate function parameter name", BytecodeGenErr::DuplicateParam, )
+            throw CreateBytecodeGenEx(BytecodeGenErr::DuplicateParameter, node.GetToken());
         }
 
         offset = _paramOffset--;
@@ -507,13 +527,14 @@ namespace scrpt
         return offset;
     }
 
-    int BytecodeGen::LookupIdentOffset(const char* ident) const
+    int BytecodeGen::LookupIdentOffset(const AstNode& node) const
     {
+        Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
+
         int offset;
-        if (!this->LookupIdentOffset(ident, &offset))
+        if (!this->LookupIdentOffset(node.GetToken()->GetString(), &offset))
         {
-            // TODO: Throw a real error
-            AssertFail("Real error");
+            throw CreateBytecodeGenEx(BytecodeGenErr::NoSuchIdent, node.GetToken());
         }
 
         return offset;
@@ -547,6 +568,12 @@ namespace scrpt
         {
             ENUM_CASE_TO_STRING(BytecodeGenErr::NoError);
             ENUM_CASE_TO_STRING(BytecodeGenErr::UnexpectedToken);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::FunctionRedefinition);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::ParamCountExceeded);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::NoSuchFunction);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::IncorrectArity);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::NoSuchIdent);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::DuplicateParameter);
 
         default:
             AssertFail("Missing case for BytecodeGenErr");
