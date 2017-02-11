@@ -24,10 +24,41 @@ func main() {
 
     ACCUMTEST(TestBytecodeGen("Basic For Loop", true, R"testCode(
 func main() {
-    for (sum = 0; sum < 10; sum += i)
-    {
+    for (sum = 0; sum < 10; sum += 1)
         i = 0;
+}
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Basic While Loop", true, R"testCode(
+func main() {
+    while (true) {}
+}
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Basic Bracket", true, R"testCode(
+func main() {
+    i = 0;
+    {
+        sum = i + 1;
     }
+    return i;
+}
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("For Loop Emtpy Children", true, R"testCode(
+func main() {
+    for (i = 0; ; ++i) {}
+
+    a = 0;
+    for (; a < 10; ++a) {}
+
+    for (i = 0; i < 10; ) {}
+}
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Basic If", true, R"testCode(
+func main() {
+    if (true) {}
 }
 )testCode"));
 }

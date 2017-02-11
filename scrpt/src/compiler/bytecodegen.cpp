@@ -2,11 +2,6 @@
 
 #define COMPONENTNAME "BytecodeGen"
 
-// TODO: Loops decl share scope w/ the associated block
-// TODO: Only need to push a scope if it has new locals
-
-// TODO: More scopes! for, if, block, while, do, etc.
-
 namespace scrpt
 {
     BytecodeGen::BytecodeGen()
@@ -140,11 +135,12 @@ namespace scrpt
             break;
 
         case Symbol::LBracket:
-            // TODO: Push scope?
+            this->PushScope();
             for (auto child : node.GetChildren())
             {
                 this->CompileStatement(child);
             }
+            this->PopScope();
             break;
 
         default:
@@ -286,7 +282,9 @@ namespace scrpt
         }
 
         // Block
+        this->PushScope();
         this->CompileStatement(blockStatement);
+        this->PopScope();
 
         // End 
         if (!endExpr.IsEmpty())
@@ -307,17 +305,21 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::While, "Unexpected node");
         Assert(node.GetChildren().size() == 2, "Unexpected child count on While node");
 
-        // TODO: New scope
-
         auto checkExpr = node.GetFirstChild();
         auto blockStatement = node.GetLastChild();
+
+        this->PushScope();
 
         unsigned int reentry = (unsigned int)_byteBuffer.size();
         this->CompileExpression(checkExpr);
         size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+        this->PushScope();
         this->CompileStatement(blockStatement);
+        this->PopScope();
         this->AddOp(OpCode::Jmp, reentry);
         this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+
+        this->PopScope();
     }
 
     void BytecodeGen::CompileDo(const AstNode& node)
@@ -325,12 +327,16 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::Do, "Unexpected node");
         Assert(node.GetChildren().size() == 2, "Unexpected child count on Do node");
 
-        // TODO: New scope
+        this->PushScope();
 
         unsigned int reentry = (unsigned int)_byteBuffer.size();
+        this->PushScope();
         this->CompileStatement(node.GetFirstChild());
+        this->PopScope();
         this->CompileExpression(node.GetSecondChild());
         this->AddOp(OpCode::BrT, reentry);
+
+        this->PopScope();
     }
 
     void BytecodeGen::CompileIf(const AstNode& node)
@@ -338,16 +344,21 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::If, "Unexpected node");
         Assert(node.GetChildren().size() >= 2, "Unexpected child count on If node");
 
-        // TODO: New scope
         // TODO: ElIf and Else support
 
         auto checkExpr = node.GetFirstChild();
         auto blockStatement = node.GetSecondChild();
 
+        this->PushScope();
+
         this->CompileExpression(checkExpr);
         size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+        this->PushScope();
         this->CompileStatement(blockStatement);
+        this->PopScope();
         this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+
+        this->PopScope();
     }
 
     void BytecodeGen::CompileCall(const AstNode& node)
