@@ -11,6 +11,7 @@ namespace scrpt
         void RunTestsParser(unsigned int* passed, unsigned int* failed);
         void RunTestsLexer(unsigned int* passed, unsigned int* failed);
         void RunTestsBytecodeGen(unsigned int* passed, unsigned int* failed);
+        void RunTestsVM(unsigned int* passed, unsigned int* failed);
     }
 }
 

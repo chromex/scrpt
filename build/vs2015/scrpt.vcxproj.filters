@@ -65,6 +65,9 @@
     <ClCompile Include="..\..\scrpt\src\vm\vm.cpp">
       <Filter>Source Files\vm</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\tests\tests_vm.cpp">
+      <Filter>Source Files\tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">

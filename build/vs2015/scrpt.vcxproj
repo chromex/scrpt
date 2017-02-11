@@ -149,6 +149,7 @@
     <ClCompile Include="..\..\scrpt\src\tests\tests_bytecodeGen.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests_lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests_parser.cpp" />
+    <ClCompile Include="..\..\scrpt\src\tests\tests_vm.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests.cpp" />
