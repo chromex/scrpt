@@ -239,6 +239,7 @@ namespace scrpt
             }
             else
             {
+                AssertFail("Unsupported");
                 // TODO: tuples?
             }
             break;
@@ -344,21 +345,47 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::If, "Unexpected node");
         Assert(node.GetChildren().size() >= 2, "Unexpected child count on If node");
 
-        // TODO: ElIf and Else support
-
-        auto checkExpr = node.GetFirstChild();
-        auto blockStatement = node.GetSecondChild();
+        std::vector<size_t> statementEndJmps;
+        auto childIter = node.GetChildren().begin();
+        size_t nCheckBlocks = node.GetChildren().size() / 2;
 
         this->PushScope();
 
-        this->CompileExpression(checkExpr);
-        size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
-        this->PushScope();
-        this->CompileStatement(blockStatement);
-        this->PopScope();
-        this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+        // If / ElIf blocks
+        for (size_t count = 0; count < nCheckBlocks; ++count)
+        {
+            auto checkExpr = *childIter++;
+            auto blockStatement = *childIter++;
+            this->CompileExpression(checkExpr);
+            size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+            this->PushScope();
+            this->CompileStatement(blockStatement);
+            this->PopScope();
+            if (node.GetChildren().size() > 2)
+            {
+                statementEndJmps.push_back(this->AddOp(OpCode::Jmp, unsigned int(0xFFFFFFFF)));
+            }
+            this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+        }
+
+        // Else block
+        if (childIter != node.GetChildren().end())
+        {
+            auto blockStatement = *childIter++;
+            this->PushScope();
+            this->CompileStatement(blockStatement);
+            this->PopScope();
+        }
+
+        Assert(childIter == node.GetChildren().end(), "Not all If children processed");
 
         this->PopScope();
+
+        // Set the exit jmps for the individual sections
+        for (size_t offset : statementEndJmps)
+        {
+            this->SetOpOperand(offset, (unsigned int)_byteBuffer.size());
+        }
     }
 
     void BytecodeGen::CompileCall(const AstNode& node)

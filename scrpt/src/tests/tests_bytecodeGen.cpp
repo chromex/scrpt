@@ -58,7 +58,9 @@ func main() {
 
     ACCUMTEST(TestBytecodeGen("Basic If", true, R"testCode(
 func main() {
-    if (true) {}
+    if (true) {a = 0;}
+    if (false) {a = 0;} else {b = 0;}
+    if (false) {a = 0;} elif (true) {b = 0;} else {c = 0;}
 }
 )testCode"));
 }

@@ -489,20 +489,17 @@ namespace scrpt
             this->Expect(Symbol::RParen);
             this->ParseStatement(true);
 
-            while (this->Accept(Symbol::ElseIf, true))
+            while (this->Accept(Symbol::ElseIf))
             {
                 this->Expect(Symbol::LParen);
                 this->ParseExpression(true);
                 this->Expect(Symbol::RParen);
                 this->ParseStatement(true);
-
-                this->PopNode();
             }
 
-            if (this->Accept(Symbol::Else, true))
+            if (this->Accept(Symbol::Else))
             {
                 this->ParseStatement(true);
-                this->PopNode();
             }
 
             this->PopNode();
