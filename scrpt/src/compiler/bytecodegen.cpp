@@ -22,13 +22,13 @@ namespace scrpt
         }
     }
 
-    void BytecodeGen::DumpBytecode()
+    Bytecode BytecodeGen::GetBytecode()
     {
         _byteBuffer.resize(_byteBuffer.size());
         Bytecode bytecode;
         bytecode.data = std::move(_byteBuffer);
         bytecode.functions = std::move(_functions);
-        Decompile(&bytecode);
+        return bytecode;
     }
 
     void BytecodeGen::RecordFunction(const AstNode& node)
@@ -416,7 +416,7 @@ namespace scrpt
             this->CompileExpression(*child);
         }
         this->AddOp(OpCode::Call, funcId);
-        for (int count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
+        for (size_t count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
         this->AddOp(OpCode::RestoreRet);
     }
 
@@ -522,7 +522,7 @@ namespace scrpt
         _scopeStack.push_back(std::map<std::string, int>());
         if (_scopeStack.size() == 1)
         {
-            _paramOffset = -1;
+            _paramOffset = -2;
             _localOffset = 0;
         }
     }

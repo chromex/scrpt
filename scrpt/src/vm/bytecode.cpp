@@ -51,44 +51,42 @@ const char* scrpt::OpCodeToString(OpCode code)
     return nullptr;
 }
 
-void scrpt::Decompile(Bytecode* bytecode)
+void scrpt::Decompile(const Bytecode& bytecode)
 {
-    AssertNotNull(bytecode);
-
     // TODO: Dump string table
 
     std::cout << "[FUNCTIONS]" << std::endl;
     std::map<unsigned int, unsigned int> functionEntryMap;
-    for (unsigned int idx = 0; idx < bytecode->functions.size(); ++idx)
+    for (unsigned int idx = 0; idx < bytecode.functions.size(); ++idx)
     {
-        FunctionData& func = bytecode->functions[idx];
+        const FunctionData& func = bytecode.functions[idx];
         std::cout << func.name << "/" << (int)func.nParam << " entry: " << func.entry << std::endl;
         functionEntryMap[func.entry] = idx;
     }
 
     std::cout << "[BYTECODE]" << std::endl;
-    if (bytecode->data.size() > 0)
+    if (bytecode.data.size() > 0)
     {
-        unsigned char* data = &bytecode->data[0];
+        const unsigned char* data = &bytecode.data[0];
         unsigned int currentFunction = -1;
-        for (unsigned int idx = 0; idx < bytecode->data.size(); ++idx)
+        for (unsigned int idx = 0; idx < bytecode.data.size(); ++idx)
         {
             auto entry = functionEntryMap.find(idx);
             if (entry != functionEntryMap.end())
             {
                 currentFunction = entry->second;
-                std::cout << "; begin " << bytecode->functions[entry->second].name << std::endl;
+                std::cout << "; begin " << bytecode.functions[entry->second].name << std::endl;
             }
 
             std::cout << std::setfill('0') << std::setw(4) << idx << " ";
 
-            if (bytecode->data[idx] >= (unsigned char)OpCode::__Num)
+            if (bytecode.data[idx] >= (unsigned char)OpCode::__Num)
             {
                 std::cout << "<< invalid opcode >>" << std::endl;
                 continue;
             }
 
-            OpCode op = (OpCode)(bytecode->data[idx]);
+            OpCode op = (OpCode)(bytecode.data[idx]);
 
             std::cout << std::string(OpCodeToString(op)).substr(8);
 
@@ -132,7 +130,7 @@ void scrpt::Decompile(Bytecode* bytecode)
             switch (op)
             {
             case OpCode::Call:
-                std::cout << " ; " << bytecode->functions[uintVal].name;
+                std::cout << " ; " << bytecode.functions[uintVal].name;
                 break;
 
             case OpCode::PushIdent:
@@ -146,8 +144,15 @@ void scrpt::Decompile(Bytecode* bytecode)
             case OpCode::DecI:
             case OpCode::PostIncI:
             case OpCode::PostDecI:
-                std::cout << " ; " << bytecode->functions[currentFunction].localLookup[intVal];
-                break;
+                {
+                    const scrpt::FunctionData& fd = bytecode.functions[currentFunction];
+                    auto local = fd.localLookup.find(intVal);
+                    if (local != fd.localLookup.end())
+                    {
+                        std::cout << " ; " << local->second;
+                    }
+                    break;
+                }
             }
 
             std::cout << std::endl;

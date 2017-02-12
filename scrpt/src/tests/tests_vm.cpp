@@ -3,7 +3,7 @@
 
 #define COMPONENTNAME "Tests_VM"
 
-static bool TestVM(const char* testName, const char* source);
+static bool TestVM(const char* testName, int resultValue, const char* source);
 
 void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
 {
@@ -11,7 +11,7 @@ void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
     AssertNotNull(failed);
 
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
-    ACCUMTEST(TestVM("Simple counting", R"testCode(
+    ACCUMTEST(TestVM("Simple counting", 100000, R"testCode(
 func main() {
     sum = 0;
     do
@@ -21,9 +21,23 @@ func main() {
     return sum;
 }
 )testCode"));
+
+    ACCUMTEST(TestVM("Fibonacci", 317811, R"testCode(
+func main() {
+    v0 = 0;
+    v1 = 1;
+    while (v1 < 300000)
+    {
+        t = v0 + v1;
+        v0 = v1;
+        v1 = t;
+    }
+    return v1;
+}
+)testCode"));
 }
 
-static bool TestVM(const char* testName, const char* source)
+static bool TestVM(const char* testName, int resultValue, const char* source)
 {
     AssertNotNull(testName);
     AssertNotNull(source);
@@ -38,17 +52,17 @@ static bool TestVM(const char* testName, const char* source)
     {
         parser.Consume(&lexer);
         compiler.Consume(*parser.GetAst());
-        
-        // TODO: Get bytecode object
-        // Give it to a VM
-        // Run it
-        // Get ret val
+        scrpt::Bytecode bytecode = compiler.GetBytecode();
+        Decompile(bytecode);
+        scrpt::VM vm(&bytecode);
+        scrpt::VM::StackVal* ret = vm.Execute("main");
+        err = ret == nullptr || ret->integer != resultValue;
     }
     catch (scrpt::CompilerException& ex)
     {
         std::cout << ex.what() << std::endl;
         err = true;
-        compiler.DumpBytecode();
+        Decompile(compiler.GetBytecode());
     }
 
     if (!err)

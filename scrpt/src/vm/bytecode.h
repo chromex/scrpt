@@ -6,20 +6,9 @@ namespace scrpt
     {
         Unknown,
         PushNull, 
-        PushInt, // int val
-        PushFloat, // float val
-        PushString, // unsigned int string id
         PushTrue, 
         PushFalse,
-        PushIdent, // int ident offset
         Pop, 
-        Call, // unsigned int function offset
-        AssignI, // int ident offset
-        PlusEqI, // int ident offset
-        MinusEqI, // int ident offset
-        MultEqI, // int ident offset
-        DivEqI, // int ident offset
-        ModuloEqI, // int ident offset
         Eq,
         Or,
         And,
@@ -32,6 +21,19 @@ namespace scrpt
         GT,
         LTE,
         GTE,
+        Ret,
+        RestoreRet,
+        PushInt, // int val
+        PushFloat, // float val
+        PushString, // unsigned int string id
+        PushIdent, // int ident offset
+        Call, // unsigned int function offset
+        AssignI, // int ident offset
+        PlusEqI, // int ident offset
+        MinusEqI, // int ident offset
+        MultEqI, // int ident offset
+        DivEqI, // int ident offset
+        ModuloEqI, // int ident offset
         IncI, // int ident offset
         DecI, // int ident offset
         PostIncI, // int ident offset
@@ -39,8 +41,6 @@ namespace scrpt
         BrT, // unsigned int bytecode location
         BrF, // unsigned int bytecode location
         Jmp, // unsigned int bytecode locaiton
-        Ret,
-        RestoreRet,
         __Num,
     };
     const char* OpCodeToString(OpCode code);
@@ -60,5 +60,5 @@ namespace scrpt
         // string table
     };
 
-    void Decompile(Bytecode* bytecode);
+    void Decompile(const Bytecode& bytecode);
 }

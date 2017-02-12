@@ -80,13 +80,13 @@ bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source
     {
         parser.Consume(&lexer);
         compiler.Consume(*parser.GetAst());
-        if (dumpBytecode) compiler.DumpBytecode();
+        if (dumpBytecode) Decompile(compiler.GetBytecode());
     }
     catch (scrpt::CompilerException& ex)
     {
         std::cout << ex.what() << std::endl;
         err = true;
-        compiler.DumpBytecode();
+        Decompile(compiler.GetBytecode());
     }
 
     if (!err)

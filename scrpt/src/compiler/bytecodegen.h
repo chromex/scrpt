@@ -8,7 +8,7 @@ namespace scrpt
         BytecodeGen();
 
         void Consume(const AstNode& ast);
-        void DumpBytecode();
+        Bytecode GetBytecode();
 
     private:
         void RecordFunction(const AstNode& node);
