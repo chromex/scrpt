@@ -5,6 +5,10 @@
 
 static bool TestVM(const char* testName, int resultValue, const char* source);
 
+// TODO: Runtime speed checks
+// TODO: Bubble sort, quick sort
+// TODO: Conways game of life
+
 void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
 {
     AssertNotNull(passed);
@@ -33,6 +37,33 @@ func main() {
         v1 = t;
     }
     return v1;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Simple call", 1, R"testCode(
+func main() {
+    if (Test(1, 2, 3))
+        return 1;
+    
+    return 0;
+}
+
+func Test(a, b, c) {
+    sum = a + b + c;
+    return sum == 6;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Factorial", 6227020800, R"testCode(
+func main() {
+    return Fact(13);
+}
+
+func Fact(v) {
+    if (v == 0)
+        return 1;
+    else
+        return v * Fact(v - 1);
 }
 )testCode"));
 }
