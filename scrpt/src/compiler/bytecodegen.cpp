@@ -485,7 +485,7 @@ namespace scrpt
         {
         case Symbol::Eq: return OpCode::Eq;
         case Symbol::Or: return OpCode::Or;
-        case Symbol::And: return OpCode::Add;
+        case Symbol::And: return OpCode::And;
         case Symbol::Plus: return OpCode::Add;
         case Symbol::Minus: return OpCode::Sub;
         case Symbol::Mult: return OpCode::Mul;

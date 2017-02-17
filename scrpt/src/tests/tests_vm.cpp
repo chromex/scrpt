@@ -54,9 +54,9 @@ func Test(a, b, c) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Factorial", 6227020800, R"testCode(
+    ACCUMTEST(TestVM("Factorial", 479001600, R"testCode(
 func main() {
-    return Fact(13);
+    return Fact(12);
 }
 
 func Fact(v) {

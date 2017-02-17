@@ -70,11 +70,11 @@ namespace scrpt
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
+        this->Pop(2); \
         if (t1 != StackType::Int && t1 != StackType::Float) AssertFail("Runtime error"); \
         if (t2 != StackType::Int && t2 != StackType::Float) AssertFail("Runtime error"); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
-            this->Pop(2); \
             this->PushInt(StackType::Int, v1->v.integer Op v2->v.integer); \
         } \
         else \
@@ -83,6 +83,62 @@ namespace scrpt
             float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer; \
             this->PushFloat(fv1 Op fv2); \
         } \
+    }
+
+    #define ASSIGNMATHOP(Op) \
+    {\
+        StackObj* target = _framePointer + GetOperand(int);\
+        StackObj* value = _stackPointer - 1;\
+        StackType t1 = target->v.type;\
+        StackType t2 = value->v.type;\
+        this->Pop(1);\
+        if (t1 != StackType::Int && t1 != StackType::Float) AssertFail("Runtime error");\
+        if (t2 != StackType::Int && t2 != StackType::Float) AssertFail("Runtime error");\
+        if (t1 == StackType::Float)\
+        {\
+            float result = target->v.fp Op t2 == StackType::Float ? value->v.fp : (float)value->v.integer;\
+            this->PushFloat(result);\
+        }\
+        else\
+        {\
+            int result = target->v.integer Op t2 == StackType::Int ? value->v.integer : (int)value->v.fp;\
+            this->PushInt(StackType::Int, result);\
+        }\
+        _ip += 4;\
+    }
+
+    #define COMPOP(Op)  \
+    { \
+        bool result; \
+        StackObj* v1 = _stackPointer - 2; \
+        StackObj* v2 = _stackPointer - 1; \
+        StackType t1 = v1->v.type; \
+        StackType t2 = v2->v.type; \
+        if (t1 != StackType::Int && t1 != StackType::Float) AssertFail("Runtime error"); \
+        if (t2 != StackType::Int && t2 != StackType::Float) AssertFail("Runtime error"); \
+        if (t1 == StackType::Int && t2 == StackType::Int) \
+        { \
+            result = v1->v.integer Op v2->v.integer; \
+        } \
+        else \
+        { \
+            float fv1 = t1 == StackType::Float ? v1->v.fp : (float)v1->v.integer; \
+            float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer; \
+            result = fv1 Op fv2; \
+        } \
+        this->Pop(2); \
+        this->PushInt(StackType::Boolean, result); \
+    }
+
+    #define BOOLOP(Op) \
+    { \
+        StackObj* v1 = _stackPointer - 2; \
+        StackObj* v2 = _stackPointer - 1; \
+        StackType t1 = v1->v.type; \
+        StackType t2 = v2->v.type; \
+        if (t1 != StackType::Boolean && t2 != StackType::Boolean) AssertFail("Runtime error"); \
+        this->Pop(2); \
+        this->PushInt(StackType::Boolean, v1->v.integer Op v2->v.integer); \
     }
 
     void VM::Run()
@@ -132,8 +188,12 @@ namespace scrpt
                     this->PushInt(StackType::Boolean, result);
                 }
                 break;
-            //case OpCode::Or:
-            //case OpCode::And:
+            case OpCode::Or:
+                BOOLOP(||);
+                break;
+            case OpCode::And:
+                BOOLOP(&&);
+                break;
             case OpCode::Add:
                 MATHOP(+);
                 break;
@@ -148,31 +208,17 @@ namespace scrpt
                 break;
             //case OpCode::Mod:
             case OpCode::LT: 
-                {
-                    bool result;
-                    StackObj* v1 = _stackPointer - 2;
-                    StackObj* v2 = _stackPointer - 1;
-                    StackType t1 = v1->v.type;
-                    StackType t2 = v2->v.type;
-                    if (t1 != StackType::Int && t1 != StackType::Float) AssertFail("Runtime error");
-                    if (t2 != StackType::Int && t2 != StackType::Float) AssertFail("Runtime error");
-                    if (t1 == StackType::Int && t2 == StackType::Int)
-                    {
-                        result = v1->v.integer < v2->v.integer;
-                    }
-                    else
-                    {
-                        float fv1 = t1 == StackType::Float ? v1->v.fp : (float)v1->v.integer;
-                        float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer;
-                        result = fv1 < fv2;
-                    }
-                    this->Pop(2);
-                    this->PushInt(StackType::Boolean, result);
-                }
+                COMPOP(<);
                 break;
-            //case OpCode::GT:
-            //case OpCode::LTE:
-            //case OpCode::GTE:
+            case OpCode::GT:
+                COMPOP(>);
+                break;
+            case OpCode::LTE:
+                COMPOP(<=);
+                break;
+            case OpCode::GTE:
+                COMPOP(>=);
+                break;
             case OpCode::Ret:
                 {
                     this->Copy(_stackPointer - 1, &_returnValue);
@@ -232,10 +278,18 @@ namespace scrpt
                 this->Copy(_stackPointer - 1, _framePointer + GetOperand(int));
                 _ip += 4;
                 break;
-            //case OpCode::PlusEqI:
-            //case OpCode::MinusEqI:
-            //case OpCode::MultEqI:
-            //case OpCode::DivEqI:
+            case OpCode::PlusEqI:
+                ASSIGNMATHOP(+=);
+                break;
+            case OpCode::MinusEqI:
+                ASSIGNMATHOP(-=);
+                break;
+            case OpCode::MultEqI:
+                ASSIGNMATHOP(*=);
+                break;
+            case OpCode::DivEqI:
+                ASSIGNMATHOP(/=);
+                break;
             //case OpCode::ModuloEqI:
             case OpCode::IncI:
                 INCREMENTOP(++obj->v.integer, ++obj->v.fp);
