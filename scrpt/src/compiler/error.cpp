@@ -114,7 +114,7 @@ namespace scrpt
 	CompilerException CreateRuntimeEx(const std::string& message, RuntimeErr err)
 	{
 		std::stringstream ss;
-		ss << "Runtime Failure: " << RuntimeErrToString(err) << ": " << message << std::endl;
+		ss << "Runtime Failure: " << RuntimeErrToString(err) << ": " << message;
 
 		return CompilerException(ss.str(), err);
 	}

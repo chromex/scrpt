@@ -93,7 +93,6 @@ static bool TestVM(const char* testName, int resultValue, const char* source)
     {
         std::cout << ex.what() << std::endl;
         err = true;
-        Decompile(compiler.GetBytecode());
     }
 
     if (!err)

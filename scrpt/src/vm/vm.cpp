@@ -3,7 +3,6 @@
 #define COMPONENTNAME "VM"
 #define STACKSIZE 10000
 
-// TODO: Errors
 // TODO: Basic FFI
 // TODO: Strings / ref count
 // TODO: Release support
@@ -61,8 +60,8 @@ namespace scrpt
             this->PushFloat(FloatOp); \
         else \
 			throw CreateRuntimeEx(StackTypeToString(t), RuntimeErr::UnsupportedOperandType); \
-    } \
-    _ip += 4;
+        _ip += 4; \
+    } 
 
 	#define MATHOP(Op) \
     { \
@@ -136,7 +135,7 @@ namespace scrpt
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        if (t1 != StackType::Boolean && t2 != StackType::Boolean) AssertFail("Runtime error"); \
+        if (t1 != StackType::Boolean && t2 != StackType::Boolean) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
         this->Pop(2); \
         this->PushInt(StackType::Boolean, v1->v.integer Op v2->v.integer); \
     }
@@ -175,13 +174,13 @@ namespace scrpt
                             result = v1->v.fp == v2->v.fp;
                             break;
                         default:
-                            AssertFail("Runtime error");
+                            throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType);
                             break;
                         }
                     }
                     else
                     {
-                        AssertFail("Runtime error");
+                        throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::OperandMismatch);
                     }
 
                     this->Pop(2);
@@ -322,7 +321,7 @@ namespace scrpt
         }
     }
 
-    #define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) AssertFail("Runtime stack overflow");
+    #define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) throw CreateRuntimeEx("", RuntimeErr::StackOverflow);
 
     void VM::PushStackFrame(unsigned int returnIp, int framePointerOffset)
     {
@@ -395,7 +394,7 @@ namespace scrpt
     void VM::ConditionalJump(int test, unsigned int dest)
     {
         StackObj *obj = _stackPointer - 1;
-        if (obj->v.type != StackType::Boolean) AssertFail("Runtime error");
+        if (obj->v.type != StackType::Boolean) throw CreateRuntimeEx(StackTypeToString(obj->v.type), RuntimeErr::UnsupportedOperandType);
         if (obj->v.integer == test)
         {
             _ip = dest - 1;
@@ -436,6 +435,7 @@ namespace scrpt
 			ENUM_CASE_TO_STRING(RuntimeErr::FailedFunctionLookup);
 			ENUM_CASE_TO_STRING(RuntimeErr::UnsupportedOperandType);
 			ENUM_CASE_TO_STRING(RuntimeErr::OperandMismatch);
+            ENUM_CASE_TO_STRING(RuntimeErr::StackOverflow);
 
 		default:
 			AssertFail("Missing case for RuntimeErr");

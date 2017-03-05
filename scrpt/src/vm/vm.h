@@ -12,6 +12,7 @@ namespace scrpt
 		FailedFunctionLookup,
 		UnsupportedOperandType,
 		OperandMismatch,
+        StackOverflow,
 	};
 	const char* RuntimeErrToString(RuntimeErr err);
 
