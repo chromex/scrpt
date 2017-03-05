@@ -238,7 +238,6 @@ namespace scrpt
                         running = false;
                     }
                     this->Pop(); // Stack frame
-                    _callstack.pop_back();
                 }
                 break;
             case OpCode::RestoreRet:
