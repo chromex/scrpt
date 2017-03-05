@@ -4,6 +4,8 @@
 #define STACKSIZE 10000
 
 // TODO: Errors
+// TODO: Basic FFI
+// TODO: Strings / ref count
 // TODO: Release support
 // TODO: Print support
 
@@ -22,7 +24,7 @@ namespace scrpt
         }
     }
 
-    VM::StackVal* VM::Execute(const char* funcName)
+	VM::StackVal* VM::Execute(const char* funcName)
     {
         AssertNotNull(funcName);
 
@@ -45,13 +47,11 @@ namespace scrpt
         }
         else
         {
-            AssertFail("Real error");
-            // TODO
-            return nullptr;
+			throw CreateRuntimeEx(funcName, RuntimeErr::FailedFunctionLookup);
         }
-    }
+	}
 
-    #define INCREMENTOP(IntOp, FloatOp) \
+	#define INCREMENTOP(IntOp, FloatOp) \
     { \
         StackObj* obj = _framePointer + GetOperand(int); \
         StackType t = obj->v.type; \
@@ -60,19 +60,19 @@ namespace scrpt
         else if (t == StackType::Float) \
             this->PushFloat(FloatOp); \
         else \
-            AssertFail("Unsupported operation"); \
+			throw CreateRuntimeEx(StackTypeToString(t), RuntimeErr::UnsupportedOperandType); \
     } \
     _ip += 4;
 
-    #define MATHOP(Op) \
+	#define MATHOP(Op) \
     { \
         StackObj* v1 = _stackPointer - 2; \
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
         this->Pop(2); \
-        if (t1 != StackType::Int && t1 != StackType::Float) AssertFail("Runtime error"); \
-        if (t2 != StackType::Int && t2 != StackType::Float) AssertFail("Runtime error"); \
+        if (t1 != StackType::Int && t1 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t2), RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
             this->PushInt(StackType::Int, v1->v.integer Op v2->v.integer); \
@@ -92,8 +92,8 @@ namespace scrpt
         StackType t1 = target->v.type;\
         StackType t2 = value->v.type;\
         this->Pop(1);\
-        if (t1 != StackType::Int && t1 != StackType::Float) AssertFail("Runtime error");\
-        if (t2 != StackType::Int && t2 != StackType::Float) AssertFail("Runtime error");\
+        if (t1 != StackType::Int && t1 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t2), RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Float)\
         {\
             float result = target->v.fp Op t2 == StackType::Float ? value->v.fp : (float)value->v.integer;\
@@ -114,8 +114,8 @@ namespace scrpt
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        if (t1 != StackType::Int && t1 != StackType::Float) AssertFail("Runtime error"); \
-        if (t2 != StackType::Int && t2 != StackType::Float) AssertFail("Runtime error"); \
+        if (t1 != StackType::Int && t1 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t2), RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
             result = v1->v.integer Op v2->v.integer; \
@@ -406,4 +406,41 @@ namespace scrpt
         }
         this->Pop();
     }
+
+	const char* VM::StackTypeToString(StackType type)
+	{
+		switch (type)
+		{
+			ENUM_CASE_TO_STRING(StackType::Top);
+			ENUM_CASE_TO_STRING(StackType::Null);
+			ENUM_CASE_TO_STRING(StackType::Boolean);
+			ENUM_CASE_TO_STRING(StackType::Int);
+			ENUM_CASE_TO_STRING(StackType::Float);
+			ENUM_CASE_TO_STRING(StackType::StaticString);
+			ENUM_CASE_TO_STRING(StackType::DynamicString);
+			ENUM_CASE_TO_STRING(StackType::List);
+			ENUM_CASE_TO_STRING(StackType::Map);
+
+		default: 
+			AssertFail("Mising case for StackType");
+		}
+
+		return nullptr;
+	}
+
+	const char* RuntimeErrToString(RuntimeErr err)
+	{
+		switch (err)
+		{
+			ENUM_CASE_TO_STRING(RuntimeErr::NoError);
+			ENUM_CASE_TO_STRING(RuntimeErr::FailedFunctionLookup);
+			ENUM_CASE_TO_STRING(RuntimeErr::UnsupportedOperandType);
+			ENUM_CASE_TO_STRING(RuntimeErr::OperandMismatch);
+
+		default:
+			AssertFail("Missing case for RuntimeErr");
+		}
+
+		return nullptr;
+	}
 }

@@ -6,6 +6,15 @@
 
 namespace scrpt
 {
+	enum class RuntimeErr
+	{
+		NoError,
+		FailedFunctionLookup,
+		UnsupportedOperandType,
+		OperandMismatch,
+	};
+	const char* RuntimeErrToString(RuntimeErr err);
+
     class VM
     {
     public:
@@ -23,6 +32,7 @@ namespace scrpt
             List,
             Map,
         };
+		const char* StackTypeToString(StackType type);
 
         struct StackVal
         {

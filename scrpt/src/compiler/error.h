@@ -5,8 +5,10 @@ namespace scrpt
     class CompilerException : public std::exception
     {
     public:
-        explicit CompilerException(const char* message, std::shared_ptr<Token> token, ParseErr parseErr, LexErr lexErr, BytecodeGenErr bytecodeGenErr);
-        explicit CompilerException(const std::string& message, std::shared_ptr<Token> token, ParseErr parseErr, LexErr lexErr, BytecodeGenErr bytecodeGenErr);
+		explicit CompilerException(const std::string& message, std::shared_ptr<Token> token, ParseErr parseErr);
+		explicit CompilerException(const std::string& message, std::shared_ptr<Token> token, LexErr lexErr);
+		explicit CompilerException(const std::string& message, std::shared_ptr<Token> token, BytecodeGenErr bytecodeGenErr);
+		explicit CompilerException(const std::string& message, RuntimeErr err);
 
         virtual char const* what() const;
         std::shared_ptr<Token> GetToken() const;
@@ -20,6 +22,7 @@ namespace scrpt
         ParseErr _parseErr;
         LexErr _lexErr;
         BytecodeGenErr _bytecodeGenErr;
+		RuntimeErr _runtimeErr;
     };
 
     CompilerException CreateLexerEx(LexErr err, std::shared_ptr<Token> token);
@@ -27,4 +30,5 @@ namespace scrpt
     CompilerException CreateParseEx(const std::string& message, ParseErr err, std::shared_ptr<Token> token);
     CompilerException CreateBytecodeGenEx(BytecodeGenErr err, std::shared_ptr<Token> token);
     CompilerException CreateBytecodeGenEx(const std::string& message, BytecodeGenErr err, std::shared_ptr<Token> token);
+	CompilerException CreateRuntimeEx(const std::string& message, RuntimeErr err);
 }
