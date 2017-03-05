@@ -13,6 +13,7 @@ namespace scrpt
 		UnsupportedOperandType,
 		OperandMismatch,
         StackOverflow,
+        StackUnderflow,
 	};
 	const char* RuntimeErrToString(RuntimeErr err);
 
@@ -50,7 +51,7 @@ namespace scrpt
 
     private:
         const Bytecode* _bytecode;
-        std::map<std::string, const FunctionData*> _functionMap;
+        std::map<std::string, unsigned int> _functionMap;
 
         struct StackFrame
         {
@@ -79,6 +80,7 @@ namespace scrpt
         void PushFloat(float val);
         void Copy(StackObj* src, StackObj* dest);
         void Pop(size_t num = 1);
+        void ThrowErr(RuntimeErr err);
 
         void ConditionalJump(int test, unsigned int dest);
     };

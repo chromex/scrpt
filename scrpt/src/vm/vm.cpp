@@ -17,9 +17,9 @@ namespace scrpt
     {
         AssertNotNull(_bytecode);
 
-        for (auto& fd : _bytecode->functions)
+        for (unsigned int id = 0; id < _bytecode->functions.size(); ++id)
         {
-            _functionMap[fd.name] = &fd;
+            _functionMap[_bytecode->functions[id].name] = id;
         }
     }
 
@@ -30,14 +30,15 @@ namespace scrpt
         auto funcIter = _functionMap.find(funcName);
         if (funcIter != _functionMap.end())
         {
-            size_t nLocals = funcIter->second->localLookup.size();
+            const FunctionData& fd = _bytecode->functions[funcIter->second];
+            size_t nLocals = fd.localLookup.size();
 
             _stackPointer = &_stack[0];
-            _ip = funcIter->second->entry;
+            _ip = fd.entry;
             // TODO: Push params
             this->PushStackFrame(0, 0);
             _framePointer = _stackPointer;
-            this->PushNull(nLocals - funcIter->second->nParam);
+            this->PushNull(nLocals - fd.nParam);
             this->Run();
             // TODO: Pop params
 
@@ -59,7 +60,7 @@ namespace scrpt
         else if (t == StackType::Float) \
             this->PushFloat(FloatOp); \
         else \
-			throw CreateRuntimeEx(StackTypeToString(t), RuntimeErr::UnsupportedOperandType); \
+			this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         _ip += 4; \
     } 
 
@@ -70,8 +71,8 @@ namespace scrpt
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
         this->Pop(2); \
-        if (t1 != StackType::Int && t1 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
-        if (t2 != StackType::Int && t2 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t2), RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
             this->PushInt(StackType::Int, v1->v.integer Op v2->v.integer); \
@@ -91,8 +92,8 @@ namespace scrpt
         StackType t1 = target->v.type;\
         StackType t2 = value->v.type;\
         this->Pop(1);\
-        if (t1 != StackType::Int && t1 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
-        if (t2 != StackType::Int && t2 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t2), RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Float)\
         {\
             float result = target->v.fp Op t2 == StackType::Float ? value->v.fp : (float)value->v.integer;\
@@ -113,8 +114,8 @@ namespace scrpt
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        if (t1 != StackType::Int && t1 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
-        if (t2 != StackType::Int && t2 != StackType::Float) throw CreateRuntimeEx(StackTypeToString(t2), RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
             result = v1->v.integer Op v2->v.integer; \
@@ -135,7 +136,7 @@ namespace scrpt
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        if (t1 != StackType::Boolean && t2 != StackType::Boolean) throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Boolean && t2 != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         this->Pop(2); \
         this->PushInt(StackType::Boolean, v1->v.integer Op v2->v.integer); \
     }
@@ -174,13 +175,13 @@ namespace scrpt
                             result = v1->v.fp == v2->v.fp;
                             break;
                         default:
-                            throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::UnsupportedOperandType);
+                            this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                             break;
                         }
                     }
                     else
                     {
-                        throw CreateRuntimeEx(StackTypeToString(t1), RuntimeErr::OperandMismatch);
+                        this->ThrowErr(RuntimeErr::OperandMismatch);
                     }
 
                     this->Pop(2);
@@ -237,6 +238,7 @@ namespace scrpt
                         running = false;
                     }
                     this->Pop(); // Stack frame
+                    _callstack.pop_back();
                 }
                 break;
             case OpCode::RestoreRet:
@@ -264,7 +266,8 @@ namespace scrpt
                 break;
             case OpCode::Call:
                 {
-                    const FunctionData& fd = _bytecode->functions[GetOperand(unsigned int)];
+                    unsigned int funcId = GetOperand(unsigned int);
+                    const FunctionData& fd = _bytecode->functions[funcId];
                     // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
                     int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
                     this->PushStackFrame(_ip + 5, framePointerOffset);
@@ -321,7 +324,7 @@ namespace scrpt
         }
     }
 
-    #define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) throw CreateRuntimeEx("", RuntimeErr::StackOverflow);
+    #define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) this->ThrowErr(RuntimeErr::StackOverflow);
 
     void VM::PushStackFrame(unsigned int returnIp, int framePointerOffset)
     {
@@ -380,7 +383,7 @@ namespace scrpt
     {
         if (_stackPointer == &_stack[0])
         {
-            AssertFail("Runtime stack underflow");
+            this->ThrowErr(RuntimeErr::StackOverflow);
         }
 
         // TODO: De-ref
@@ -391,10 +394,16 @@ namespace scrpt
         }
     }
 
+    void VM::ThrowErr(RuntimeErr err)
+    {
+        // TODO: Create stack trace
+        throw CreateRuntimeEx("", err);
+    }
+
     void VM::ConditionalJump(int test, unsigned int dest)
     {
         StackObj *obj = _stackPointer - 1;
-        if (obj->v.type != StackType::Boolean) throw CreateRuntimeEx(StackTypeToString(obj->v.type), RuntimeErr::UnsupportedOperandType);
+        if (obj->v.type != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
         if (obj->v.integer == test)
         {
             _ip = dest - 1;
