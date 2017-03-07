@@ -12,22 +12,19 @@
     <Filter Include="Source Files\compiler">
       <UniqueIdentifier>{ac9dc06f-785a-4fb8-9648-be23b4465978}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\vm">
-      <UniqueIdentifier>{97572dc9-1814-4768-b383-2b1165d5f865}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\util">
       <UniqueIdentifier>{74d451ea-8d05-4ff6-9d38-cca004b7dd41}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\tests">
       <UniqueIdentifier>{d4110772-f705-4cf1-84b1-166136d4d75d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\vm">
+      <UniqueIdentifier>{97572dc9-1814-4768-b383-2b1165d5f865}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\scrpt\src\main.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\scrpt\src\util\fileio.cpp">
-      <Filter>Source Files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\scrpt\src\util\trace.cpp">
       <Filter>Source Files\util</Filter>
@@ -67,6 +64,9 @@
     </ClCompile>
     <ClCompile Include="..\..\scrpt\src\tests\tests_vm.cpp">
       <Filter>Source Files\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\util\fileio.cpp">
+      <Filter>Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

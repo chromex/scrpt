@@ -20,7 +20,7 @@ namespace scrpt
     class VM
     {
     public:
-        VM(const Bytecode* bytecode);
+        VM();
 
         enum class StackType : int
         {
@@ -47,10 +47,13 @@ namespace scrpt
             };
         };
 
+		void AddSource(std::shared_ptr<const char> source);
+		void Finalize();
         StackVal* Execute(const char* funcName);
 
     private:
-        const Bytecode* _bytecode;
+		std::unique_ptr<Parser> _parser;
+        Bytecode _bytecode;
         std::map<std::string, unsigned int> _functionMap;
 
         struct StackFrame

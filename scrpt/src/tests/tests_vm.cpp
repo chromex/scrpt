@@ -66,6 +66,12 @@ func Fact(v) {
         return v * Fact(v - 1);
 }
 )testCode"));
+
+	ACCUMTEST(TestVM("FFI Test", 1234, R"testCode(
+func main() {
+    return print(12);
+}
+)testCode"));
 }
 
 static bool TestVM(const char* testName, int resultValue, const char* source)
@@ -76,18 +82,14 @@ static bool TestVM(const char* testName, int resultValue, const char* source)
     std::cout << "VM: " << testName << std::endl;
 
     bool err = false;
-    scrpt::Lexer lexer(scrpt::Tests::DuplicateSource(source));
-    scrpt::Parser parser;
-    scrpt::BytecodeGen compiler;
     try
     {
-        parser.Consume(&lexer);
-        compiler.Consume(*parser.GetAst());
-        scrpt::Bytecode bytecode = compiler.GetBytecode();
-        Decompile(bytecode);
-        scrpt::VM vm(&bytecode);
-        scrpt::VM::StackVal* ret = vm.Execute("main");
-        err = ret == nullptr || ret->integer != resultValue;
+		scrpt::VM vm;
+		//scrpt::RegiserSTL(vm); -- NEW
+		vm.AddSource(scrpt::Tests::DuplicateSource(source));
+		vm.Finalize();
+		scrpt::VM::StackVal* ret = vm.Execute("main");
+		err = ret == nullptr || ret->integer != resultValue;
     }
     catch (scrpt::CompilerException& ex)
     {

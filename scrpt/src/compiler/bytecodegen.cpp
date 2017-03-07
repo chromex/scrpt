@@ -400,6 +400,7 @@ namespace scrpt
         auto funcIter = _functionLookup.find(node.GetFirstChild().GetToken()->GetString());
         if (funcIter == _functionLookup.end())
         {
+			// TODO(now): Register new function with external 
             throw CreateBytecodeGenEx(BytecodeGenErr::NoSuchFunction, node.GetToken());
         }
 

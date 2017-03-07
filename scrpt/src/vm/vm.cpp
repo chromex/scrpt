@@ -3,34 +3,55 @@
 #define COMPONENTNAME "VM"
 #define STACKSIZE 10000
 
-// TODO: Basic FFI
 // TODO: Strings / ref count
 // TODO: Release support
-// TODO: Print support
 
 namespace scrpt
 {
-    VM::VM(const Bytecode* bytecode)
-        : _bytecode(bytecode)
-        , _ip(0)
+    VM::VM()
+        : _parser(new Parser())
+		, _ip(0)
         , _stack(STACKSIZE)
     {
-        AssertNotNull(_bytecode);
-
-        for (unsigned int id = 0; id < _bytecode->functions.size(); ++id)
-        {
-            _functionMap[_bytecode->functions[id].name] = id;
-        }
     }
+
+	void VM::AddSource(std::shared_ptr<const char> source)
+	{
+		AssertNotNull(_parser.get());
+		AssertNotNull(source);
+
+		Lexer lexer(source);
+		_parser.get()->Consume(&lexer);
+	}
+
+	void VM::Finalize()
+	{
+		AssertNotNull(_parser.get());
+
+		BytecodeGen compiler;
+		compiler.Consume(*(_parser.get()->GetAst()));
+		_bytecode = compiler.GetBytecode();
+		_parser.reset(nullptr);
+
+		for (unsigned int id = 0; id < _bytecode.functions.size(); ++id)
+		{
+			_functionMap[_bytecode.functions[id].name] = id;
+		}
+	}
 
 	VM::StackVal* VM::Execute(const char* funcName)
     {
         AssertNotNull(funcName);
 
+		if (_parser.get() != nullptr)
+		{
+			this->Finalize();
+		}
+
         auto funcIter = _functionMap.find(funcName);
         if (funcIter != _functionMap.end())
         {
-            const FunctionData& fd = _bytecode->functions[funcIter->second];
+            const FunctionData& fd = _bytecode.functions[funcIter->second];
             size_t nLocals = fd.localLookup.size();
 
             _stackPointer = &_stack[0];
@@ -143,7 +164,7 @@ namespace scrpt
 
     void VM::Run()
     {
-        const unsigned char* data = &(_bytecode->data[0]);
+        const unsigned char* data = &(_bytecode.data[0]);
 
         bool running = true;
         while (running)
@@ -266,7 +287,7 @@ namespace scrpt
             case OpCode::Call:
                 {
                     unsigned int funcId = GetOperand(unsigned int);
-                    const FunctionData& fd = _bytecode->functions[funcId];
+                    const FunctionData& fd = _bytecode.functions[funcId];
                     // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
                     int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
                     this->PushStackFrame(_ip + 5, framePointerOffset);
