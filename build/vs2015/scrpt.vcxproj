@@ -169,6 +169,7 @@
     <ClInclude Include="..\..\scrpt\src\compiler\parser.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\error.h" />
     <ClInclude Include="..\..\scrpt\src\vm\bytecode.h" />
+    <ClInclude Include="..\..\scrpt\src\vm\stack.h" />
     <ClInclude Include="..\..\scrpt\src\vm\vm.h" />
   </ItemGroup>
   <ItemGroup>

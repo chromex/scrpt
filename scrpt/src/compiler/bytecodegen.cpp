@@ -9,6 +9,15 @@ namespace scrpt
     {
     }
 
+    void BytecodeGen::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
+    {
+        AssertNotNull(name);
+        Assert(_functionLookup.find(name) == _functionLookup.end(), "Extern already registered");
+
+        _functionLookup[name] = (unsigned int)_functions.size();
+        _functions.push_back(FunctionData{ name, nParam, 0xFFFFFFFF, true, func });
+    }
+
     void BytecodeGen::Consume(const AstNode& ast)
     {
         for (auto node : ast.GetChildren())
@@ -55,7 +64,7 @@ namespace scrpt
         }
 
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0xFFFFFFFF });
+        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0xFFFFFFFF, false });
     }
 
     void BytecodeGen::CompileFunction(const AstNode& node)
@@ -264,8 +273,6 @@ namespace scrpt
 
         this->PushScope();
 
-        // TODO: Add note to lessons about bytecode variety
-
         // Begin
         if (!beginExpr.IsEmpty())
         {
@@ -400,7 +407,6 @@ namespace scrpt
         auto funcIter = _functionLookup.find(node.GetFirstChild().GetToken()->GetString());
         if (funcIter == _functionLookup.end())
         {
-			// TODO(now): Register new function with external 
             throw CreateBytecodeGenEx(BytecodeGenErr::NoSuchFunction, node.GetToken());
         }
 

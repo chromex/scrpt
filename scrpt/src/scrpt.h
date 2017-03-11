@@ -7,9 +7,12 @@
 #include <stdexcept>
 #include <vector>
 #include <map>
+#include <functional>
 #include <iomanip>
 namespace fs = std::experimental::filesystem;
 
+namespace scrpt { class VM; }
+#include "vm/stack.h"
 #include "util/trace.h"
 #include "util/fileio.h"
 #include "compiler/lexer.h"

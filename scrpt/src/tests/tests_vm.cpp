@@ -40,6 +40,17 @@ func main() {
 }
 )testCode"));
 
+    ACCUMTEST(TestVM("Fibonacci 2", 6765, R"testCode(
+func main() {
+    return fib(20);
+}
+
+func fib(n) {
+    if (n > 2) return fib(n - 1) + fib(n - 2);
+    return 1;
+}
+)testCode"));
+
     ACCUMTEST(TestVM("Simple call", 1, R"testCode(
 func main() {
     if (Test(1, 2, 3))
@@ -69,9 +80,17 @@ func Fact(v) {
 
 	ACCUMTEST(TestVM("FFI Test", 1234, R"testCode(
 func main() {
-    return print(12);
+    return testextern(12, 34);
 }
 )testCode"));
+}
+
+void testextern(scrpt::VM* vm)
+{
+    AssertNotNull(vm);
+    int i = vm->GetParam<int>(scrpt::ParamId::_0);
+    int i2 = vm->GetParam<int>(scrpt::ParamId::_1);
+    vm->PushInt(scrpt::StackType::Int, i * 100 + i2);
 }
 
 static bool TestVM(const char* testName, int resultValue, const char* source)
@@ -85,10 +104,11 @@ static bool TestVM(const char* testName, int resultValue, const char* source)
     try
     {
 		scrpt::VM vm;
-		//scrpt::RegiserSTL(vm); -- NEW
+        vm.AddExternFunc("testextern", 2, testextern);
 		vm.AddSource(scrpt::Tests::DuplicateSource(source));
 		vm.Finalize();
-		scrpt::VM::StackVal* ret = vm.Execute("main");
+        vm.Decompile();
+		scrpt::StackVal* ret = vm.Execute("main");
 		err = ret == nullptr || ret->integer != resultValue;
     }
     catch (scrpt::CompilerException& ex)

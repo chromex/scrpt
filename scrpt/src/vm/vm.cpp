@@ -10,12 +10,24 @@ namespace scrpt
 {
     VM::VM()
         : _parser(new Parser())
-		, _ip(0)
+        , _compiler(new BytecodeGen())
+        , _ip(0)
         , _stack(STACKSIZE)
+        , _stackPointer(nullptr)
+        , _framePointer(nullptr)
+        , _currentExternArgN(0)
     {
     }
 
-	void VM::AddSource(std::shared_ptr<const char> source)
+    void VM::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
+    {
+        AssertNotNull(_compiler.get());
+        AssertNotNull(name);
+
+        _compiler.get()->AddExternFunc(name, nParam, func);
+    }
+
+    void VM::AddSource(std::shared_ptr<const char> source)
 	{
 		AssertNotNull(_parser.get());
 		AssertNotNull(source);
@@ -28,10 +40,10 @@ namespace scrpt
 	{
 		AssertNotNull(_parser.get());
 
-		BytecodeGen compiler;
-		compiler.Consume(*(_parser.get()->GetAst()));
-		_bytecode = compiler.GetBytecode();
+		_compiler.get()->Consume(*(_parser.get()->GetAst()));
+		_bytecode = _compiler.get()->GetBytecode();
 		_parser.reset(nullptr);
+        _compiler.reset(nullptr);
 
 		for (unsigned int id = 0; id < _bytecode.functions.size(); ++id)
 		{
@@ -39,7 +51,12 @@ namespace scrpt
 		}
 	}
 
-	VM::StackVal* VM::Execute(const char* funcName)
+    void VM::Decompile()
+    {
+        scrpt::Decompile(_bytecode);
+    }
+
+	StackVal* VM::Execute(const char* funcName)
     {
         AssertNotNull(funcName);
 
@@ -288,12 +305,28 @@ namespace scrpt
                 {
                     unsigned int funcId = GetOperand(unsigned int);
                     const FunctionData& fd = _bytecode.functions[funcId];
-                    // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
-                    int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
-                    this->PushStackFrame(_ip + 5, framePointerOffset);
-                    _framePointer = _stackPointer;
-                    this->PushNull(fd.localLookup.size() - fd.nParam);
-                    _ip = fd.entry - 1;
+                    if (!fd.external)
+                    {
+                        // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
+                        int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
+                        this->PushStackFrame(_ip + 5, framePointerOffset);
+                        _framePointer = _stackPointer;
+                        this->PushNull(fd.localLookup.size() - fd.nParam);
+                        _ip = fd.entry - 1;
+                    }
+                    else
+                    {
+                        // TODO: Re-entrant externals
+                        StackObj* startingStack = _stackPointer;
+                        _currentExternArgN = fd.nParam;
+
+                        fd.func(this);
+                        // TODO: Support for no return value
+                        // TODO: Error on more than one return value
+                        this->Copy(_stackPointer - 1, &_returnValue);
+                        this->Pop(); 
+                        _ip += 4;
+                    }
                 }
                 break;
             case OpCode::AssignI: 
@@ -389,6 +422,18 @@ namespace scrpt
         ++_stackPointer;
     }
 
+    StackObj* VM::GetParamBase(ParamId id)
+    {
+        int pOffset = (int)id;
+        if (pOffset >= _currentExternArgN)
+        {
+            this->ThrowErr(RuntimeErr::BadParamRequest);
+        }
+
+        int offset = -_currentExternArgN + (int)id;
+        return _stackPointer + offset;
+    }
+
     void VM::Copy(StackObj* src, StackObj* dest)
     {
         AssertNotNull(src);
@@ -435,7 +480,7 @@ namespace scrpt
         this->Pop();
     }
 
-	const char* VM::StackTypeToString(StackType type)
+	const char* StackTypeToString(StackType type)
 	{
 		switch (type)
 		{
@@ -465,6 +510,9 @@ namespace scrpt
 			ENUM_CASE_TO_STRING(RuntimeErr::UnsupportedOperandType);
 			ENUM_CASE_TO_STRING(RuntimeErr::OperandMismatch);
             ENUM_CASE_TO_STRING(RuntimeErr::StackOverflow);
+            ENUM_CASE_TO_STRING(RuntimeErr::StackUnderflow);
+            ENUM_CASE_TO_STRING(RuntimeErr::UnexpectedParamType);
+            ENUM_CASE_TO_STRING(RuntimeErr::BadParamRequest);
 
 		default:
 			AssertFail("Missing case for RuntimeErr");

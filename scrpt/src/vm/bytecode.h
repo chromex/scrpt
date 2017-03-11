@@ -50,6 +50,8 @@ namespace scrpt
         std::string name;
         unsigned char nParam;
         unsigned int entry;
+        bool external;
+        std::function<void(VM*)> func;
         std::map<int, std::string> localLookup;
     };
 

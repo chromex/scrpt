@@ -7,6 +7,7 @@ namespace scrpt
     public:
         BytecodeGen();
 
+        void AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func);
         void Consume(const AstNode& ast);
         Bytecode GetBytecode();
 

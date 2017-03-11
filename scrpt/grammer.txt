@@ -16,7 +16,7 @@ bool = "true" | "false";
 
 constant = terminal | number | bool | list | dict;
 
-ident = ( letter | "_" ), { letter, digit, "_" };
+ident = ( letter | "_" ), { letter | digit | "_" };
 
 key_value_pair = terminal, ":", expression;
 dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
