@@ -4,7 +4,6 @@
 #define STACKSIZE 10000
 
 // TODO: Strings / ref count
-// TODO: Release support
 
 namespace scrpt
 {
