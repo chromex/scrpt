@@ -67,7 +67,7 @@ namespace scrpt
         void Copy(StackObj* src, StackObj* dest);
         void Pop(size_t num = 1);
         void ThrowErr(RuntimeErr err);
-        inline StackObj* GetParamBase(ParamId id);
+        StackObj* GetParamBase(ParamId id);
 
         void ConditionalJump(int test, unsigned int dest);
     };

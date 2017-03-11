@@ -1,11 +1,11 @@
 #include "../scrpt.h"
 #include "tests.h"
+#include <windows.h>
 
 #define COMPONENTNAME "Tests_VM"
 
 static bool TestVM(const char* testName, int resultValue, const char* source);
 
-// TODO: Runtime speed checks
 // TODO: Bubble sort, quick sort
 // TODO: Conways game of life
 
@@ -93,6 +93,20 @@ void testextern(scrpt::VM* vm)
     vm->PushInt(scrpt::StackType::Int, i * 100 + i2);
 }
 
+LARGE_INTEGER GetTime()
+{
+    LARGE_INTEGER time;
+    QueryPerformanceCounter(&time);
+    return time;
+}
+
+double ConvertTimeMS(LONGLONG time)
+{
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    return (time / (double)freq.QuadPart) * 1000.0;
+}
+
 static bool TestVM(const char* testName, int resultValue, const char* source)
 {
     AssertNotNull(testName);
@@ -108,8 +122,11 @@ static bool TestVM(const char* testName, int resultValue, const char* source)
 		vm.AddSource(scrpt::Tests::DuplicateSource(source));
 		vm.Finalize();
         vm.Decompile();
+        LARGE_INTEGER startTime = GetTime();
 		scrpt::StackVal* ret = vm.Execute("main");
+        LARGE_INTEGER endTime = GetTime();
 		err = ret == nullptr || ret->integer != resultValue;
+        std::cout << "Runtime: " << ConvertTimeMS(endTime.QuadPart - startTime.QuadPart) << "ms" << std::endl;
     }
     catch (scrpt::CompilerException& ex)
     {
