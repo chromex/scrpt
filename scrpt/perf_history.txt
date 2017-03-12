@@ -1,0 +1,10 @@
+3/11/17
+=======
+V|Simple counting> Passed [3.7829]
+V|Fibonacci> Passed [0.00403394]
+V|Fibonacci 2> Passed [1.50031]
+V|Simple call> Passed [0.000930909]
+V|Factorial> Passed [0.00248242]
+V|FFI> Passed [0.831302]
+V|Strings> Passed [0.934943]
+V|Concat> Passed [0.00372364]

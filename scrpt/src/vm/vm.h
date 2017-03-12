@@ -67,10 +67,10 @@ namespace scrpt
 
         void Run();
 
-        void PushStackFrame(unsigned int returnIp, int framePointerOffset);
-        void PushId(StackType type, unsigned int id);
-        void Copy(StackObj* src, StackObj* dest);
-        void Pop(size_t num = 1);
+        inline void PushStackFrame(unsigned int returnIp, int framePointerOffset);
+        inline void PushString(unsigned int id);
+        inline void Copy(StackObj* src, StackObj* dest);
+        inline void Pop(unsigned int n = 1);
         inline void Deref(StackVal* stackVal);
         void ThrowErr(RuntimeErr err);
         StackObj* GetParamBase(ParamId id);
@@ -118,12 +118,17 @@ namespace scrpt
     inline const char* VM::GetParam(ParamId id)
     {
         StackObj* obj = this->GetParamBase(id);
-        if (obj->v.type != StackType::DynamicString)
+        if (obj->v.type == StackType::DynamicString)
         {
-            this->ThrowErr(RuntimeErr::UnexpectedParamType);
+            return ((std::string*)(obj->v.ref->value))->c_str();
+        }
+        else if (obj->v.type == StackType::StaticString)
+        {
+            return _bytecode.strings[(unsigned int)obj->v.integer].c_str();
         }
 
-        return ((std::string*)(obj->v.ref->value))->c_str();
+        this->ThrowErr(RuntimeErr::UnexpectedParamType);
+        return nullptr;
     }
 
     template<>

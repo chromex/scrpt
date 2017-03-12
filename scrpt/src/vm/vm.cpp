@@ -92,7 +92,7 @@ namespace scrpt
         {
 			throw CreateRuntimeEx(funcName, RuntimeErr::FailedFunctionLookup);
         }
-	}
+    }
 
 	#define INCREMENTOP(IntOp, FloatOp) \
     { \
@@ -309,8 +309,10 @@ namespace scrpt
                 StackObj* v2 = _stackPointer - 1; 
                 StackType t1 = v1->v.type; 
                 StackType t2 = v2->v.type; 
-                if (t1 != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                std::stringstream ss(*(std::string*)v1->v.ref->value, std::ios_base::ate | std::ios_base::out);
+                if (t1 != StackType::DynamicString && t1 != StackType::StaticString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                std::stringstream ss(
+                    t1 == StackType::StaticString ? _bytecode.strings[(unsigned int)v1->v.integer] : *(std::string*)v1->v.ref->value, 
+                    std::ios_base::ate | std::ios_base::out);
                 switch (t2)
                 {
                 case StackType::Boolean:
@@ -335,7 +337,7 @@ namespace scrpt
                     ss << "null";
                     break;
                 case StackType::StaticString:
-                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    ss << _bytecode.strings[(unsigned int)v2->v.integer];
                     break;
                 default:
                     ThrowErr(RuntimeErr::NotImplemented);
@@ -429,7 +431,7 @@ namespace scrpt
             /// Push String
             ///
             case OpCode::PushString:
-                this->PushString(_bytecode.strings[GetOperand(unsigned int)].c_str());
+                this->PushString(GetOperand(unsigned int));
                 _ip += 4;
                 break;
 
@@ -606,14 +608,6 @@ namespace scrpt
         }
     }
 
-    void VM::PushId(StackType type, unsigned int id)
-    {
-        CHECKSTACK
-        _stackPointer->v.type = type;
-        _stackPointer->v.id = id;
-        ++_stackPointer;
-    }
-
     void VM::PushInt(StackType type, int val)
     {
         CHECKSTACK
@@ -637,6 +631,14 @@ namespace scrpt
         CHECKSTACK
         _stackPointer->v.type = StackType::DynamicString;
         _stackPointer->v.ref = new StackRef{ 1, new std::string(string) };
+        ++_stackPointer;
+    }
+
+    void VM::PushString(unsigned int id)
+    {
+        CHECKSTACK
+        _stackPointer->v.type = StackType::StaticString;
+        _stackPointer->v.integer = id;
         ++_stackPointer;
     }
 
@@ -665,7 +667,7 @@ namespace scrpt
         }
     }
 
-    void VM::Pop(size_t num /* = 1 */)
+    void VM::Pop(unsigned int num /* = 1 */)
     {
         while (num-- > 0)
         {

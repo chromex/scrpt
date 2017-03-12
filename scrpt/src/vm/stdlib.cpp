@@ -14,7 +14,10 @@ void scrpt::RegisterStdLib(VM& vm)
         case scrpt::StackType::Boolean: std::cout << (val->integer == 0 ? "false" : "true") << std::endl; break;
         case scrpt::StackType::Int: std::cout << val->integer << std::endl; break;
         case scrpt::StackType::Float: std::cout << val->fp << std::endl; break;
-        case scrpt::StackType::DynamicString: std::cout << vm->GetParam<const char*>(scrpt::ParamId::_0) << std::endl; break;
+        case scrpt::StackType::DynamicString: 
+        case scrpt::StackType::StaticString:
+            std::cout << vm->GetParam<const char*>(scrpt::ParamId::_0) << std::endl; 
+            break;
 
         default:
             AssertFail("Unsupported type for print");
