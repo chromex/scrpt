@@ -161,7 +161,7 @@ bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, 
     AssertNotNull(testName);
     AssertNotNull(source);
 
-    std::cout << "Parser: " << testName << std::endl;
+    std::cout << "P|" << testName << "> ";
 
     scrpt::ParseErr err = scrpt::ParseErr::NoError;
     scrpt::Parser parser;
@@ -182,13 +182,12 @@ bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, 
 
     if (passed)
     {
-        std::cout << "<<<Test Passed>>>" << std::endl;
+        std::cout << "Passed" << std::endl;
     }
     else
     {
-        std::cout << "<<<Test Failed>>>" << std::endl;
+        std::cout << "<<< Failed >>>" << std::endl;
     }
 
-    std::cout << std::endl;
     return passed;
 }

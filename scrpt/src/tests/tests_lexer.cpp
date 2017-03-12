@@ -109,7 +109,7 @@ void scrpt::Tests::RunTestsLexer(unsigned int* passed, unsigned int* failed)
 
 bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr)
 {
-    std::cout << "Lexer: " << testName << std::endl;
+    std::cout << "L|" << testName << "> ";
 
     scrpt::Lexer lexer(scrpt::Tests::DuplicateSource(source));
     std::shared_ptr<scrpt::Token> token;
@@ -124,9 +124,10 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
     }
     catch (scrpt::CompilerException& ex)
     {
-        std::cout << ex.what() << std::endl;
         token = ex.GetToken();
         err = ex.GetLexErr();
+        if (expectedErr != err)
+            std::cout << std::endl << ex.what() << std::endl;
     }
 
     bool passed = false;
@@ -143,13 +144,12 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
 
     if (passed)
     {
-        std::cout << "<<<Test Passed>>>" << std::endl;
+        std::cout << "Passed" << std::endl;
     }
     else
     {
-        std::cout << "<<<Test Failed>>>" << std::endl;
+        std::cout << "<<< Failed >>>" << std::endl;
     }
 
-    std::cout << std::endl;
     return passed;
 }

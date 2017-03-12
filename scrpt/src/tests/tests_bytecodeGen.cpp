@@ -70,7 +70,7 @@ bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source
     AssertNotNull(testName);
     AssertNotNull(source);
 
-    std::cout << "Bytecode Gen: " << testName << std::endl;
+    std::cout << "B|" << testName << "> ";
 
     bool err = false;
     scrpt::Lexer lexer(scrpt::Tests::DuplicateSource(source));
@@ -91,13 +91,12 @@ bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source
 
     if (!err)
     {
-        std::cout << "<<<Test Passed>>>" << std::endl;
+        std::cout << "Passed" << std::endl;
     }
     else
     {
-        std::cout << "<<<Test Failed>>>" << std::endl;
+        std::cout << "<<< Failed >>>" << std::endl;
     }
 
-    std::cout << std::endl;
     return !err;
 }

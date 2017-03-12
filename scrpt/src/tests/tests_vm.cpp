@@ -90,8 +90,6 @@ func main() {
 
     ACCUMTEST(TestVM("Strings", 1, false, R"testCode(
 func main() {
-    print("hello world");
-    print(strlen("hello world"));
     for (i = 0; i < 10000; ++i)
     {
         test("whut");
@@ -105,7 +103,7 @@ func test(str) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Concat", 1, true, R"testCode(
+    ACCUMTEST(TestVM("Concat", 1, false, R"testCode(
 func main() {
     a = "hello world" # "!";
     return 1;
@@ -139,9 +137,10 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
     AssertNotNull(testName);
     AssertNotNull(source);
 
-    std::cout << "VM: " << testName << std::endl;
+    std::cout << "V|" << testName << "> ";
 
     bool err = false;
+    double runtime = 0.0;
     try
     {
 		scrpt::VM vm;
@@ -154,7 +153,7 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
         scrpt::StackVal* ret = vm.Execute("main");
         LARGE_INTEGER endTime = GetTime();
         err = ret == nullptr || ret->integer != resultValue;
-        std::cout << "Runtime: " << ConvertTimeMS(endTime.QuadPart - startTime.QuadPart) << "ms" << std::endl;
+        runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart);
     }
     catch (scrpt::CompilerException& ex)
     {
@@ -164,13 +163,12 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
 
     if (!err)
     {
-        std::cout << "<<<Test Passed>>>" << std::endl;
+        std::cout << "Passed [" << runtime << "]" << std::endl;
     }
     else
     {
-        std::cout << "<<<Test Failed>>>" << std::endl;
+        std::cout << "<<< Failed >>>" << std::endl;
     }
 
-    std::cout << std::endl;
     return !err;
 }
