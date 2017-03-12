@@ -24,6 +24,7 @@ namespace scrpt
         GTE,
         Ret,
         RestoreRet,
+        MakeList, // unsigned int number of items
         PushInt, // int val
         PushFloat, // float val
         PushString, // unsigned int string id

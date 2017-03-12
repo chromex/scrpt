@@ -14,6 +14,8 @@ void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
     AssertNotNull(passed);
     AssertNotNull(failed);
 
+    srand((unsigned int)time(NULL));
+
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
     ACCUMTEST(TestVM("Simple counting", 100000, false, R"testCode(
 func main() {
@@ -109,6 +111,51 @@ func main() {
     return strlen(a);
 }
 )testCode"));
+
+    ACCUMTEST(TestVM("Quick sort", 20, true, R"testCode(
+func main() {
+    lst = [];
+    for (count = 0; count < 20; ++count)
+        lst #= randomInt();
+    print(lst);
+    return length(lst);
+}
+
+func quickSort(list, left, right) {
+    index = partition(list, left, right);
+    if (left < index - 1)
+        quickSort(list, left, index - 1);
+    if (index < right)
+        quickSort(list, index, right);
+}
+
+func partition(list, left, right) {
+    i = left;
+    j = right;
+    pivot = list[(left + right) / 2];
+
+    while (i <= j) {
+        while (list[i] < pivot)
+            ++i;
+        while (list[j] > pivot)
+            --j;
+        if (i <= j) {
+            tmp = list[i];
+            list[i] = list[j];
+            list[j] = tmp;
+            ++i;
+            --j;
+        }
+    }
+
+    return i;
+}
+)testCode"));
+}
+
+void randomInt(scrpt::VM* vm)
+{
+    vm->PushInt(scrpt::StackType::Int, rand() % 100000);
 }
 
 void testextern(scrpt::VM* vm)
@@ -146,6 +193,7 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
 		scrpt::VM vm;
         scrpt::RegisterStdLib(vm);
         vm.AddExternFunc("testextern", 2, testextern);
+        vm.AddExternFunc("randomInt", 0, randomInt);
 		vm.AddSource(scrpt::Tests::DuplicateSource(source));
 		vm.Finalize();
         if (decompile) vm.Decompile();

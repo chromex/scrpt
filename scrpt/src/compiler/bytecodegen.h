@@ -21,6 +21,7 @@ namespace scrpt
         void CompileDo(const AstNode& node);
         void CompileIf(const AstNode& node);
         void CompileCall(const AstNode& node);
+        void CompileList(const AstNode& node);
         size_t AddOp(OpCode op);
         size_t AddOp(OpCode op, int p0);
         size_t AddOp(OpCode op, unsigned int p0);

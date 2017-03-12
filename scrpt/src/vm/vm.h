@@ -50,6 +50,7 @@ namespace scrpt
         template<> float GetParam<float>(ParamId id);
         template<> bool GetParam<bool>(ParamId id);
         template<> const char* GetParam<const char*>(ParamId id);
+        template<> List* GetParam<List*>(ParamId id);
         template<> StackVal* GetParam<StackVal*>(ParamId id);
 
     private:
@@ -69,10 +70,12 @@ namespace scrpt
 
         inline void PushStackFrame(unsigned int returnIp, int framePointerOffset);
         inline void PushString(unsigned int id);
+        inline void PushList(List* list);
         inline void Copy(StackObj* src, StackObj* dest);
         inline void Pop(unsigned int n = 1);
-        inline void Deref(StackVal* stackVal);
-        void ThrowErr(RuntimeErr err);
+        inline void Deref(StackVal* stackVal) const;
+        inline bool IsRefCounted(StackVal* val) const;
+        inline void ThrowErr(RuntimeErr err) const;
         StackObj* GetParamBase(ParamId id);
 
         void ConditionalJump(int test, unsigned int dest);
@@ -120,7 +123,7 @@ namespace scrpt
         StackObj* obj = this->GetParamBase(id);
         if (obj->v.type == StackType::DynamicString)
         {
-            return ((std::string*)(obj->v.ref->value))->c_str();
+            return obj->v.ref->string->c_str();
         }
         else if (obj->v.type == StackType::StaticString)
         {
@@ -129,6 +132,18 @@ namespace scrpt
 
         this->ThrowErr(RuntimeErr::UnexpectedParamType);
         return nullptr;
+    }
+
+    template<>
+    inline List* VM::GetParam(ParamId id)
+    {
+        StackObj* obj = this->GetParamBase(id);
+        if (obj->v.type != StackType::List)
+        {
+            this->ThrowErr(RuntimeErr::UnexpectedParamType);
+        }
+
+        return obj->v.ref->list;
     }
 
     template<>

@@ -16,22 +16,30 @@ namespace scrpt
     };
     const char* StackTypeToString(StackType type);
 
+    union StackObj;
+    typedef std::vector<StackObj> Stack;
+    typedef std::vector<StackObj> List;
+
     struct StackRef
     {
         unsigned int refCount;
-        void* value;
+        union
+        {
+            void* value;
+            std::string* string;
+            List* list;
+        };
     };
 
-    // TODO: Consider using a StackRef table to avoid the 64bit ptr
     struct StackVal
     {
         StackType type;
         union
         {
+            StackRef* ref;
             unsigned int id;
             int integer;
             float fp;
-            StackRef* ref;
         };
     };
 
@@ -46,6 +54,4 @@ namespace scrpt
         StackVal v;
         StackFrame frame;
     };
-
-    typedef std::vector<StackObj> Stack;
 }

@@ -45,6 +45,7 @@ const char* scrpt::OpCodeToString(OpCode code)
         ENUM_CASE_TO_STRING(OpCode::Jmp);
         ENUM_CASE_TO_STRING(OpCode::Ret);
         ENUM_CASE_TO_STRING(OpCode::RestoreRet);
+        ENUM_CASE_TO_STRING(OpCode::MakeList);
 
     default:
         AssertFail("Missing case for OpCode");
@@ -119,6 +120,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::MultEqI:
             case OpCode::DivEqI:
             case OpCode::ModuloEqI:
+            case OpCode::ConcatEqI:
             case OpCode::IncI:
             case OpCode::DecI:
             case OpCode::PostIncI:
@@ -132,6 +134,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::BrT:
             case OpCode::BrF:
             case OpCode::Jmp:
+            case OpCode::MakeList:
                 std::cout << " " << uintVal;
                 idx += 4;
                 break;
@@ -150,6 +153,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::MultEqI:
             case OpCode::DivEqI:
             case OpCode::ModuloEqI:
+            case OpCode::ConcatEqI:
             case OpCode::IncI:
             case OpCode::DecI:
             case OpCode::PostIncI:

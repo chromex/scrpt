@@ -194,7 +194,7 @@ namespace scrpt
             #define GetOperand(Type) *((Type*)(data + _ip + 1))
             switch ((const OpCode)(data[_ip]))
             {
-            case OpCode::Unknown: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
+            case OpCode::Unknown: this->ThrowErr(RuntimeErr::NotImplemented); break;
 
             /// 
             /// Push Null
@@ -298,7 +298,7 @@ namespace scrpt
             /// 
             /// Modulo
             ///
-            case OpCode::Mod: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
+            case OpCode::Mod: this->ThrowErr(RuntimeErr::NotImplemented); break;
 
             ///
             /// Concat
@@ -311,7 +311,7 @@ namespace scrpt
                 StackType t2 = v2->v.type; 
                 if (t1 != StackType::DynamicString && t1 != StackType::StaticString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                 std::stringstream ss(
-                    t1 == StackType::StaticString ? _bytecode.strings[(unsigned int)v1->v.integer] : *(std::string*)v1->v.ref->value, 
+                    t1 == StackType::StaticString ? _bytecode.strings[(unsigned int)v1->v.integer] : *v1->v.ref->string, 
                     std::ios_base::ate | std::ios_base::out);
                 switch (t2)
                 {
@@ -319,7 +319,7 @@ namespace scrpt
                     ss << (v2->v.integer == 0 ? "false" : "true");
                     break;
                 case StackType::DynamicString:
-                    ss << *(std::string*)v2->v.ref->value;
+                    ss << *v2->v.ref->string;
                     break;
                 case StackType::Float:
                     ss << v2->v.fp;
@@ -328,10 +328,10 @@ namespace scrpt
                     ss << v2->v.integer;
                     break;
                 case StackType::List:
-                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    this->ThrowErr(RuntimeErr::NotImplemented);
                     break;
                 case StackType::Map:
-                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    this->ThrowErr(RuntimeErr::NotImplemented);
                     break;
                 case StackType::Null:
                     ss << "null";
@@ -409,6 +409,24 @@ namespace scrpt
                 this->Deref(&_returnValue.v);
                 _returnValue.v.type = StackType::Null;
                 _returnValue.v.ref = nullptr;
+                break;
+
+            ///
+            /// Make list
+            ///
+            case OpCode::MakeList:
+                {
+                    // TODO: Max list size must be less than intmax and stack size
+                    unsigned int size = GetOperand(unsigned int);
+                    List* list = new List(size);
+                    for (int index = -(int)size; index < 0; ++index)
+                    {
+                        this->Copy(_stackPointer + index, &(*list)[index + size]);
+                    }
+                    this->Pop(size);
+                    this->PushList(list);
+                }
+                _ip += 4;
                 break;
 
             /// 
@@ -518,15 +536,27 @@ namespace scrpt
             /// 
             /// Identifier Modulo Assign
             ///
-            case OpCode::ModuloEqI: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
+            case OpCode::ModuloEqI: this->ThrowErr(RuntimeErr::NotImplemented); break;
 
             /// 
             /// Identifier Concatenate Assign
             ///
-            case OpCode::ConcatEqI:
+            case OpCode::ConcatEqI: 
                 {
-                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    // TODO: This doesn't properly concat lists, rather it would append the list as a unit
+                    StackObj* target = _framePointer + GetOperand(int); 
+                    StackObj* value = _stackPointer - 1; 
+                    StackType t1 = target->v.type; 
+                    StackType t2 = value->v.type; 
+                    if (t1 != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    StackObj obj = StackObj{ StackVal{ StackType::Null, nullptr } };
+                    this->Copy(value, &obj);
+                    target->v.ref->list->push_back(obj);
+                    this->Pop(1);
+                    this->PushNull();
+                    this->Copy(target, value);
                 }
+                _ip += 4;
                 break;
 
             /// 
@@ -579,7 +609,7 @@ namespace scrpt
                 break;
 
             default:
-                this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                this->ThrowErr(RuntimeErr::NotImplemented);
                 break;
             }
 
@@ -642,6 +672,16 @@ namespace scrpt
         ++_stackPointer;
     }
 
+    void VM::PushList(List* list)
+    {
+        AssertNotNull(list);
+
+        CHECKSTACK
+        _stackPointer->v.type = StackType::List;
+        _stackPointer->v.ref = new StackRef{ 1, list };
+        ++_stackPointer;
+    }
+
     StackObj* VM::GetParamBase(ParamId id)
     {
         int pOffset = (int)id;
@@ -661,7 +701,7 @@ namespace scrpt
 
         dest->v.type = src->v.type;
         dest->v.ref = src->v.ref;
-        if (dest->v.type == StackType::DynamicString)
+        if (this->IsRefCounted(&dest->v))
         {
             ++dest->v.ref->refCount;
         }
@@ -681,16 +721,22 @@ namespace scrpt
             _stackPointer->v.type = StackType::Top;
         }
     }
-
-    inline void VM::Deref(StackVal* stackVal)
+     
+    inline void VM::Deref(StackVal* stackVal) const
     {
         AssertNotNull(stackVal);
-        if (stackVal->type == StackType::DynamicString)
+        if (this->IsRefCounted(stackVal))
         {
             stackVal->ref->refCount -= 1;
             if (stackVal->ref->refCount == 0)
             {
-                delete (std::string*)stackVal->ref->value;
+                // TODO: Map support
+                switch (stackVal->type)
+                {
+                case StackType::DynamicString: delete stackVal->ref->string; break;
+                case StackType::List: delete stackVal->ref->list; break;
+                default: this->ThrowErr(RuntimeErr::NotImplemented);
+                }
                 stackVal->ref->value = nullptr;
                 delete stackVal->ref;
                 stackVal->ref = nullptr;
@@ -698,7 +744,14 @@ namespace scrpt
         }
     }
 
-    void VM::ThrowErr(RuntimeErr err)
+    inline bool VM::IsRefCounted(StackVal* val) const
+    {
+        AssertNotNull(val);
+        StackType t = val->type;
+        return t == StackType::DynamicString || t == StackType::List || t == StackType::Map;
+    }
+
+    void VM::ThrowErr(RuntimeErr err) const
     {
         // TODO: Create stack trace
         throw CreateRuntimeEx("", err);

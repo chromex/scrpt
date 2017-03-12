@@ -270,6 +270,10 @@ namespace scrpt
             }
             break;
 
+        case Symbol::LSquare:
+            this->CompileList(node);
+            break;
+
         default:
             AssertFail("Unhandled Symbol in expression compilation: " << SymbolToString(node.GetToken()->GetSym()));
             success = false;
@@ -443,6 +447,19 @@ namespace scrpt
         this->AddOp(OpCode::Call, funcId);
         for (size_t count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
         this->AddOp(OpCode::RestoreRet);
+    }
+
+    void BytecodeGen::CompileList(const AstNode& node)
+    {
+        Assert(node.GetSym() == Symbol::LSquare, "Unexpected node");
+
+        // TODO: Check number of children
+        auto children = node.GetChildren();
+        for (auto child = children.begin(); child != children.end(); ++child)
+        {
+            this->CompileExpression(*child);
+        }
+        this->AddOp(OpCode::MakeList, (unsigned int)children.size());
     }
 
     size_t BytecodeGen::AddOp(OpCode op)
