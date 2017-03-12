@@ -103,10 +103,10 @@ func test(str) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Concat", 1, false, R"testCode(
+    ACCUMTEST(TestVM("Concat", 12, false, R"testCode(
 func main() {
     a = "hello world" # "!";
-    return 1;
+    return strlen(a);
 }
 )testCode"));
 }
