@@ -195,10 +195,30 @@ namespace scrpt
             switch ((const OpCode)(data[_ip]))
             {
             case OpCode::Unknown: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
+
+            /// 
+            /// Push Null
+            ///
             case OpCode::PushNull: this->PushNull(); break;
+
+            /// 
+            /// Push True
+            ///
             case OpCode::PushTrue: this->PushInt(StackType::Boolean, 1); break;
+
+            /// 
+            /// Push False
+            ///
             case OpCode::PushFalse: this->PushInt(StackType::Boolean, 0); break;
+
+            /// 
+            /// Pop
+            ///
             case OpCode::Pop: this->Pop(); break;
+
+            /// 
+            /// Equals
+            ///
             case OpCode::Eq:
                 {
                     bool result;
@@ -232,83 +252,130 @@ namespace scrpt
                     this->PushInt(StackType::Boolean, result);
                 }
                 break;
+
+            /// 
+            /// Or
+            ///
             case OpCode::Or:
                 BOOLOP(||);
                 break;
+
+            /// 
+            /// And
+            ///
             case OpCode::And:
                 BOOLOP(&&);
                 break;
+
+            /// 
+            /// Add
+            ///
             case OpCode::Add:
                 MATHOP(+);
                 break;
+
+            /// 
+            /// Subtract
+            ///
             case OpCode::Sub:
                 MATHOP(-);
                 break;
+
+            /// 
+            /// Multiply
+            ///
             case OpCode::Mul:
                 MATHOP(*);
                 break;
+
+            /// 
+            /// Divide
+            ///
             case OpCode::Div:
                 MATHOP(/);
                 break;
+
+            /// 
+            /// Modulo
+            ///
             case OpCode::Mod: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
 
-                ///
-                /// Concat
-                ///
-                case OpCode::Concat:
+            ///
+            /// Concat
+            ///
+            case OpCode::Concat:
+            {
+                StackObj* v1 = _stackPointer - 2; 
+                StackObj* v2 = _stackPointer - 1; 
+                StackType t1 = v1->v.type; 
+                StackType t2 = v2->v.type; 
+                if (t1 != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                std::stringstream ss(*(std::string*)v1->v.ref->value, std::ios_base::ate | std::ios_base::out);
+                switch (t2)
                 {
-                    StackObj* v1 = _stackPointer - 2; 
-                    StackObj* v2 = _stackPointer - 1; 
-                    StackType t1 = v1->v.type; 
-                    StackType t2 = v2->v.type; 
-                    if (t1 != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                    std::stringstream ss(*(std::string*)v1->v.ref->value, std::ios_base::ate | std::ios_base::out);
-                    switch (t2)
-                    {
-                    case StackType::Boolean:
-                        ss << (v2->v.integer == 0 ? "false" : "true");
-                        break;
-                    case StackType::DynamicString:
-                        ss << *(std::string*)v2->v.ref->value;
-                        break;
-                    case StackType::Float:
-                        ss << v2->v.fp;
-                        break;
-                    case StackType::Int:
-                        ss << v2->v.integer;
-                        break;
-                    case StackType::List:
-                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                        break;
-                    case StackType::Map:
-                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                        break;
-                    case StackType::Null:
-                        ss << "null";
-                        break;
-                    case StackType::StaticString:
-                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                        break;
-                    default:
-                        ThrowErr(RuntimeErr::NotImplemented);
-                    }
-                    this->Pop(2);
-                    this->PushString(ss.str().c_str());
+                case StackType::Boolean:
+                    ss << (v2->v.integer == 0 ? "false" : "true");
+                    break;
+                case StackType::DynamicString:
+                    ss << *(std::string*)v2->v.ref->value;
+                    break;
+                case StackType::Float:
+                    ss << v2->v.fp;
+                    break;
+                case StackType::Int:
+                    ss << v2->v.integer;
+                    break;
+                case StackType::List:
+                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    break;
+                case StackType::Map:
+                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    break;
+                case StackType::Null:
+                    ss << "null";
+                    break;
+                case StackType::StaticString:
+                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    break;
+                default:
+                    ThrowErr(RuntimeErr::NotImplemented);
                 }
-                break;
+                this->Pop(2);
+                this->PushString(ss.str().c_str());
+            }
+            break;
 
+            /// 
+            /// Less Than
+            ///
             case OpCode::LT: 
                 COMPOP(<);
                 break;
+
+            /// 
+            /// Greater Than
+            ///
             case OpCode::GT:
                 COMPOP(>);
                 break;
+
+            ///  
+            /// Less Than or Equal
+            ///
             case OpCode::LTE:
                 COMPOP(<=);
                 break;
+
+            /// 
+            /// Greater Than or Equal
+            ///
             case OpCode::GTE:
                 COMPOP(>=);
                 break;
+
+            /// 
+            /// Return
+            ///
             case OpCode::Ret:
                 {
                     this->Copy(_stackPointer - 1, &_returnValue);
@@ -330,6 +397,10 @@ namespace scrpt
                     this->Pop(); // Stack frame
                 }
                 break;
+
+            /// 
+            /// Restore Return Value
+            ///
             case OpCode::RestoreRet:
                 this->PushNull();
                 this->Copy(&_returnValue, _stackPointer - 1);
@@ -338,18 +409,33 @@ namespace scrpt
                 _returnValue.v.ref = nullptr;
                 break;
 
+            /// 
+            /// Push Integer
+            ///
             case OpCode::PushInt: 
                 this->PushInt(StackType::Int, GetOperand(int)); 
                 _ip += 4;
                 break;
+
+            /// 
+            /// Push Float
+            ///
             case OpCode::PushFloat: 
                 this->PushFloat(GetOperand(float)); 
                 _ip += 4;
                 break;
+
+            /// 
+            /// Push String
+            ///
             case OpCode::PushString:
                 this->PushString(_bytecode.strings[GetOperand(unsigned int)].c_str());
                 _ip += 4;
                 break;
+
+            /// 
+            /// Push Ident Value
+            ///
             case OpCode::PushIdent:
                 {
                     StackObj* obj = _stackPointer;
@@ -358,6 +444,10 @@ namespace scrpt
                 }
                 _ip += 4;
                 break;
+
+            /// 
+            /// Call Function
+            ///
             case OpCode::Call:
                 {
                     unsigned int funcId = GetOperand(unsigned int);
@@ -386,49 +476,106 @@ namespace scrpt
                     }
                 }
                 break;
+
+            /// 
+            /// Identifier Assign
+            ///
             case OpCode::AssignI: 
                 this->Copy(_stackPointer - 1, _framePointer + GetOperand(int));
                 _ip += 4;
                 break;
+
+            /// 
+            /// Identifier Add Assign
+            ///
             case OpCode::PlusEqI:
                 ASSIGNMATHOP(+=);
                 break;
+
+            /// 
+            /// Identifier Subtract Assign
+            ///
             case OpCode::MinusEqI:
                 ASSIGNMATHOP(-=);
                 break;
+
+            /// 
+            /// Identifier Multiply Assign
+            ///
             case OpCode::MultEqI:
                 ASSIGNMATHOP(*=);
                 break;
+
+            /// 
+            /// Identifier Divide Assign
+            ///
             case OpCode::DivEqI:
                 ASSIGNMATHOP(/=);
                 break;
+
+            /// 
+            /// Identifier Modulo Assign
+            ///
             case OpCode::ModuloEqI: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
+
+            /// 
+            /// Identifier Concatenate Assign
+            ///
             case OpCode::ConcatEqI:
                 {
                     this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                 }
                 break;
+
+            /// 
+            /// Prefix Increment Identifier
+            ///
             case OpCode::IncI:
                 INCREMENTOP(++obj->v.integer, ++obj->v.fp);
                 break;
+
+            /// 
+            /// Prefix Decrement Identifier
+            ///
             case OpCode::DecI:
                 INCREMENTOP(--obj->v.integer, --obj->v.fp);
                 break;
+
+            /// 
+            /// Postfix Increment Identifier
+            ///
             case OpCode::PostIncI:
                 INCREMENTOP(obj->v.integer++, obj->v.fp++);
                 break;
+
+            /// 
+            /// Postfix Decrement Identifier
+            ///
             case OpCode::PostDecI:
                 INCREMENTOP(obj->v.integer--, obj->v.fp--);
                 break;
+
+            /// 
+            /// Branch True
+            ///
             case OpCode::BrT:
                 this->ConditionalJump(1, GetOperand(unsigned int));
                 break;
+
+            /// 
+            /// Branch False
+            ///
             case OpCode::BrF:
                 this->ConditionalJump(0, GetOperand(unsigned int));
                 break;
+
+            /// 
+            /// Jump
+            ///
             case OpCode::Jmp:
                 _ip = GetOperand(unsigned int) - 1;
                 break;
+
             default:
                 this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                 break;
