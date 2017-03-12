@@ -53,7 +53,11 @@ const char* scrpt::OpCodeToString(OpCode code)
 
 void scrpt::Decompile(const Bytecode& bytecode)
 {
-    // TODO: Dump string table
+    std::cout << "[STRINGS]" << std::endl;
+    for (unsigned int idx = 0; idx < bytecode.strings.size(); ++idx)
+    {
+        std::cout << idx << ": " << bytecode.strings[idx] << std::endl;
+    }
 
     std::cout << "[FUNCTIONS]" << std::endl;
     std::map<unsigned int, unsigned int> functionEntryMap;

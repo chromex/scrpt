@@ -21,6 +21,7 @@ namespace scrpt { class VM; }
 #include "vm/bytecode.h"
 #include "compiler/bytecodegen.h"
 #include "vm/vm.h"
+#include "vm/stdlib.h"
 
 #include "compiler/error.h"
 

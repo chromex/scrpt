@@ -4,7 +4,7 @@
 
 #define COMPONENTNAME "Tests_VM"
 
-static bool TestVM(const char* testName, int resultValue, const char* source);
+static bool TestVM(const char* testName, int resultValue, bool, const char* source);
 
 // TODO: Bubble sort, quick sort
 // TODO: Conways game of life
@@ -15,18 +15,19 @@ void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
     AssertNotNull(failed);
 
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
-    ACCUMTEST(TestVM("Simple counting", 100000, R"testCode(
+    ACCUMTEST(TestVM("Simple counting", 100000, false, R"testCode(
 func main() {
     sum = 0;
     do
     {
         ++sum;
     } while(sum < 100000);
+
     return sum;
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Fibonacci", 317811, R"testCode(
+    ACCUMTEST(TestVM("Fibonacci", 317811, false, R"testCode(
 func main() {
     v0 = 0;
     v1 = 1;
@@ -40,7 +41,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Fibonacci 2", 6765, R"testCode(
+    ACCUMTEST(TestVM("Fibonacci 2", 6765, false, R"testCode(
 func main() {
     return fib(20);
 }
@@ -51,7 +52,7 @@ func fib(n) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Simple call", 1, R"testCode(
+    ACCUMTEST(TestVM("Simple call", 1, false, R"testCode(
 func main() {
     if (Test(1, 2, 3))
         return 1;
@@ -65,7 +66,7 @@ func Test(a, b, c) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Factorial", 479001600, R"testCode(
+    ACCUMTEST(TestVM("Factorial", 479001600, false, R"testCode(
 func main() {
     return Fact(12);
 }
@@ -78,16 +79,35 @@ func Fact(v) {
 }
 )testCode"));
 
-	ACCUMTEST(TestVM("FFI Test", 1234, R"testCode(
+    ACCUMTEST(TestVM("FFI Test", 1234, false, R"testCode(
 func main() {
+    for (i = 0; i < 10000; ++i)
+        testextern(12, 34);
+
     return testextern(12, 34);
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("String Test", 1, true, R"testCode(
+func main() {
+    print("hello world");
+    print(strlen("hello world"));
+    for (i = 0; i < 10000; ++i)
+    {
+        test("whut");
+    }
+
+    return 1;
+}
+
+func test(str) {
+    return str;
 }
 )testCode"));
 }
 
 void testextern(scrpt::VM* vm)
 {
-    AssertNotNull(vm);
     int i = vm->GetParam<int>(scrpt::ParamId::_0);
     int i2 = vm->GetParam<int>(scrpt::ParamId::_1);
     vm->PushInt(scrpt::StackType::Int, i * 100 + i2);
@@ -107,7 +127,7 @@ double ConvertTimeMS(LONGLONG time)
     return (time / (double)freq.QuadPart) * 1000.0;
 }
 
-static bool TestVM(const char* testName, int resultValue, const char* source)
+static bool TestVM(const char* testName, int resultValue, bool decompile, const char* source)
 {
     AssertNotNull(testName);
     AssertNotNull(source);
@@ -118,14 +138,15 @@ static bool TestVM(const char* testName, int resultValue, const char* source)
     try
     {
 		scrpt::VM vm;
+        scrpt::RegisterStdLib(vm);
         vm.AddExternFunc("testextern", 2, testextern);
 		vm.AddSource(scrpt::Tests::DuplicateSource(source));
 		vm.Finalize();
-        vm.Decompile();
+        if (decompile) vm.Decompile();
         LARGE_INTEGER startTime = GetTime();
-		scrpt::StackVal* ret = vm.Execute("main");
+        scrpt::StackVal* ret = vm.Execute("main");
         LARGE_INTEGER endTime = GetTime();
-		err = ret == nullptr || ret->integer != resultValue;
+        err = ret == nullptr || ret->integer != resultValue;
         std::cout << "Runtime: " << ConvertTimeMS(endTime.QuadPart - startTime.QuadPart) << "ms" << std::endl;
     }
     catch (scrpt::CompilerException& ex)

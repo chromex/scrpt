@@ -32,6 +32,7 @@ namespace scrpt
     {
     public:
         VM();
+        ~VM();
 
         void AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func);
 		void AddSource(std::shared_ptr<const char> source);
@@ -42,10 +43,13 @@ namespace scrpt
         void PushNull(size_t num = 1);
         void PushInt(StackType type, int val);
         void PushFloat(float val);
+        void PushString(const char* string);
         template<typename T> T GetParam(ParamId id);
         template<> int GetParam<int>(ParamId id);
         template<> float GetParam<float>(ParamId id);
         template<> bool GetParam<bool>(ParamId id);
+        template<> const char* GetParam<const char*>(ParamId id);
+        template<> StackVal* GetParam<StackVal*>(ParamId id);
 
     private:
 		std::unique_ptr<Parser> _parser;
@@ -66,6 +70,7 @@ namespace scrpt
         void PushId(StackType type, unsigned int id);
         void Copy(StackObj* src, StackObj* dest);
         void Pop(size_t num = 1);
+        inline void Deref(StackVal* stackVal);
         void ThrowErr(RuntimeErr err);
         StackObj* GetParamBase(ParamId id);
 
@@ -106,5 +111,23 @@ namespace scrpt
         }
 
         return !(obj->v.integer == 0);
+    }
+
+    template<>
+    inline const char* VM::GetParam(ParamId id)
+    {
+        StackObj* obj = this->GetParamBase(id);
+        if (obj->v.type != StackType::DynamicString)
+        {
+            this->ThrowErr(RuntimeErr::UnexpectedParamType);
+        }
+
+        return ((std::string*)(obj->v.ref->value))->c_str();
+    }
+
+    template<>
+    inline StackVal* VM::GetParam(ParamId id)
+    {
+        return &(this->GetParamBase(id)->v);
     }
 }

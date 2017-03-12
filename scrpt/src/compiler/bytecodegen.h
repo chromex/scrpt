@@ -42,6 +42,8 @@ namespace scrpt
         std::vector<unsigned char> _byteBuffer;
         std::vector<FunctionData> _functions;
         std::map<std::string, unsigned int> _functionLookup;
+        std::vector<std::string> _strings;
+        std::map<std::string, unsigned int> _stringLookup;
         std::vector< std::map<std::string, int> > _scopeStack;
         int _paramOffset;
         int _localOffset;

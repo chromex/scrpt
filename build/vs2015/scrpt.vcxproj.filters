@@ -68,6 +68,9 @@
     <ClCompile Include="..\..\scrpt\src\tests\tests_vm.cpp">
       <Filter>Source Files\tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\vm\stdlib.cpp">
+      <Filter>Source Files\vm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">
@@ -104,6 +107,9 @@
       <Filter>Source Files\vm</Filter>
     </ClInclude>
     <ClInclude Include="..\..\scrpt\src\vm\stack.h">
+      <Filter>Source Files\vm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\vm\stdlib.h">
       <Filter>Source Files\vm</Filter>
     </ClInclude>
   </ItemGroup>

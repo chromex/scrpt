@@ -37,6 +37,7 @@ namespace scrpt
         Bytecode bytecode;
         bytecode.data = std::move(_byteBuffer);
         bytecode.functions = std::move(_functions);
+        bytecode.strings = std::move(_strings);
         return bytecode;
     }
 
@@ -184,8 +185,22 @@ namespace scrpt
             break;
 
         case Symbol::Terminal:
-            // TODO: Need string table id
-            this->AddOp(OpCode::PushString, unsigned int(0xFFFFFFFF));
+            {
+                unsigned int strId = 0;
+                const char* str = node.GetToken()->GetString();
+                auto entry = _stringLookup.find(str);
+                if (entry == _stringLookup.end())
+                {
+                    strId = _stringLookup[str] = (unsigned int)_strings.size();
+                    _strings.push_back(str);
+                }
+                else
+                {
+                    strId = entry->second;
+                }
+
+                this->AddOp(OpCode::PushString, strId);
+            }
             break;
 
         case Symbol::True:
@@ -298,6 +313,7 @@ namespace scrpt
         if (!endExpr.IsEmpty())
         {
             this->CompileExpression(endExpr);
+            this->AddOp(OpCode::Pop);
         }
         this->AddOp(OpCode::Jmp, reentry);
         if (!checkExpr.IsEmpty())

@@ -18,6 +18,11 @@ namespace scrpt
     {
     }
 
+    VM::~VM()
+    {
+        this->Deref(&_returnValue.v);
+    }
+
     void VM::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
     {
         AssertNotNull(_compiler.get());
@@ -63,6 +68,9 @@ namespace scrpt
 		{
 			this->Finalize();
 		}
+
+        // Clear out any previous return value
+        this->Deref(&_returnValue.v);
 
         auto funcIter = _functionMap.find(funcName);
         if (funcIter != _functionMap.end())
@@ -280,7 +288,9 @@ namespace scrpt
             case OpCode::RestoreRet:
                 this->PushNull();
                 this->Copy(&_returnValue, _stackPointer - 1);
-                // TODO: Need to clear the ret value and de-ref
+                this->Deref(&_returnValue.v);
+                _returnValue.v.type = StackType::Null;
+                _returnValue.v.ref = nullptr;
                 break;
 
             case OpCode::PushInt: 
@@ -291,7 +301,10 @@ namespace scrpt
                 this->PushFloat(GetOperand(float)); 
                 _ip += 4;
                 break;
-            //case OpCode::PushString:
+            case OpCode::PushString:
+                this->PushString(_bytecode.strings[GetOperand(unsigned int)].c_str());
+                _ip += 4;
+                break;
             case OpCode::PushIdent:
                 {
                     StackObj* obj = _stackPointer;
@@ -421,6 +434,16 @@ namespace scrpt
         ++_stackPointer;
     }
 
+    void VM::PushString(const char* string)
+    {
+        AssertNotNull(string);
+        
+        CHECKSTACK
+        _stackPointer->v.type = StackType::DynamicString;
+        _stackPointer->v.ref = new StackRef{ 1, new std::string(string) };
+        ++_stackPointer;
+    }
+
     StackObj* VM::GetParamBase(ParamId id)
     {
         int pOffset = (int)id;
@@ -438,23 +461,42 @@ namespace scrpt
         AssertNotNull(src);
         AssertNotNull(dest);
 
-        // TODO: Ref count
         dest->v.type = src->v.type;
-        dest->v.integer = src->v.integer;
+        dest->v.ref = src->v.ref;
+        if (dest->v.type == StackType::DynamicString)
+        {
+            ++dest->v.ref->refCount;
+        }
     }
 
     void VM::Pop(size_t num /* = 1 */)
     {
-        if (_stackPointer == &_stack[0])
-        {
-            this->ThrowErr(RuntimeErr::StackOverflow);
-        }
-
-        // TODO: De-ref
         while (num-- > 0)
         {
+            if (_stackPointer == &_stack[0])
+            {
+                this->ThrowErr(RuntimeErr::StackUnderflow);
+            }
+
             _stackPointer -= 1;
+            this->Deref(&_stackPointer->v);
             _stackPointer->v.type = StackType::Top;
+        }
+    }
+
+    inline void VM::Deref(StackVal* stackVal)
+    {
+        AssertNotNull(stackVal);
+        if (stackVal->type == StackType::DynamicString)
+        {
+            stackVal->ref->refCount -= 1;
+            if (stackVal->ref->refCount == 0)
+            {
+                delete (std::string*)stackVal->ref->value;
+                stackVal->ref->value = nullptr;
+                delete stackVal->ref;
+                stackVal->ref = nullptr;
+            }
         }
     }
 

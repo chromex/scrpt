@@ -16,6 +16,13 @@ namespace scrpt
     };
     const char* StackTypeToString(StackType type);
 
+    struct StackRef
+    {
+        unsigned int refCount;
+        void* value;
+    };
+
+    // TODO: Consider using a StackRef table to avoid the 64bit ptr
     struct StackVal
     {
         StackType type;
@@ -24,6 +31,7 @@ namespace scrpt
             unsigned int id;
             int integer;
             float fp;
+            StackRef* ref;
         };
     };
 

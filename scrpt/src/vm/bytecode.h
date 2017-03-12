@@ -59,7 +59,7 @@ namespace scrpt
     {
         std::vector<unsigned char> data;
         std::vector<FunctionData> functions;
-        // string table
+        std::vector<std::string> strings;
     };
 
     void Decompile(const Bytecode& bytecode);
