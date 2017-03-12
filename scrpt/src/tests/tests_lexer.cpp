@@ -13,7 +13,7 @@ func main(arg1, arg2)
 	numbers = {0, 1, 0123, 0.1234, 19203.1, -1.23, -0};
 	_bo0leans = {true, false};
 
-        // Basic expressions
+    // Basic expressions
 	val = numbers[2];
 	slice = numbers[1:];
 	a = !b;
@@ -23,7 +23,7 @@ func main(arg1, arg2)
 	t = a <= b;
 	t = a >= b;
 
-        // Math
+    // Math
 	v = 1 + 3.2 - 2.2 * 3.0 / 0.0 % 2;
 	v += 3;
 	v -= val;
@@ -35,7 +35,12 @@ func main(arg1, arg2)
 	--a;
 	a--;
 
-        // Control flow
+    // Concat
+    str = "hello " # "world";
+    lst = [];
+    lst #= 4;
+
+    // Control flow
 	test(1, 0, "foo");
 	if (true == false && true || false)
 	{

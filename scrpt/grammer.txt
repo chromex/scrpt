@@ -40,16 +40,17 @@ continue = "continue", ";";
 
 parens = "(", expression, ")";
 
-ex8 = ident | constant | parens;
-ex7 = ex8, { ( index | call | dot_expand | "++" | "--" ) } | ex8;
-ex6 = ( "!" | "++" | "--" | "-" ), ex6 | ex7;
-ex5 = ex6, ( "*" | "/" | "%" ), ex5 | ex6;
-ex4 = ex5, ( "+" | "-" ), ex4 | ex5;
-ex3 = ex4, ( "<" | ">" | "<=" | ">=" ), ex3 | ex4;
-ex2 = ex3, ( "==" | "!=" ), ex2 | ex3;
-ex1 = ex2, "&&", ex1 | ex2;
-ex0 = ex1, "||", ex0 | ex1;
-expression = ex0, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" ), expression | ex0;
+ex_term = ident | constant | parens;
+ex_postfix = ex_term, { ( index | call | dot_expand | "++" | "--" ) } | ex_term;
+ex_prefix = ( "!" | "++" | "--" | "-" ), ex_prefix | ex7;
+ex_mul = ex_prefix, ( "*" | "/" | "%" ), ex_mul | ex_prefix;
+ex_add = ex_mul, ( "+" | "-" ), ex_add | ex_mul;
+ex_compare = ex_add, ( "<" | ">" | "<=" | ">=" ), ex_compare | ex_add;
+ex_concat = ex_compare, "#", ex_concat | ex_compare;
+ex_equals = ex_concat, ( "==" | "!=" ), ex_equals | ex_concat;
+ex_and = ex_equals, "&&", ex_and | ex_equals;
+ex_or = ex_and, "||", ex_or | ex_and;
+expression = ex_or, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" | "#=" ), expression | ex_or;
 
 statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
 

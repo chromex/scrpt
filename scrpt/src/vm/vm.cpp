@@ -3,8 +3,6 @@
 #define COMPONENTNAME "VM"
 #define STACKSIZE 10000
 
-// TODO: Strings / ref count
-
 namespace scrpt
 {
     VM::VM()
@@ -196,6 +194,7 @@ namespace scrpt
             #define GetOperand(Type) *((Type*)(data + _ip + 1))
             switch ((const OpCode)(data[_ip]))
             {
+            case OpCode::Unknown: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
             case OpCode::PushNull: this->PushNull(); break;
             case OpCode::PushTrue: this->PushInt(StackType::Boolean, 1); break;
             case OpCode::PushFalse: this->PushInt(StackType::Boolean, 0); break;
@@ -251,7 +250,53 @@ namespace scrpt
             case OpCode::Div:
                 MATHOP(/);
                 break;
-            //case OpCode::Mod:
+            case OpCode::Mod: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
+
+                ///
+                /// Concat
+                ///
+                case OpCode::Concat:
+                {
+                    StackObj* v1 = _stackPointer - 2; 
+                    StackObj* v2 = _stackPointer - 1; 
+                    StackType t1 = v1->v.type; 
+                    StackType t2 = v2->v.type; 
+                    if (t1 != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    std::stringstream ss(*(std::string*)v1->v.ref->value, std::ios_base::ate | std::ios_base::out);
+                    switch (t2)
+                    {
+                    case StackType::Boolean:
+                        ss << (v2->v.integer == 0 ? "false" : "true");
+                        break;
+                    case StackType::DynamicString:
+                        ss << *(std::string*)v2->v.ref->value;
+                        break;
+                    case StackType::Float:
+                        ss << v2->v.fp;
+                        break;
+                    case StackType::Int:
+                        ss << v2->v.integer;
+                        break;
+                    case StackType::List:
+                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        break;
+                    case StackType::Map:
+                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        break;
+                    case StackType::Null:
+                        ss << "null";
+                        break;
+                    case StackType::StaticString:
+                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        break;
+                    default:
+                        ThrowErr(RuntimeErr::NotImplemented);
+                    }
+                    this->Pop(2);
+                    this->PushString(ss.str().c_str());
+                }
+                break;
+
             case OpCode::LT: 
                 COMPOP(<);
                 break;
@@ -357,7 +402,12 @@ namespace scrpt
             case OpCode::DivEqI:
                 ASSIGNMATHOP(/=);
                 break;
-            //case OpCode::ModuloEqI:
+            case OpCode::ModuloEqI: this->ThrowErr(RuntimeErr::UnsupportedOperandType); break;
+            case OpCode::ConcatEqI:
+                {
+                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                }
+                break;
             case OpCode::IncI:
                 INCREMENTOP(++obj->v.integer, ++obj->v.fp);
                 break;
@@ -380,8 +430,7 @@ namespace scrpt
                 _ip = GetOperand(unsigned int) - 1;
                 break;
             default:
-                AssertFail("Unknown code");
-                running = false;
+                this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                 break;
             }
 
@@ -554,6 +603,7 @@ namespace scrpt
             ENUM_CASE_TO_STRING(RuntimeErr::StackUnderflow);
             ENUM_CASE_TO_STRING(RuntimeErr::UnexpectedParamType);
             ENUM_CASE_TO_STRING(RuntimeErr::BadParamRequest);
+            ENUM_CASE_TO_STRING(RuntimeErr::NotImplemented);
 
 		default:
 			AssertFail("Missing case for RuntimeErr");

@@ -217,6 +217,7 @@ namespace scrpt
         case Symbol::MultEq:
         case Symbol::DivEq:
         case Symbol::ModuloEq:
+        case Symbol::ConcatEq:
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 2, "Unexpected number of children");
@@ -232,6 +233,7 @@ namespace scrpt
         case Symbol::Mult:
         case Symbol::Div:
         case Symbol::Modulo:
+        case Symbol::Concat:
         case Symbol::LessThan:
         case Symbol::LessThanEq:
         case Symbol::GreaterThan:
@@ -514,6 +516,7 @@ namespace scrpt
         case Symbol::Mult: return OpCode::Mul;
         case Symbol::Div: return OpCode::Div;
         case Symbol::Modulo: return OpCode::Mod;
+        case Symbol::Concat: return OpCode::Concat;
         case Symbol::LessThan: return OpCode::LT;
         case Symbol::LessThanEq: return OpCode::LTE;
         case Symbol::GreaterThan: return OpCode::GT;
@@ -534,6 +537,7 @@ namespace scrpt
         case Symbol::MultEq: return OpCode::MultEqI;
         case Symbol::DivEq: return OpCode::DivEqI;
         case Symbol::ModuloEq: return OpCode::ModuloEqI;
+        case Symbol::ConcatEq: return OpCode::ConcatEqI;
         default:
             AssertFail("Unmapped unary assign op: " << SymbolToString(sym));
             return OpCode::Unknown;

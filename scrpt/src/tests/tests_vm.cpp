@@ -79,7 +79,7 @@ func Fact(v) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("FFI Test", 1234, false, R"testCode(
+    ACCUMTEST(TestVM("FFI", 1234, false, R"testCode(
 func main() {
     for (i = 0; i < 10000; ++i)
         testextern(12, 34);
@@ -88,7 +88,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("String Test", 1, true, R"testCode(
+    ACCUMTEST(TestVM("Strings", 1, false, R"testCode(
 func main() {
     print("hello world");
     print(strlen("hello world"));
@@ -102,6 +102,13 @@ func main() {
 
 func test(str) {
     return str;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Concat", 1, true, R"testCode(
+func main() {
+    a = "hello world" # "!";
+    return 1;
 }
 )testCode"));
 }

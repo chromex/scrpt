@@ -147,6 +147,13 @@ func main() {
     dict.whoa *= 4;
 }
 )testCode"));
+
+    ACCUMTEST(TestParse("Concat", scrpt::ParseErr::NoError, false, R"testCode(
+func main() {
+    val = "hello" # "world" # "again";
+    val #= " one more";
+}
+)testCode"));
 }
 
 bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, const char* source)

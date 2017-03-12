@@ -16,6 +16,7 @@ namespace scrpt
         StackUnderflow,
         UnexpectedParamType,
         BadParamRequest,
+        NotImplemented,
 	};
 	const char* RuntimeErrToString(RuntimeErr err);
 

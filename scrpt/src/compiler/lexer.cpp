@@ -135,6 +135,7 @@ namespace scrpt
         DOUBLE_COMPLEX_SYM('<', '=', Symbol::LessThan, Symbol::LessThanEq)
         DOUBLE_COMPLEX_SYM('>', '=', Symbol::GreaterThan, Symbol::GreaterThanEq)
         DOUBLE_COMPLEX_SYM('%', '=', Symbol::Modulo, Symbol::ModuloEq)
+        DOUBLE_COMPLEX_SYM('#', '=', Symbol::Concat, Symbol::ConcatEq)
 
 #define TRIPLE_COMPLEX_SYM(C, V, Z, SymC, SymV, SymZ) else if (c == C && cn == Z) { sym = SymZ; _location += 2; } DOUBLE_COMPLEX_SYM(C, V, SymC, SymV)
         TRIPLE_COMPLEX_SYM('-', '=', '-', Symbol::Minus, Symbol::MinusEq, Symbol::MinusMinus)
@@ -366,11 +367,13 @@ namespace scrpt
             ENUM_CASE_TO_STRING(Symbol::Mult);
             ENUM_CASE_TO_STRING(Symbol::Div);
             ENUM_CASE_TO_STRING(Symbol::Modulo);
+            ENUM_CASE_TO_STRING(Symbol::Concat);
             ENUM_CASE_TO_STRING(Symbol::PlusEq);
             ENUM_CASE_TO_STRING(Symbol::MinusEq);
             ENUM_CASE_TO_STRING(Symbol::MultEq);
             ENUM_CASE_TO_STRING(Symbol::DivEq);
             ENUM_CASE_TO_STRING(Symbol::ModuloEq);
+            ENUM_CASE_TO_STRING(Symbol::ConcatEq);
             ENUM_CASE_TO_STRING(Symbol::Not);
             ENUM_CASE_TO_STRING(Symbol::And);
             ENUM_CASE_TO_STRING(Symbol::Or);

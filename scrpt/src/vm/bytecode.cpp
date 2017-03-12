@@ -22,6 +22,7 @@ const char* scrpt::OpCodeToString(OpCode code)
         ENUM_CASE_TO_STRING(OpCode::MultEqI);
         ENUM_CASE_TO_STRING(OpCode::DivEqI);
         ENUM_CASE_TO_STRING(OpCode::ModuloEqI);
+        ENUM_CASE_TO_STRING(OpCode::ConcatEqI);
         ENUM_CASE_TO_STRING(OpCode::Eq);
         ENUM_CASE_TO_STRING(OpCode::Or);
         ENUM_CASE_TO_STRING(OpCode::And);
@@ -30,6 +31,7 @@ const char* scrpt::OpCodeToString(OpCode code)
         ENUM_CASE_TO_STRING(OpCode::Mul);
         ENUM_CASE_TO_STRING(OpCode::Div);
         ENUM_CASE_TO_STRING(OpCode::Mod);
+        ENUM_CASE_TO_STRING(OpCode::Concat);
         ENUM_CASE_TO_STRING(OpCode::LT);
         ENUM_CASE_TO_STRING(OpCode::GT);
         ENUM_CASE_TO_STRING(OpCode::LTE);

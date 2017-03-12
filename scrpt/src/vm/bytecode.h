@@ -17,6 +17,7 @@ namespace scrpt
         Mul,
         Div,
         Mod,
+        Concat,
         LT,
         GT,
         LTE,
@@ -34,6 +35,7 @@ namespace scrpt
         MultEqI, // int ident offset
         DivEqI, // int ident offset
         ModuloEqI, // int ident offset
+        ConcatEqI, // int ident offset
         IncI, // int ident offset
         DecI, // int ident offset
         PostIncI, // int ident offset
