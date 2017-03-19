@@ -17,12 +17,19 @@ const char* scrpt::OpCodeToString(OpCode code)
         ENUM_CASE_TO_STRING(OpCode::Pop);
         ENUM_CASE_TO_STRING(OpCode::Call);
         ENUM_CASE_TO_STRING(OpCode::AssignI);
+        ENUM_CASE_TO_STRING(OpCode::AssignIdxI);
         ENUM_CASE_TO_STRING(OpCode::PlusEqI);
+        ENUM_CASE_TO_STRING(OpCode::PlusEqIdxI);
         ENUM_CASE_TO_STRING(OpCode::MinusEqI);
+        ENUM_CASE_TO_STRING(OpCode::MinusEqIdxI);
         ENUM_CASE_TO_STRING(OpCode::MultEqI);
+        ENUM_CASE_TO_STRING(OpCode::MultEqIdxI);
         ENUM_CASE_TO_STRING(OpCode::DivEqI);
+        ENUM_CASE_TO_STRING(OpCode::DivEqIdxI);
         ENUM_CASE_TO_STRING(OpCode::ModuloEqI);
+        ENUM_CASE_TO_STRING(OpCode::ModuloEqIdxI);
         ENUM_CASE_TO_STRING(OpCode::ConcatEqI);
+        ENUM_CASE_TO_STRING(OpCode::ConcatEqIdxI);
         ENUM_CASE_TO_STRING(OpCode::Eq);
         ENUM_CASE_TO_STRING(OpCode::Or);
         ENUM_CASE_TO_STRING(OpCode::And);
@@ -45,6 +52,7 @@ const char* scrpt::OpCodeToString(OpCode code)
         ENUM_CASE_TO_STRING(OpCode::Jmp);
         ENUM_CASE_TO_STRING(OpCode::Ret);
         ENUM_CASE_TO_STRING(OpCode::RestoreRet);
+        ENUM_CASE_TO_STRING(OpCode::Index);
         ENUM_CASE_TO_STRING(OpCode::MakeList);
 
     default:
@@ -115,12 +123,19 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::PushInt:
             case OpCode::PushIdent:
             case OpCode::AssignI:
+            case OpCode::AssignIdxI:
             case OpCode::PlusEqI:
+            case OpCode::PlusEqIdxI:
             case OpCode::MinusEqI:
+            case OpCode::MinusEqIdxI:
             case OpCode::MultEqI:
+            case OpCode::MultEqIdxI:
             case OpCode::DivEqI:
+            case OpCode::DivEqIdxI:
             case OpCode::ModuloEqI:
+            case OpCode::ModuloEqIdxI:
             case OpCode::ConcatEqI:
+            case OpCode::ConcatEqIdxI:
             case OpCode::IncI:
             case OpCode::DecI:
             case OpCode::PostIncI:
@@ -148,12 +163,19 @@ void scrpt::Decompile(const Bytecode& bytecode)
 
             case OpCode::PushIdent:
             case OpCode::AssignI:
+            case OpCode::AssignIdxI:
             case OpCode::PlusEqI:
+            case OpCode::PlusEqIdxI:
             case OpCode::MinusEqI:
+            case OpCode::MinusEqIdxI:
             case OpCode::MultEqI:
+            case OpCode::MultEqIdxI:
             case OpCode::DivEqI:
+            case OpCode::DivEqIdxI:
             case OpCode::ModuloEqI:
+            case OpCode::ModuloEqIdxI:
             case OpCode::ConcatEqI:
+            case OpCode::ConcatEqIdxI:
             case OpCode::IncI:
             case OpCode::DecI:
             case OpCode::PostIncI:

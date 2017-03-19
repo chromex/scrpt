@@ -72,6 +72,7 @@ namespace scrpt
         inline void PushString(unsigned int id);
         inline void PushList(List* list);
         inline void Copy(StackObj* src, StackObj* dest);
+        inline void Move(StackObj* src, StackObj* dest);
         inline void Pop(unsigned int n = 1);
         inline void Deref(StackVal* stackVal) const;
         inline bool IsRefCounted(StackVal* val) const;

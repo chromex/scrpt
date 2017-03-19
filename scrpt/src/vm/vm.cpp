@@ -412,6 +412,39 @@ namespace scrpt
                 break;
 
             ///
+            /// Index An Object
+            ///
+            case OpCode::Index:
+                {
+                    StackObj* index = _stackPointer - 1;
+                    StackObj* object = _stackPointer - 2;
+                    StackType indexType = index->v.type;
+                    StackType objectType = object->v.type;
+                    if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    if (objectType != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    List* list = object->v.ref->list;
+                    int idx = index->v.integer;
+                    if (idx < 0)
+                    {
+                        this->ThrowErr(RuntimeErr::NotImplemented);
+                    }
+                    
+                    if (idx < list->size())
+                    {
+                        StackObj obj;
+                        this->Copy(&list->at(idx), &obj);
+                        this->Move(&obj, _stackPointer - 2);
+                        this->Pop(1);
+                    }
+                    else
+                    {
+                        this->Pop(2);
+                        this->PushNull();
+                    }
+                }
+                break;
+
+            ///
             /// Make list
             ///
             case OpCode::MakeList:
@@ -505,6 +538,35 @@ namespace scrpt
                 _ip += 4;
                 break;
 
+            ///
+            /// Indexed Identifier Assignment
+            ///
+            case OpCode::AssignIdxI:
+                {
+                    int index = (_stackPointer - 1)->v.integer;
+                    StackObj* value = _stackPointer - 2;
+                    StackObj* target = _framePointer + GetOperand(int);
+                    if (target->v.type != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+
+                    List* list = target->v.ref->list;
+                    if (index < 0)
+                    {
+                        this->ThrowErr(RuntimeErr::NotImplemented);
+                    }
+
+                    if (index >= list->size())
+                    {
+                        list->resize(index + 1, StackObj());
+                    }
+
+                    StackObj* targetVal = &list->at(index);
+                    this->Copy(value, targetVal);
+                    this->Pop();
+
+                    _ip += 4;
+                }
+                break;
+
             /// 
             /// Identifier Add Assign
             ///
@@ -549,7 +611,7 @@ namespace scrpt
                     StackType t1 = target->v.type; 
                     StackType t2 = value->v.type; 
                     if (t1 != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                    StackObj obj = StackObj{ StackVal{ StackType::Null, nullptr } };
+                    StackObj obj(StackType::Null, nullptr);
                     this->Copy(value, &obj);
                     target->v.ref->list->push_back(obj);
                     this->Pop(1);
@@ -699,12 +761,25 @@ namespace scrpt
         AssertNotNull(src);
         AssertNotNull(dest);
 
+        this->Deref(&dest->v);
         dest->v.type = src->v.type;
         dest->v.ref = src->v.ref;
         if (this->IsRefCounted(&dest->v))
         {
             ++dest->v.ref->refCount;
         }
+    }
+
+    inline void VM::Move(StackObj* src, StackObj* dest)
+    {
+        AssertNotNull(src);
+        AssertNotNull(dest);
+
+        this->Deref(&dest->v);
+        dest->v.type = src->v.type;
+        dest->v.ref = src->v.ref;
+        src->v.type = StackType::Null;
+        src->v.ref = nullptr;
     }
 
     void VM::Pop(unsigned int num /* = 1 */)
@@ -718,7 +793,7 @@ namespace scrpt
 
             _stackPointer -= 1;
             this->Deref(&_stackPointer->v);
-            _stackPointer->v.type = StackType::Top;
+            _stackPointer->v.type = StackType::Null;
         }
     }
      
@@ -730,6 +805,7 @@ namespace scrpt
             stackVal->ref->refCount -= 1;
             if (stackVal->ref->refCount == 0)
             {
+                // TODO: Deref list and map values before destroying
                 // TODO: Map support
                 switch (stackVal->type)
                 {
@@ -740,6 +816,7 @@ namespace scrpt
                 stackVal->ref->value = nullptr;
                 delete stackVal->ref;
                 stackVal->ref = nullptr;
+                stackVal->type = StackType::Null;
             }
         }
     }
@@ -776,7 +853,6 @@ namespace scrpt
 	{
 		switch (type)
 		{
-			ENUM_CASE_TO_STRING(StackType::Top);
 			ENUM_CASE_TO_STRING(StackType::Null);
 			ENUM_CASE_TO_STRING(StackType::Boolean);
 			ENUM_CASE_TO_STRING(StackType::Int);

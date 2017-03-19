@@ -118,6 +118,8 @@ func main() {
     for (count = 0; count < 20; ++count)
         lst #= randomInt();
     print(lst);
+    quickSort(lst, 0, length(lst) - 1);
+    print(lst);
     return length(lst);
 }
 

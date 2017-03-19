@@ -154,6 +154,12 @@ func main() {
     val #= " one more";
 }
 )testCode"));
+
+    ACCUMTEST(TestParse("Complex Expansion", scrpt::ParseErr::NoError, false, R"testCode(
+func main() {
+    foo()[1][2].blah("yo");
+}
+)testCode"));
 }
 
 bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, const char* source)

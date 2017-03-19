@@ -218,11 +218,25 @@ namespace scrpt
         case Symbol::DivEq:
         case Symbol::ModuloEq:
         case Symbol::ConcatEq:
-            Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
-
-            Assert(node.GetChildren().size() == 2, "Unexpected number of children");
-            this->CompileExpression(node.GetSecondChild());
-            this->AddOp(this->MapUnaryAssignOp(node.GetSym()), this->AddLocal(node.GetFirstChild().GetToken()->GetString()));
+            {
+                Assert(node.GetChildren().size() == 2, "Unexpected number of children");
+                const AstNode& firstChild = node.GetFirstChild();
+                if (firstChild.GetSym() == Symbol::Ident)
+                {
+                    this->CompileExpression(node.GetSecondChild());
+                    this->AddOp(this->MapUnaryAssignOp(node.GetSym()), this->AddLocal(firstChild.GetToken()->GetString()));
+                }
+                else if (firstChild.GetSym() == Symbol::LSquare)
+                {
+                    this->CompileExpression(node.GetSecondChild());
+                    this->CompileExpression(firstChild.GetSecondChild());
+                    this->AddOp(this->MapUnaryAssignIdxOp(node.GetSym()), this->AddLocal(firstChild.GetFirstChild().GetToken()->GetString()));
+                }
+                else
+                {
+                    Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Unknown assignment LHS");
+                }
+            }
             break;
 
         case Symbol::Eq:
@@ -271,7 +285,17 @@ namespace scrpt
             break;
 
         case Symbol::LSquare:
-            this->CompileList(node);
+            if (node.IsConstant())
+            {
+                this->CompileList(node);
+            }
+            else
+            {
+                Assert(node.GetChildren().size() == 2, "Unexpected number of children");
+                this->CompileExpression(node.GetFirstChild());
+                this->CompileExpression(node.GetSecondChild());
+                this->AddOp(OpCode::Index);
+            }
             break;
 
         default:
@@ -557,6 +581,23 @@ namespace scrpt
         case Symbol::ConcatEq: return OpCode::ConcatEqI;
         default:
             AssertFail("Unmapped unary assign op: " << SymbolToString(sym));
+            return OpCode::Unknown;
+        }
+    }
+
+    OpCode BytecodeGen::MapUnaryAssignIdxOp(Symbol sym) const
+    {
+        switch (sym)
+        {
+        case Symbol::Assign: return OpCode::AssignIdxI;
+        case Symbol::PlusEq: return OpCode::PlusEqIdxI;
+        case Symbol::MinusEq: return OpCode::MinusEqIdxI;
+        case Symbol::MultEq: return OpCode::MultEqIdxI;
+        case Symbol::DivEq: return OpCode::DivEqIdxI;
+        case Symbol::ModuloEq: return OpCode::ModuloEqIdxI;
+        case Symbol::ConcatEq: return OpCode::ConcatEqIdxI;
+        default:
+            AssertFail("Unmapped unary assign idex op: " << SymbolToString(sym));
             return OpCode::Unknown;
         }
     }

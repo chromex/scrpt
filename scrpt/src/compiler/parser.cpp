@@ -417,6 +417,8 @@ namespace scrpt
                 this->ParseExpression(false);
             }
 
+            // TODO: Error on nothing?
+
             this->Expect(Symbol::RSquare);
             this->PopNode();
             return true;

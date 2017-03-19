@@ -4,7 +4,6 @@ namespace scrpt
 {
     enum class StackType : int
     {
-        Top,
         Null,
         Boolean,
         Int,
@@ -18,7 +17,7 @@ namespace scrpt
 
     union StackObj;
     typedef std::vector<StackObj> Stack;
-    typedef std::vector<StackObj> List;
+    typedef std::vector<StackObj> List; 
 
     struct StackRef
     {
@@ -33,6 +32,9 @@ namespace scrpt
 
     struct StackVal
     {
+        StackVal() : type(StackType::Null), ref(nullptr) {}
+        StackVal(StackType t, StackRef* r) : type(t), ref(r) {}
+
         StackType type;
         union
         {
@@ -51,6 +53,9 @@ namespace scrpt
 
     union StackObj
     {
+        StackObj() : v(StackType::Null, nullptr) {}
+        StackObj(StackType t, StackRef* r) : v(t, r) {}
+
         StackVal v;
         StackFrame frame;
     };
