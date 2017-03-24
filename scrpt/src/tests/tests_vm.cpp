@@ -112,15 +112,18 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Quick sort", 20, true, R"testCode(
+	ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
 func main() {
+	numElements = 1000;
     lst = [];
-    for (count = 0; count < 20; ++count)
+    for (count = 0; count < numElements; ++count)
         lst #= randomInt();
-    print(lst);
     quickSort(lst, 0, length(lst) - 1);
-    print(lst);
-    return length(lst);
+	correct = true;
+	for (count = 0; count < length(lst) - 1 && correct; ++count)
+		if (lst[count] > lst[count+1]) correct = false;
+    if (correct) return 1;
+	return 0;
 }
 
 func quickSort(list, left, right) {

@@ -57,11 +57,11 @@ namespace scrpt
         NoError,
         UnexpectedToken,
         FunctionRedefinition,
-        ParamCountExceeded,
-        NoSuchFunction,
-        IncorrectArity,
-        NoSuchIdent,
-        DuplicateParameter,
+        ParameterCountExceeded,
+        UndeclaredFunctionReference,
+        IncorrectCallArity,
+        UndeclaredIdentifierReference,
+        DuplicateParameterName,
     };
     const char* BytecodeGenErrToString(BytecodeGenErr err);
 }

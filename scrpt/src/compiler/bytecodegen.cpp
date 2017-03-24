@@ -61,7 +61,7 @@ namespace scrpt
         size_t nParam = children.size() - 2;
         if (nParam > 255)
         {
-            CreateBytecodeGenEx(BytecodeGenErr::ParamCountExceeded, ident.GetToken());
+            CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, ident.GetToken());
         }
 
         _functionLookup[name] = (unsigned int)_functions.size();
@@ -453,14 +453,14 @@ namespace scrpt
         auto funcIter = _functionLookup.find(node.GetFirstChild().GetToken()->GetString());
         if (funcIter == _functionLookup.end())
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::NoSuchFunction, node.GetToken());
+            throw CreateBytecodeGenEx(BytecodeGenErr::UndeclaredFunctionReference, node.GetToken());
         }
 
         unsigned int funcId = funcIter->second;
 
         if ((unsigned char)nParam != _functions[funcId].nParam)
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::IncorrectArity, node.GetToken());
+            throw CreateBytecodeGenEx(BytecodeGenErr::IncorrectCallArity, node.GetToken());
         }
 
         auto children = node.GetChildren();
@@ -627,7 +627,7 @@ namespace scrpt
         const char* ident = node.GetToken()->GetString();
         if (this->LookupIdentOffset(ident, &offset))
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::DuplicateParameter, node.GetToken());
+            throw CreateBytecodeGenEx(BytecodeGenErr::DuplicateParameterName, node.GetToken());
         }
 
         offset = _paramOffset--;
@@ -657,7 +657,7 @@ namespace scrpt
         int offset;
         if (!this->LookupIdentOffset(node.GetToken()->GetString(), &offset))
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::NoSuchIdent, node.GetToken());
+            throw CreateBytecodeGenEx(BytecodeGenErr::UndeclaredIdentifierReference, node.GetToken());
         }
 
         return offset;
@@ -692,11 +692,11 @@ namespace scrpt
             ENUM_CASE_TO_STRING(BytecodeGenErr::NoError);
             ENUM_CASE_TO_STRING(BytecodeGenErr::UnexpectedToken);
             ENUM_CASE_TO_STRING(BytecodeGenErr::FunctionRedefinition);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::ParamCountExceeded);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::NoSuchFunction);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::IncorrectArity);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::NoSuchIdent);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::DuplicateParameter);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::ParameterCountExceeded);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::UndeclaredFunctionReference);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::IncorrectCallArity);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::UndeclaredIdentifierReference);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::DuplicateParameterName);
 
         default:
             AssertFail("Missing case for BytecodeGenErr");
