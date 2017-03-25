@@ -3,14 +3,20 @@
 #define COMPONENTNAME "VM"
 #define STACKSIZE 10000
 
-#define ISREFCOUNTED(Type) (Type == StackType::DynamicString || Type == StackType::List || Type == StackType::Map)
+using namespace scrpt;
 
+inline bool IsRefCounted(scrpt::StackType t)
+{
+	return (t == scrpt::StackType::DynamicString || t == scrpt::StackType::List || t == scrpt::StackType::Map);
+}
+
+// TODO: Need error on not impl for switch
 #define DEREF(Val) \
 { \
 	StackVal* val = (Val); \
     AssertNotNull(val); \
 	StackType type = val->type; \
-    if (ISREFCOUNTED(type)) \
+    if (IsRefCounted(type)) \
     { \
 		StackRef* ref = val->ref; \
         ref->refCount -= 1; \
@@ -20,13 +26,27 @@
             { \
             case StackType::DynamicString: delete ref->string; break; \
             case StackType::List: delete ref->list; break; \
-            default: this->ThrowErr(RuntimeErr::NotImplemented); \
             } \
             delete ref; \
             val->ref = nullptr; \
             val->type = StackType::Null; \
         } \
     } \
+}
+
+__forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
+{
+	AssertNotNull(src);
+	AssertNotNull(dest);
+
+	DEREF(&dest->v);
+	dest->v.type = src->v.type;
+	dest->v.ref = src->v.ref;
+	scrpt::StackType type = dest->v.type;
+	if (IsRefCounted(type))
+	{
+		++dest->v.ref->refCount;
+	}
 }
 
 #define POP1 \
@@ -435,7 +455,7 @@ namespace scrpt
             ///
             case OpCode::Ret:
                 {
-                    this->Copy(_stackPointer - 1, &_returnValue);
+                    Copy(_stackPointer - 1, &_returnValue);
 					POP1; // return value
                     while (_stackPointer > _framePointer)
                     {
@@ -484,7 +504,7 @@ namespace scrpt
                     if (idx < list->size())
                     {
                         StackObj obj;
-                        this->Copy(&list->at(idx), &obj);
+                        Copy(&list->at(idx), &obj);
                         this->Move(&obj, _stackPointer - 2);
                         POP1;
                     }
@@ -506,7 +526,7 @@ namespace scrpt
                     List* list = new List(size);
                     for (int index = -(int)size; index < 0; ++index)
                     {
-                        this->Copy(_stackPointer + index, &(*list)[index + size]);
+                        Copy(_stackPointer + index, &(*list)[index + size]);
                     }
                     POPN(size);
                     this->PushList(list);
@@ -545,7 +565,7 @@ namespace scrpt
                 {
                     StackObj* obj = _stackPointer;
                     this->PushNull();
-                    this->Copy(_framePointer + GetOperand(int), obj);
+                    Copy(_framePointer + GetOperand(int), obj);
                 }
                 _ip += 4;
                 break;
@@ -575,7 +595,7 @@ namespace scrpt
                         fd.func(this);
                         // TODO: Support for no return value
                         // TODO: Error on more than one return value
-                        this->Copy(_stackPointer - 1, &_returnValue);
+                        Copy(_stackPointer - 1, &_returnValue);
                         POP1; 
                         _ip += 4;
                     }
@@ -586,7 +606,7 @@ namespace scrpt
             /// Identifier Assign
             ///
             case OpCode::AssignI: 
-                this->Copy(_stackPointer - 1, _framePointer + GetOperand(int));
+                Copy(_stackPointer - 1, _framePointer + GetOperand(int));
                 _ip += 4;
                 break;
 
@@ -612,7 +632,7 @@ namespace scrpt
                     }
 
                     StackObj* targetVal = &list->at(index);
-                    this->Copy(value, targetVal);
+                    Copy(value, targetVal);
                     POP1;
 
                     _ip += 4;
@@ -664,11 +684,11 @@ namespace scrpt
                     StackType t2 = value->v.type; 
                     if (t1 != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                     StackObj obj(StackType::Null, nullptr);
-                    this->Copy(value, &obj);
+                    Copy(value, &obj);
                     target->v.ref->list->push_back(obj);
                     POP1;
                     this->PushNull();
-                    this->Copy(target, value);
+                    Copy(target, value);
                 }
                 _ip += 4;
                 break;
@@ -806,21 +826,6 @@ namespace scrpt
 
         int offset = -_currentExternArgN + (int)id;
         return _stackPointer + offset;
-    }
-
-    void VM::Copy(StackObj* src, StackObj* dest)
-    {
-        AssertNotNull(src);
-        AssertNotNull(dest);
-
-		DEREF(&dest->v);
-        dest->v.type = src->v.type;
-        dest->v.ref = src->v.ref;
-		StackType type = dest->v.type;
-        if (ISREFCOUNTED(type))
-        {
-            ++dest->v.ref->refCount;
-        }
     }
 
     inline void VM::Move(StackObj* src, StackObj* dest)
