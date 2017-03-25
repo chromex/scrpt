@@ -29,6 +29,29 @@
     } \
 }
 
+#define POP1 \
+{ \
+	if (_stackPointer == _stackRoot) \
+	{ \
+		this->ThrowErr(RuntimeErr::StackUnderflow); \
+	} \
+	_stackPointer -= 1; \
+	DEREF(&_stackPointer->v); \
+	_stackPointer->v.type = StackType::Null; \
+	_stackPointer->v.ref = nullptr; \
+}
+
+#define POP2 POP1 POP1
+
+#define POPN(N) \
+{ \
+	int num = (N); \
+	while (num-- > 0) \
+	{ \
+		POP1 \
+	} \
+}
+
 namespace scrpt
 {
     VM::VM()
@@ -36,10 +59,12 @@ namespace scrpt
         , _compiler(new BytecodeGen())
         , _ip(0)
         , _stack(STACKSIZE)
+		, _stackRoot(nullptr)
         , _stackPointer(nullptr)
         , _framePointer(nullptr)
         , _currentExternArgN(0)
     {
+		_stackRoot = &_stack[0];
     }
 
     VM::~VM()
@@ -120,7 +145,7 @@ namespace scrpt
         }
 	}
 
-#define INCREMENTOP(IntOp, FloatOp) \
+	#define INCREMENTOP(IntOp, FloatOp) \
     { \
         StackObj* obj = _framePointer + GetOperand(int); \
         StackType t = obj->v.type; \
@@ -133,7 +158,7 @@ namespace scrpt
         _ip += 4; \
     } 
 
-#define MATHOP(Op) \
+	#define MATHOP(Op) \
     { \
         StackObj* v1 = _stackPointer - 2; \
         StackObj* v2 = _stackPointer - 1; \
@@ -144,14 +169,14 @@ namespace scrpt
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
 			int result = v1->v.integer Op v2->v.integer; \
-			this->Pop(2); \
+			POP2; \
             this->PushInt(StackType::Int, result); \
         } \
         else \
         { \
             float fv1 = t1 == StackType::Float ? v1->v.fp : (float)v1->v.integer; \
             float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer; \
-			this->Pop(2); \
+			POP2; \
             this->PushFloat(fv1 Op fv2); \
         } \
     }
@@ -167,13 +192,13 @@ namespace scrpt
         if (t1 == StackType::Float)\
         {\
             float result = target->v.fp Op t2 == StackType::Float ? value->v.fp : (float)value->v.integer;\
-			this->Pop(1); \
+			POP1; \
             this->PushFloat(result);\
         }\
         else\
         {\
             int result = target->v.integer Op t2 == StackType::Int ? value->v.integer : (int)value->v.fp;\
-			this->Pop(1);\
+			POP1;\
             this->PushInt(StackType::Int, result);\
         }\
         _ip += 4;\
@@ -198,7 +223,7 @@ namespace scrpt
             float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer; \
             result = fv1 Op fv2; \
         } \
-        this->Pop(2); \
+        POP2; \
         this->PushInt(StackType::Boolean, result); \
     }
 
@@ -210,7 +235,7 @@ namespace scrpt
         StackType t2 = v2->v.type; \
         if (t1 != StackType::Boolean && t2 != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
 		int result = v1->v.integer Op v2->v.integer; \
-        this->Pop(2); \
+        POP2; \
         this->PushInt(StackType::Boolean, result); \
     }
 
@@ -244,7 +269,7 @@ namespace scrpt
             /// 
             /// Pop
             ///
-            case OpCode::Pop: this->Pop(); break;
+            case OpCode::Pop: POP1; break;
 
             /// 
             /// Equals
@@ -278,7 +303,7 @@ namespace scrpt
                         this->ThrowErr(RuntimeErr::OperandMismatch);
                     }
 
-                    this->Pop(2);
+					POP2;
                     this->PushInt(StackType::Boolean, result);
                 }
                 break;
@@ -372,7 +397,7 @@ namespace scrpt
                 default:
                     ThrowErr(RuntimeErr::NotImplemented);
                 }
-                this->Pop(2);
+				POP2;
                 this->PushString(ss.str().c_str());
             }
             break;
@@ -411,10 +436,10 @@ namespace scrpt
             case OpCode::Ret:
                 {
                     this->Copy(_stackPointer - 1, &_returnValue);
-                    this->Pop(); // return value
+					POP1; // return value
                     while (_stackPointer > _framePointer)
                     {
-                        this->Pop();
+                        POP1;
                     }
                     StackObj* stackFrame = _stackPointer - 1;
                     if (stackFrame->frame.framePointerOffset != 0)
@@ -426,7 +451,7 @@ namespace scrpt
                     {
                         running = false;
                     }
-                    this->Pop(); // Stack frame
+                    POP1; // Stack frame
                 }
                 break;
 
@@ -461,11 +486,11 @@ namespace scrpt
                         StackObj obj;
                         this->Copy(&list->at(idx), &obj);
                         this->Move(&obj, _stackPointer - 2);
-                        this->Pop(1);
+                        POP1;
                     }
                     else
                     {
-                        this->Pop(2);
+                        POP2;
                         this->PushNull();
                     }
                 }
@@ -483,7 +508,7 @@ namespace scrpt
                     {
                         this->Copy(_stackPointer + index, &(*list)[index + size]);
                     }
-                    this->Pop(size);
+                    POPN(size);
                     this->PushList(list);
                 }
                 _ip += 4;
@@ -551,7 +576,7 @@ namespace scrpt
                         // TODO: Support for no return value
                         // TODO: Error on more than one return value
                         this->Copy(_stackPointer - 1, &_returnValue);
-                        this->Pop(); 
+                        POP1; 
                         _ip += 4;
                     }
                 }
@@ -588,7 +613,7 @@ namespace scrpt
 
                     StackObj* targetVal = &list->at(index);
                     this->Copy(value, targetVal);
-                    this->Pop();
+                    POP1;
 
                     _ip += 4;
                 }
@@ -641,7 +666,7 @@ namespace scrpt
                     StackObj obj(StackType::Null, nullptr);
                     this->Copy(value, &obj);
                     target->v.ref->list->push_back(obj);
-                    this->Pop(1);
+                    POP1;
                     this->PushNull();
                     this->Copy(target, value);
                 }
@@ -810,22 +835,6 @@ namespace scrpt
         src->v.ref = nullptr;
     }
 
-    void VM::Pop(unsigned int num /* = 1 */)
-    {
-        while (num-- > 0)
-        {
-            if (_stackPointer == &_stack[0])
-            {
-                this->ThrowErr(RuntimeErr::StackUnderflow);
-            }
-
-            _stackPointer -= 1;
-            DEREF(&_stackPointer->v);
-            _stackPointer->v.type = StackType::Null;
-			_stackPointer->v.ref = nullptr;
-        }
-    }
-
     void VM::ThrowErr(RuntimeErr err) const
     {
         // TODO: Create stack trace
@@ -844,7 +853,7 @@ namespace scrpt
         {
             _ip += 4;
         }
-        this->Pop();
+        POP1;
     }
 
 	const char* StackTypeToString(StackType type)

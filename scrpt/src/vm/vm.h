@@ -61,6 +61,7 @@ namespace scrpt
 
         unsigned int _ip;
         std::vector<StackObj> _stack;
+		StackObj* _stackRoot;
         StackObj* _stackPointer;
         StackObj* _framePointer;
         StackObj _returnValue;
@@ -73,7 +74,6 @@ namespace scrpt
         inline void PushList(List* list);
         inline void Copy(StackObj* src, StackObj* dest);
         inline void Move(StackObj* src, StackObj* dest);
-        inline void Pop(unsigned int n = 1);
         inline void ThrowErr(RuntimeErr err) const;
         StackObj* GetParamBase(ParamId id);
 
