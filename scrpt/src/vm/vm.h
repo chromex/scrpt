@@ -74,8 +74,6 @@ namespace scrpt
         inline void Copy(StackObj* src, StackObj* dest);
         inline void Move(StackObj* src, StackObj* dest);
         inline void Pop(unsigned int n = 1);
-        inline void Deref(StackVal* stackVal) const;
-        inline bool IsRefCounted(StackVal* val) const;
         inline void ThrowErr(RuntimeErr err) const;
         StackObj* GetParamBase(ParamId id);
 

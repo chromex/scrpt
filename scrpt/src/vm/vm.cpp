@@ -3,6 +3,32 @@
 #define COMPONENTNAME "VM"
 #define STACKSIZE 10000
 
+#define ISREFCOUNTED(Type) (Type == StackType::DynamicString || Type == StackType::List || Type == StackType::Map)
+
+#define DEREF(Val) \
+{ \
+	StackVal* val = (Val); \
+    AssertNotNull(val); \
+	StackType type = val->type; \
+    if (ISREFCOUNTED(type)) \
+    { \
+		StackRef* ref = val->ref; \
+        ref->refCount -= 1; \
+        if (ref->refCount == 0) \
+        { \
+            switch (type) \
+            { \
+            case StackType::DynamicString: delete ref->string; break; \
+            case StackType::List: delete ref->list; break; \
+            default: this->ThrowErr(RuntimeErr::NotImplemented); \
+            } \
+            delete ref; \
+            val->ref = nullptr; \
+            val->type = StackType::Null; \
+        } \
+    } \
+}
+
 namespace scrpt
 {
     VM::VM()
@@ -18,7 +44,7 @@ namespace scrpt
 
     VM::~VM()
     {
-        this->Deref(&_returnValue.v);
+        DEREF(&_returnValue.v);
     }
 
     void VM::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
@@ -68,7 +94,7 @@ namespace scrpt
 		}
 
         // Clear out any previous return value
-        this->Deref(&_returnValue.v);
+		DEREF(&_returnValue.v);
 
         auto funcIter = _functionMap.find(funcName);
         if (funcIter != _functionMap.end())
@@ -92,9 +118,9 @@ namespace scrpt
         {
 			throw CreateRuntimeEx(funcName, RuntimeErr::FailedFunctionLookup);
         }
-    }
+	}
 
-	#define INCREMENTOP(IntOp, FloatOp) \
+#define INCREMENTOP(IntOp, FloatOp) \
     { \
         StackObj* obj = _framePointer + GetOperand(int); \
         StackType t = obj->v.type; \
@@ -107,50 +133,53 @@ namespace scrpt
         _ip += 4; \
     } 
 
-	#define MATHOP(Op) \
+#define MATHOP(Op) \
     { \
         StackObj* v1 = _stackPointer - 2; \
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        this->Pop(2); \
         if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
-            this->PushInt(StackType::Int, v1->v.integer Op v2->v.integer); \
+			int result = v1->v.integer Op v2->v.integer; \
+			this->Pop(2); \
+            this->PushInt(StackType::Int, result); \
         } \
         else \
         { \
             float fv1 = t1 == StackType::Float ? v1->v.fp : (float)v1->v.integer; \
             float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer; \
+			this->Pop(2); \
             this->PushFloat(fv1 Op fv2); \
         } \
     }
 
-    #define ASSIGNMATHOP(Op) \
+	#define ASSIGNMATHOP(Op) \
     {\
         StackObj* target = _framePointer + GetOperand(int);\
         StackObj* value = _stackPointer - 1;\
         StackType t1 = target->v.type;\
         StackType t2 = value->v.type;\
-        this->Pop(1);\
         if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Float)\
         {\
             float result = target->v.fp Op t2 == StackType::Float ? value->v.fp : (float)value->v.integer;\
+			this->Pop(1); \
             this->PushFloat(result);\
         }\
         else\
         {\
             int result = target->v.integer Op t2 == StackType::Int ? value->v.integer : (int)value->v.fp;\
+			this->Pop(1);\
             this->PushInt(StackType::Int, result);\
         }\
         _ip += 4;\
     }
 
-    #define COMPOP(Op)  \
+	#define COMPOP(Op)  \
     { \
         bool result; \
         StackObj* v1 = _stackPointer - 2; \
@@ -173,15 +202,16 @@ namespace scrpt
         this->PushInt(StackType::Boolean, result); \
     }
 
-    #define BOOLOP(Op) \
+	#define BOOLOP(Op) \
     { \
         StackObj* v1 = _stackPointer - 2; \
         StackObj* v2 = _stackPointer - 1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
         if (t1 != StackType::Boolean && t2 != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+		int result = v1->v.integer Op v2->v.integer; \
         this->Pop(2); \
-        this->PushInt(StackType::Boolean, v1->v.integer Op v2->v.integer); \
+        this->PushInt(StackType::Boolean, result); \
     }
 
     void VM::Run()
@@ -405,10 +435,7 @@ namespace scrpt
             ///
             case OpCode::RestoreRet:
                 this->PushNull();
-                this->Copy(&_returnValue, _stackPointer - 1);
-                this->Deref(&_returnValue.v);
-                _returnValue.v.type = StackType::Null;
-                _returnValue.v.ref = nullptr;
+                this->Move(&_returnValue, _stackPointer - 1);
                 break;
 
             ///
@@ -761,10 +788,11 @@ namespace scrpt
         AssertNotNull(src);
         AssertNotNull(dest);
 
-        this->Deref(&dest->v);
+		DEREF(&dest->v);
         dest->v.type = src->v.type;
         dest->v.ref = src->v.ref;
-        if (this->IsRefCounted(&dest->v))
+		StackType type = dest->v.type;
+        if (ISREFCOUNTED(type))
         {
             ++dest->v.ref->refCount;
         }
@@ -775,7 +803,7 @@ namespace scrpt
         AssertNotNull(src);
         AssertNotNull(dest);
 
-        this->Deref(&dest->v);
+		DEREF(&dest->v);
         dest->v.type = src->v.type;
         dest->v.ref = src->v.ref;
         src->v.type = StackType::Null;
@@ -792,40 +820,10 @@ namespace scrpt
             }
 
             _stackPointer -= 1;
-            this->Deref(&_stackPointer->v);
+            DEREF(&_stackPointer->v);
             _stackPointer->v.type = StackType::Null;
+			_stackPointer->v.ref = nullptr;
         }
-    }
-     
-    inline void VM::Deref(StackVal* stackVal) const
-    {
-        AssertNotNull(stackVal);
-        if (this->IsRefCounted(stackVal))
-        {
-            stackVal->ref->refCount -= 1;
-            if (stackVal->ref->refCount == 0)
-            {
-                // TODO: Deref list and map values before destroying
-                // TODO: Map support
-                switch (stackVal->type)
-                {
-                case StackType::DynamicString: delete stackVal->ref->string; break;
-                case StackType::List: delete stackVal->ref->list; break;
-                default: this->ThrowErr(RuntimeErr::NotImplemented);
-                }
-                stackVal->ref->value = nullptr;
-                delete stackVal->ref;
-                stackVal->ref = nullptr;
-                stackVal->type = StackType::Null;
-            }
-        }
-    }
-
-    inline bool VM::IsRefCounted(StackVal* val) const
-    {
-        AssertNotNull(val);
-        StackType t = val->type;
-        return t == StackType::DynamicString || t == StackType::List || t == StackType::Map;
     }
 
     void VM::ThrowErr(RuntimeErr err) const
