@@ -15,6 +15,8 @@ void scrpt::Tests::RunTestsParser(unsigned int* passed, unsigned int* failed)
     ACCUMTEST(TestParse("Parse Constants", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
     num = 0;
+    num = 1234;
+    num = -4321;
     num = 0.1;
     num = 1.2;
     num = -2.5;
@@ -50,6 +52,7 @@ func main() {
     do 1 + 2; while(true);
     for (a = 0; a < 10; ++a) {}
     for (a = 0; a < 10; ++a) 1 + 2;
+    for (;;) {}
     if (true) {}
     if (false) {} elif (true) {};
     if (false) {} elif (true) {} else {};
@@ -126,6 +129,8 @@ func main() {}
 func foo(var) {}
 func foo(var, var2) {}
 func foo(var, var2, var3) {}
+func foo() { return; }
+func foo() { return 1 + 2; }
 )testCode"));
 
     ACCUMTEST(TestParse("Assignment", scrpt::ParseErr::NoError, false, R"testCode(
@@ -142,6 +147,19 @@ func main() {
     dict.whoa *= 4;
 }
 )testCode"));
+
+    ACCUMTEST(TestParse("Concat", scrpt::ParseErr::NoError, false, R"testCode(
+func main() {
+    val = "hello" # "world" # "again";
+    val #= " one more";
+}
+)testCode"));
+
+    ACCUMTEST(TestParse("Complex Expansion", scrpt::ParseErr::NoError, false, R"testCode(
+func main() {
+    foo()[1][2].blah("yo");
+}
+)testCode"));
 }
 
 bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, const char* source)
@@ -149,7 +167,7 @@ bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, 
     AssertNotNull(testName);
     AssertNotNull(source);
 
-    std::cout << "Parser: " << testName << std::endl;
+    std::cout << "P|" << testName << "> ";
 
     scrpt::ParseErr err = scrpt::ParseErr::NoError;
     scrpt::Parser parser;
@@ -170,13 +188,12 @@ bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, 
 
     if (passed)
     {
-        std::cout << "<<<Test Passed>>>" << std::endl;
+        std::cout << "Passed" << std::endl;
     }
     else
     {
-        std::cout << "<<<Test Failed>>>" << std::endl;
+        std::cout << "<<< Failed >>>" << std::endl;
     }
 
-    std::cout << std::endl;
     return passed;
 }

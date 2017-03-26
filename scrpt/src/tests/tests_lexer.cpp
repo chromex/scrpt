@@ -9,11 +9,11 @@ static const char* validSyntax = R"testCode(
 func main(arg1, arg2)
 {
 	// Values
-	strings = {"", "simple", "new\nline", "\"quote\" of doom", "\ttab\t\tmore"};
-	numbers = {0, 1, 0123, 0.1234, 19203.1, -1.23, -0};
-	_bo0leans = {true, false};
+	strings = ["", "simple", "new\nline", "\"quote\" of doom", "\ttab\t\tmore"];
+	numbers = [0, 1, 0123, 0.1234, 19203.1, -1.23, -0];
+	_bo0leans = [true, false];
 
-        // Basic expressions
+    // Basic expressions
 	val = numbers[2];
 	slice = numbers[1:];
 	a = !b;
@@ -23,7 +23,7 @@ func main(arg1, arg2)
 	t = a <= b;
 	t = a >= b;
 
-        // Math
+    // Math
 	v = 1 + 3.2 - 2.2 * 3.0 / 0.0 % 2;
 	v += 3;
 	v -= val;
@@ -35,7 +35,12 @@ func main(arg1, arg2)
 	--a;
 	a--;
 
-        // Control flow
+    // Concat
+    str = "hello " # "world";
+    lst = [];
+    lst #= 4;
+
+    // Control flow
 	test(1, 0, "foo");
 	if (true == false && true || false)
 	{
@@ -104,7 +109,7 @@ void scrpt::Tests::RunTestsLexer(unsigned int* passed, unsigned int* failed)
 
 bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expectedErr)
 {
-    std::cout << "Lexer: " << testName << std::endl;
+    std::cout << "L|" << testName << "> ";
 
     scrpt::Lexer lexer(scrpt::Tests::DuplicateSource(source));
     std::shared_ptr<scrpt::Token> token;
@@ -119,9 +124,10 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
     }
     catch (scrpt::CompilerException& ex)
     {
-        std::cout << ex.what() << std::endl;
         token = ex.GetToken();
         err = ex.GetLexErr();
+        if (expectedErr != err)
+            std::cout << std::endl << ex.what() << std::endl;
     }
 
     bool passed = false;
@@ -138,13 +144,12 @@ bool TestLexFile(const char* source, const char* testName, scrpt::LexErr expecte
 
     if (passed)
     {
-        std::cout << "<<<Test Passed>>>" << std::endl;
+        std::cout << "Passed" << std::endl;
     }
     else
     {
-        std::cout << "<<<Test Failed>>>" << std::endl;
+        std::cout << "<<< Failed >>>" << std::endl;
     }
 
-    std::cout << std::endl;
     return passed;
 }

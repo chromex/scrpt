@@ -53,6 +53,24 @@
     <ClCompile Include="..\..\scrpt\src\tests\tests_lexer.cpp">
       <Filter>Source Files\tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\tests\tests_bytecodeGen.cpp">
+      <Filter>Source Files\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\vm\bytecode.cpp">
+      <Filter>Source Files\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\compiler\bytecodegen.cpp">
+      <Filter>Source Files\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\vm\vm.cpp">
+      <Filter>Source Files\vm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\tests\tests_vm.cpp">
+      <Filter>Source Files\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\scrpt\src\vm\stdlib.cpp">
+      <Filter>Source Files\vm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h">
@@ -78,6 +96,21 @@
     </ClInclude>
     <ClInclude Include="..\..\scrpt\src\compiler\error.h">
       <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\vm\bytecode.h">
+      <Filter>Source Files\vm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\compiler\bytecodegen.h">
+      <Filter>Source Files\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\vm\vm.h">
+      <Filter>Source Files\vm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\vm\stack.h">
+      <Filter>Source Files\vm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\scrpt\src\vm\stdlib.h">
+      <Filter>Source Files\vm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

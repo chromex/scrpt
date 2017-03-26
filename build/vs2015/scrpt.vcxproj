@@ -139,22 +139,30 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\scrpt\src\compiler\ast.cpp" />
+    <ClCompile Include="..\..\scrpt\src\compiler\bytecodegen.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\main.cpp" />
+    <ClCompile Include="..\..\scrpt\src\tests\tests_bytecodeGen.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests_lexer.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests_parser.cpp" />
+    <ClCompile Include="..\..\scrpt\src\tests\tests_vm.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
     <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
     <ClCompile Include="..\..\scrpt\src\tests\tests.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\parser.cpp" />
     <ClCompile Include="..\..\scrpt\src\compiler\error.cpp" />
+    <ClCompile Include="..\..\scrpt\src\vm\bytecode.cpp" />
+    <ClCompile Include="..\..\scrpt\src\vm\stdlib.cpp" />
+    <ClCompile Include="..\..\scrpt\src\vm\vm.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\scrpt\src\compiler\ast.h" />
+    <ClInclude Include="..\..\scrpt\src\compiler\bytecodegen.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\lexer.h" />
     <ClInclude Include="..\..\scrpt\src\scrpt.h" />
     <ClInclude Include="..\..\scrpt\src\util\fileio.h" />
@@ -162,6 +170,10 @@
     <ClInclude Include="..\..\scrpt\src\tests\tests.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\parser.h" />
     <ClInclude Include="..\..\scrpt\src\compiler\error.h" />
+    <ClInclude Include="..\..\scrpt\src\vm\bytecode.h" />
+    <ClInclude Include="..\..\scrpt\src\vm\stack.h" />
+    <ClInclude Include="..\..\scrpt\src\vm\stdlib.h" />
+    <ClInclude Include="..\..\scrpt\src\vm\vm.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\scrpt\grammer.txt" />

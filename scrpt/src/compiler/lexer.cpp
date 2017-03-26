@@ -38,7 +38,8 @@ namespace scrpt
         Symbol sym = Symbol::Error;
         LexErr err = LexErr::UnknownSymbol;
         std::unique_ptr<const char[]> string;
-        double number = nan(nullptr);
+        int integer = 0;
+        float fp = nanf(nullptr);
 
         // Burn whitespace
         this->ConsumeWhitespace();
@@ -83,10 +84,9 @@ namespace scrpt
         else if (isdigit(c))
         {
             size_t rawLen = 0;
-            number = this->GetNumber(_location, &rawLen);
-            if (!isnan(number))
+            if (this->GetNumber(_location, &rawLen, &integer, &fp))
             {
-                sym = Symbol::Number;
+                sym = isnan(fp) ? Symbol::Int : Symbol::Float;
                 _location += rawLen;
             }
             else
@@ -135,6 +135,7 @@ namespace scrpt
         DOUBLE_COMPLEX_SYM('<', '=', Symbol::LessThan, Symbol::LessThanEq)
         DOUBLE_COMPLEX_SYM('>', '=', Symbol::GreaterThan, Symbol::GreaterThanEq)
         DOUBLE_COMPLEX_SYM('%', '=', Symbol::Modulo, Symbol::ModuloEq)
+        DOUBLE_COMPLEX_SYM('#', '=', Symbol::Concat, Symbol::ConcatEq)
 
 #define TRIPLE_COMPLEX_SYM(C, V, Z, SymC, SymV, SymZ) else if (c == C && cn == Z) { sym = SymZ; _location += 2; } DOUBLE_COMPLEX_SYM(C, V, SymC, SymV)
         TRIPLE_COMPLEX_SYM('-', '=', '-', Symbol::Minus, Symbol::MinusEq, Symbol::MinusMinus)
@@ -143,7 +144,7 @@ namespace scrpt
         err = sym != Symbol::Error ? LexErr::NoError : err;
 
         // Construct token
-        _token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, std::move(string), number);
+        _token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, std::move(string), integer, fp);
         if (err != LexErr::NoError)
         {
             throw CreateLexerEx(err, _token);
@@ -272,19 +273,24 @@ namespace scrpt
         return std::unique_ptr<const char[]>(term);
     }
 
-    double Lexer::GetNumber(const char* c, size_t* rawLen) const
+    bool Lexer::GetNumber(const char* c, size_t* rawLen, int* integer, float* fp) const
     {
         AssertNotNull(c);
         AssertNotNull(rawLen);
+        AssertNotNull(integer);
+        AssertNotNull(fp);
+
+        *integer = 0;
+        *fp = nanf(nullptr);
 
         const char* start = c;
-        double num = 0;
+        int iNum = 0;
 
         // Parse numerator
         do
         {
-            num *= 10.0;
-            num += *c - '0';
+            iNum *= 10;
+            iNum += *c - '0';
         } while (*++c != '\0' && isdigit(*c));
 
         // Parse denominator
@@ -292,81 +298,88 @@ namespace scrpt
         {
             if (!isdigit(*++c))
             {
-                // error!
-                return nan(nullptr);
+                return false;
             }
 
+            float fNum = (float)iNum;
             unsigned int div = 1;
             do
             {
                 div *= 10;
-                num += (*c - '0') / (double)div;
+                fNum += (*c - '0') / (float)div;
             } while (*++c != '\0' && isdigit(*c));
+
+            *fp = fNum;
+        }
+        else
+        {
+            *integer = iNum;
         }
 
         *rawLen = c - start;
-        return num;
+        return true;
     }
-
-#define SYMBOL_CASE_STRING(s) case s: return #s;
 
     const char* SymbolToString(Symbol sym)
     {
         switch (sym)
         {
-            SYMBOL_CASE_STRING(Symbol::Error)
-            SYMBOL_CASE_STRING(Symbol::Start)
-            SYMBOL_CASE_STRING(Symbol::LParen)
-            SYMBOL_CASE_STRING(Symbol::RParen)
-            SYMBOL_CASE_STRING(Symbol::LBracket)
-            SYMBOL_CASE_STRING(Symbol::RBracket)
-            SYMBOL_CASE_STRING(Symbol::LSquare)
-            SYMBOL_CASE_STRING(Symbol::RSquare)
-            SYMBOL_CASE_STRING(Symbol::Number)
-            SYMBOL_CASE_STRING(Symbol::Terminal)
-            SYMBOL_CASE_STRING(Symbol::Ident)
-            SYMBOL_CASE_STRING(Symbol::True)
-            SYMBOL_CASE_STRING(Symbol::False)
-            SYMBOL_CASE_STRING(Symbol::Colon)
-            SYMBOL_CASE_STRING(Symbol::Comma)
-            SYMBOL_CASE_STRING(Symbol::Dot)
-            SYMBOL_CASE_STRING(Symbol::If)
-            SYMBOL_CASE_STRING(Symbol::Else)
-            SYMBOL_CASE_STRING(Symbol::ElseIf)
-            SYMBOL_CASE_STRING(Symbol::Do)
-            SYMBOL_CASE_STRING(Symbol::While)
-            SYMBOL_CASE_STRING(Symbol::For)
-            SYMBOL_CASE_STRING(Symbol::Continue)
-            SYMBOL_CASE_STRING(Symbol::Switch)
-            SYMBOL_CASE_STRING(Symbol::Case)
-            SYMBOL_CASE_STRING(Symbol::Break)
-            SYMBOL_CASE_STRING(Symbol::Default)
-            SYMBOL_CASE_STRING(Symbol::Return)
-            SYMBOL_CASE_STRING(Symbol::Eq)
-            SYMBOL_CASE_STRING(Symbol::Assign)
-            SYMBOL_CASE_STRING(Symbol::NotEq)
-            SYMBOL_CASE_STRING(Symbol::LessThan)
-            SYMBOL_CASE_STRING(Symbol::LessThanEq)
-            SYMBOL_CASE_STRING(Symbol::GreaterThan)
-            SYMBOL_CASE_STRING(Symbol::GreaterThanEq)
-            SYMBOL_CASE_STRING(Symbol::Plus)
-            SYMBOL_CASE_STRING(Symbol::PlusPlus)
-            SYMBOL_CASE_STRING(Symbol::Minus)
-            SYMBOL_CASE_STRING(Symbol::MinusMinus)
-            SYMBOL_CASE_STRING(Symbol::Mult)
-            SYMBOL_CASE_STRING(Symbol::Div)
-            SYMBOL_CASE_STRING(Symbol::Modulo)
-            SYMBOL_CASE_STRING(Symbol::PlusEq)
-            SYMBOL_CASE_STRING(Symbol::MinusEq)
-            SYMBOL_CASE_STRING(Symbol::MultEq)
-            SYMBOL_CASE_STRING(Symbol::DivEq)
-            SYMBOL_CASE_STRING(Symbol::ModuloEq)
-            SYMBOL_CASE_STRING(Symbol::Not)
-            SYMBOL_CASE_STRING(Symbol::And)
-            SYMBOL_CASE_STRING(Symbol::Or)
-            SYMBOL_CASE_STRING(Symbol::SemiColon)
-            SYMBOL_CASE_STRING(Symbol::Func)
-            SYMBOL_CASE_STRING(Symbol::End)
+            ENUM_CASE_TO_STRING(Symbol::Error);
+            ENUM_CASE_TO_STRING(Symbol::Start);
+            ENUM_CASE_TO_STRING(Symbol::LParen);
+            ENUM_CASE_TO_STRING(Symbol::RParen);
+            ENUM_CASE_TO_STRING(Symbol::LBracket);
+            ENUM_CASE_TO_STRING(Symbol::RBracket);
+            ENUM_CASE_TO_STRING(Symbol::LSquare);
+            ENUM_CASE_TO_STRING(Symbol::RSquare);
+            ENUM_CASE_TO_STRING(Symbol::Int);
+            ENUM_CASE_TO_STRING(Symbol::Float);
+            ENUM_CASE_TO_STRING(Symbol::Terminal);
+            ENUM_CASE_TO_STRING(Symbol::Ident);
+            ENUM_CASE_TO_STRING(Symbol::True);
+            ENUM_CASE_TO_STRING(Symbol::False);
+            ENUM_CASE_TO_STRING(Symbol::Colon);
+            ENUM_CASE_TO_STRING(Symbol::Comma);
+            ENUM_CASE_TO_STRING(Symbol::Dot);
+            ENUM_CASE_TO_STRING(Symbol::If);
+            ENUM_CASE_TO_STRING(Symbol::Else);
+            ENUM_CASE_TO_STRING(Symbol::ElseIf);
+            ENUM_CASE_TO_STRING(Symbol::Do);
+            ENUM_CASE_TO_STRING(Symbol::While);
+            ENUM_CASE_TO_STRING(Symbol::For);
+            ENUM_CASE_TO_STRING(Symbol::Continue);
+            ENUM_CASE_TO_STRING(Symbol::Switch);
+            ENUM_CASE_TO_STRING(Symbol::Case);
+            ENUM_CASE_TO_STRING(Symbol::Break);
+            ENUM_CASE_TO_STRING(Symbol::Default);
+            ENUM_CASE_TO_STRING(Symbol::Return);
+            ENUM_CASE_TO_STRING(Symbol::Eq);
+            ENUM_CASE_TO_STRING(Symbol::Assign);
+            ENUM_CASE_TO_STRING(Symbol::NotEq);
+            ENUM_CASE_TO_STRING(Symbol::LessThan);
+            ENUM_CASE_TO_STRING(Symbol::LessThanEq);
+            ENUM_CASE_TO_STRING(Symbol::GreaterThan);
+            ENUM_CASE_TO_STRING(Symbol::GreaterThanEq);
+            ENUM_CASE_TO_STRING(Symbol::Plus);
+            ENUM_CASE_TO_STRING(Symbol::PlusPlus);
+            ENUM_CASE_TO_STRING(Symbol::Minus);
+            ENUM_CASE_TO_STRING(Symbol::MinusMinus);
+            ENUM_CASE_TO_STRING(Symbol::Mult);
+            ENUM_CASE_TO_STRING(Symbol::Div);
+            ENUM_CASE_TO_STRING(Symbol::Modulo);
+            ENUM_CASE_TO_STRING(Symbol::Concat);
+            ENUM_CASE_TO_STRING(Symbol::PlusEq);
+            ENUM_CASE_TO_STRING(Symbol::MinusEq);
+            ENUM_CASE_TO_STRING(Symbol::MultEq);
+            ENUM_CASE_TO_STRING(Symbol::DivEq);
+            ENUM_CASE_TO_STRING(Symbol::ModuloEq);
+            ENUM_CASE_TO_STRING(Symbol::ConcatEq);
+            ENUM_CASE_TO_STRING(Symbol::Not);
+            ENUM_CASE_TO_STRING(Symbol::And);
+            ENUM_CASE_TO_STRING(Symbol::Or);
+            ENUM_CASE_TO_STRING(Symbol::SemiColon);
+            ENUM_CASE_TO_STRING(Symbol::Func);
+            ENUM_CASE_TO_STRING(Symbol::End);
 
         default:
             AssertFail("Missing case for symbol");
@@ -379,31 +392,14 @@ namespace scrpt
     {
         switch (err)
         {
-            SYMBOL_CASE_STRING(LexErr::NoError)
-            SYMBOL_CASE_STRING(LexErr::UnknownSymbol)
-            SYMBOL_CASE_STRING(LexErr::UnknownStringEscape)
-            SYMBOL_CASE_STRING(LexErr::NonTerminatedString)
-            SYMBOL_CASE_STRING(LexErr::InvalidNumber)
+            ENUM_CASE_TO_STRING(LexErr::NoError);
+            ENUM_CASE_TO_STRING(LexErr::UnknownSymbol);
+            ENUM_CASE_TO_STRING(LexErr::UnknownStringEscape);
+            ENUM_CASE_TO_STRING(LexErr::NonTerminatedString);
+            ENUM_CASE_TO_STRING(LexErr::InvalidNumber);
 
         default:
             AssertFail("Missing case for LexErr");
-        }
-
-        return nullptr;
-    }
-
-    const char * ParseErrToString(ParseErr err)
-    {
-        switch (err)
-        {
-            SYMBOL_CASE_STRING(ParseErr::NoError)
-            SYMBOL_CASE_STRING(ParseErr::UnexpectedSymbol)
-            SYMBOL_CASE_STRING(ParseErr::BlockExpected)
-            SYMBOL_CASE_STRING(ParseErr::ExpressionExpected)
-            SYMBOL_CASE_STRING(ParseErr::StatementExpected)
-
-        default:
-            AssertFail("Missing case for ParseErr");
         }
 
         return nullptr;
@@ -417,7 +413,8 @@ namespace scrpt
         size_t lineNumber,
         size_t linePosition,
         std::unique_ptr<const char[]>&& string,
-        double number)
+        int integer,
+        float fp)
         : _sym(sym)
         , _sourceData(sourceData)
         , _symLocation(symLocation)
@@ -425,7 +422,8 @@ namespace scrpt
         , _lineNumber(lineNumber)
         , _linePosition(linePosition)
         , _string(std::move(string))
-        , _number(number)
+        , _int(integer)
+        , _float(fp)
     {
         AssertNotNull(_sourceData);
         AssertNotNull(_symLocation);
@@ -435,7 +433,8 @@ namespace scrpt
     Symbol Token::GetSym() const { return _sym; }
     const char * Token::SymToString() const { return SymbolToString(_sym); }
     const char* Token::GetString() const { return _string.get(); }
-    double Token::GetNumber() const { return _number; }
+    int Token::GetInt() const { return _int; }
+    float Token::GetFloat() const { return _float; }
 
     std::string Token::GetFormattedTokenCode() const
     {

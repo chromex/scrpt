@@ -2,12 +2,23 @@
 
 namespace scrpt
 {
+    enum class ParseErr
+    {
+        NoError,
+        UnexpectedSymbol,
+        BlockExpected,
+        ExpressionExpected,
+        StatementExpected,
+    };
+    const char* ParseErrToString(ParseErr err);
+
     class Parser
     {
     public:
         Parser();
 
         void Consume(Lexer* lexer);
+        AstNode* GetAst();
         void DumpAst();
 
     private:
@@ -28,15 +39,16 @@ namespace scrpt
         bool ParseBlock(bool expect);
         bool ParseStatement(bool expect);
         bool ParseExpression(bool expect);
-        bool ParseEx0(bool expect);
-        bool ParseEx1(bool expect);
-        bool ParseEx2(bool expect);
-        bool ParseEx3(bool expect);
-        bool ParseEx4(bool expect);
-        bool ParseEx5(bool expect);
-        bool ParseEx6(bool expect);
-        bool ParseEx7(bool expect);
-        bool ParseEx8();
+        bool ParseExOr(bool expect);
+        bool ParseExAnd(bool expect);
+        bool ParseExEquals(bool expect);
+        bool ParseExConcat(bool expect);
+        bool ParseExCompare(bool expect);
+        bool ParseExAdd(bool expect);
+        bool ParseExMul(bool expect);
+        bool ParseExPrefix(bool expect);
+        bool ParseExPostfix(bool expect);
+        bool ParseExTerm();
         bool ParseCall();
         bool ParseIndex();
         bool ParseDotExpand();

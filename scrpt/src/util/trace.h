@@ -17,8 +17,14 @@ void TraceMessage(const char* message);
 #define TraceWarning(message) __Trace(Warning, message)
 #define TraceError(message) __Trace(Error, message)
 
+#ifdef DEBUG
 #define AssertFail(message) { TraceError(message); __debugbreak(); }
 #define AssertNotNull(value) { if ((value) == nullptr) AssertFail("Variable is null: " #value); }
 #define Assert(condition, message) { if (!(condition)) AssertFail(message); }
+#else
+#define AssertFail(message)
+#define AssertNotNull(value)
+#define Assert(condition, message)
+#endif
 
 #endif

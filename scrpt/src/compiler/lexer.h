@@ -8,34 +8,35 @@ namespace scrpt
         Start,
         LParen,
         RParen,
-        LBracket,
+        LBracket,//
         RBracket,
-        LSquare,
+        LSquare,//
         RSquare,
-        Number,
+        Int,
+        Float,
         Terminal,
         Ident,
         True,
         False,
         Colon,
         Comma,
-        Dot,
+        Dot,//
         If,
-        Else,
-        ElseIf,
+        Else,//
+        ElseIf,//
         Do,
         While,
         For,
-        Continue,
-        Switch,
-        Case,
-        Break,
-        Default,
+        Continue,//
+        Switch,//
+        Case,//
+        Break,//
+        Default,//
         Return,
         Eq,
         Assign,
-        Not,
-        NotEq,
+        Not,//
+        NotEq,//
         LessThan,
         LessThanEq,
         GreaterThan,
@@ -47,11 +48,13 @@ namespace scrpt
         Mult,
         Div,
         Modulo,
+        Concat,
         PlusEq,
         MinusEq,
         MultEq,
         DivEq,
         ModuloEq,
+        ConcatEq,
         And,
         Or,
         SemiColon,
@@ -70,16 +73,6 @@ namespace scrpt
     };
     const char* LexErrToString(LexErr err);
 
-    enum class ParseErr
-    {
-        NoError,
-        UnexpectedSymbol,
-        BlockExpected,
-        ExpressionExpected,
-        StatementExpected,
-    };
-    const char* ParseErrToString(ParseErr err);
-
     class Token
     {
     public:
@@ -91,12 +84,14 @@ namespace scrpt
             size_t lineNumber,
             size_t linePosition,
             std::unique_ptr<const char[]>&& string,
-            double number);
+            int integer,
+            float fp);
 
         Symbol GetSym() const;
         const char* SymToString() const;
         const char* GetString() const;
-        double GetNumber() const;
+        int GetInt() const;
+        float GetFloat() const;
         std::string GetFormattedTokenCode() const;
 
     private:
@@ -107,7 +102,8 @@ namespace scrpt
         size_t _lineNumber;
         size_t _linePosition;
         std::unique_ptr<const char[]> _string;
-        double _number;
+        int _int;
+        float _float;
     };
 
     class Lexer
@@ -127,7 +123,7 @@ namespace scrpt
         bool GetRawTermLength(const char* c, size_t* length) const;
         size_t GetTermLength(const char* c) const;
         std::unique_ptr<const char[]> GetTerm(const char* c, LexErr* err);
-        double GetNumber(const char* c, size_t* rawLen) const;
+        bool GetNumber(const char* c, size_t* rawLen, int* integer, float* fp) const;
 
         std::shared_ptr<const char> _sourceData;
         std::shared_ptr<Token> _token;
