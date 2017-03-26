@@ -11,7 +11,7 @@ void scrpt::RunTests()
     Tests::RunTestsLexer(&passed, &failed);
     Tests::RunTestsParser(&passed, &failed);
     Tests::RunTestsBytecodeGen(&passed, &failed);
-    Tests::RunTestsVM(&passed, &failed);
+    //Tests::RunTestsVM(&passed, &failed);
 
     std::cout << passed << " passed and " << failed << " failed" << std::endl;
 }

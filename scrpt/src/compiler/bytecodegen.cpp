@@ -2,6 +2,17 @@
 
 #define COMPONENTNAME "BytecodeGen"
 
+// Register machine conversion...
+// * Instructions change to the format: INSTR reg1, reg2, reg3
+// * Number of registers required is:
+//   * Parameters + locals
+//   * The sum of the leafs of the largest expression tree? 
+//   * Can this be computed at runtime? E.g. keep a list and mark free / used as it goes
+// * Parameters are still push on the stack + register space is reserved on top of the stack
+// * Registers for non param/ident values are nulled out during runtime
+// * Local registers are cleaned up on return
+// * Bytecode decompiler needs to be updated
+
 namespace scrpt
 {
     BytecodeGen::BytecodeGen()
