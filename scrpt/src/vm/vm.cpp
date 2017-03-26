@@ -5,33 +5,32 @@
 
 using namespace scrpt;
 
-inline bool IsRefCounted(scrpt::StackType t)
+__forceinline bool IsRefCounted(scrpt::StackType t)
 {
 	return (t == scrpt::StackType::DynamicString || t == scrpt::StackType::List || t == scrpt::StackType::Map);
 }
 
-// TODO: Need error on not impl for switch
-#define DEREF(Val) \
-{ \
-	StackVal* val = (Val); \
-    AssertNotNull(val); \
-	StackType type = val->type; \
-    if (IsRefCounted(type)) \
-    { \
-		StackRef* ref = val->ref; \
-        ref->refCount -= 1; \
-        if (ref->refCount == 0) \
-        { \
-            switch (type) \
-            { \
-            case StackType::DynamicString: delete ref->string; break; \
-            case StackType::List: delete ref->list; break; \
-            } \
-            delete ref; \
-            val->ref = nullptr; \
-            val->type = StackType::Null; \
-        } \
-    } \
+__forceinline void Deref(StackVal* val)
+{
+	AssertNotNull(val);
+	StackType type = val->type;
+	if (IsRefCounted(type))
+	{
+		StackRef* ref = val->ref;
+		ref->refCount -= 1;
+		if (ref->refCount == 0)
+		{
+			switch (type)
+			{
+			case StackType::DynamicString: delete ref->string; break;
+			case StackType::List: delete ref->list; break;
+			// TODO: Need error on not impl for switch
+			}
+			delete ref;
+			val->ref = nullptr;
+			val->type = StackType::Null;
+		}
+	}
 }
 
 __forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
@@ -39,7 +38,7 @@ __forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
 	AssertNotNull(src);
 	AssertNotNull(dest);
 
-	DEREF(&dest->v);
+	Deref(&dest->v);
 	dest->v.type = src->v.type;
 	dest->v.ref = src->v.ref;
 	scrpt::StackType type = dest->v.type;
@@ -49,6 +48,18 @@ __forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
 	}
 }
 
+__forceinline void Move(StackObj* src, StackObj* dest)
+{
+	AssertNotNull(src);
+	AssertNotNull(dest);
+
+	Deref(&dest->v);
+	dest->v.type = src->v.type;
+	dest->v.ref = src->v.ref;
+	src->v.type = StackType::Null;
+	src->v.ref = nullptr;
+}
+
 #define POP1 \
 { \
 	if (_stackPointer == _stackRoot) \
@@ -56,7 +67,7 @@ __forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
 		this->ThrowErr(RuntimeErr::StackUnderflow); \
 	} \
 	_stackPointer -= 1; \
-	DEREF(&_stackPointer->v); \
+	Deref(&_stackPointer->v); \
 	_stackPointer->v.type = StackType::Null; \
 	_stackPointer->v.ref = nullptr; \
 }
@@ -89,7 +100,7 @@ namespace scrpt
 
     VM::~VM()
     {
-        DEREF(&_returnValue.v);
+		Deref(&_returnValue.v);
     }
 
     void VM::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
@@ -139,7 +150,7 @@ namespace scrpt
 		}
 
         // Clear out any previous return value
-		DEREF(&_returnValue.v);
+		Deref(&_returnValue.v);
 
         auto funcIter = _functionMap.find(funcName);
         if (funcIter != _functionMap.end())
@@ -480,7 +491,7 @@ namespace scrpt
             ///
             case OpCode::RestoreRet:
                 this->PushNull();
-                this->Move(&_returnValue, _stackPointer - 1);
+                Move(&_returnValue, _stackPointer - 1);
                 break;
 
             ///
@@ -505,7 +516,7 @@ namespace scrpt
                     {
                         StackObj obj;
                         Copy(&list->at(idx), &obj);
-                        this->Move(&obj, _stackPointer - 2);
+                        Move(&obj, _stackPointer - 2);
                         POP1;
                     }
                     else
@@ -826,18 +837,6 @@ namespace scrpt
 
         int offset = -_currentExternArgN + (int)id;
         return _stackPointer + offset;
-    }
-
-    inline void VM::Move(StackObj* src, StackObj* dest)
-    {
-        AssertNotNull(src);
-        AssertNotNull(dest);
-
-		DEREF(&dest->v);
-        dest->v.type = src->v.type;
-        dest->v.ref = src->v.ref;
-        src->v.type = StackType::Null;
-        src->v.ref = nullptr;
     }
 
     void VM::ThrowErr(RuntimeErr err) const

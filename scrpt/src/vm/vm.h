@@ -72,7 +72,6 @@ namespace scrpt
         inline void PushStackFrame(unsigned int returnIp, int framePointerOffset);
         inline void PushString(unsigned int id);
         inline void PushList(List* list);
-        inline void Move(StackObj* src, StackObj* dest);
         inline void ThrowErr(RuntimeErr err) const;
         StackObj* GetParamBase(ParamId id);
 
