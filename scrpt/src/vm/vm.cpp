@@ -33,18 +33,36 @@ __forceinline void Deref(StackVal* val)
 	}
 }
 
+// Does not dereference the destination location
+__forceinline void BlindCopy(scrpt::StackObj* src, scrpt::StackObj* dest)
+{
+	AssertNotNull(src);
+	AssertNotNull(dest);
+
+	StackVal& destVal = dest->v;
+	StackVal& srcVal = src->v;
+	destVal.type = srcVal.type;
+	destVal.ref = srcVal.ref;
+	if (IsRefCounted(destVal.type))
+	{
+		++destVal.ref->refCount;
+	}
+}
+
+// Does dereference the destination location
 __forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
 {
 	AssertNotNull(src);
 	AssertNotNull(dest);
 
-	Deref(&dest->v);
-	dest->v.type = src->v.type;
-	dest->v.ref = src->v.ref;
-	scrpt::StackType type = dest->v.type;
-	if (IsRefCounted(type))
+	StackVal& destVal = dest->v;
+	StackVal& srcVal = src->v;
+	Deref(&destVal);
+	destVal.type = srcVal.type;
+	destVal.ref = srcVal.ref;
+	if (IsRefCounted(destVal.type))
 	{
-		++dest->v.ref->refCount;
+		++destVal.ref->refCount;
 	}
 }
 
@@ -574,9 +592,8 @@ namespace scrpt
             ///
             case OpCode::PushIdent:
                 {
-                    StackObj* obj = _stackPointer;
-                    this->PushNull();
-                    Copy(_framePointer + GetOperand(int), obj);
+                    BlindCopy(_framePointer + GetOperand(int), _stackPointer);
+					++_stackPointer;
                 }
                 _ip += 4;
                 break;
