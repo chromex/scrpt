@@ -185,11 +185,13 @@ namespace scrpt
         switch (node.GetSym())
         {
         case Symbol::Int:
-            this->AddOp(OpCode::LoadInt, node.GetToken()->GetInt());
+            // TODO!!!
+            //this->AddOp(OpCode::LoadInt, node.GetToken()->GetInt());
             break;
 
         case Symbol::Float:
-            this->AddOp(OpCode::LoadFloat, node.GetToken()->GetFloat());
+            // TODO!!!
+            //this->AddOp(OpCode::LoadFloat, node.GetToken()->GetFloat());
             break;
 
         case Symbol::Ident:
@@ -238,13 +240,15 @@ namespace scrpt
                 if (firstChild.GetSym() == Symbol::Ident)
                 {
                     this->CompileExpression(node.GetSecondChild());
-                    this->AddOp(this->MapUnaryAssignOp(node.GetSym()), this->AddLocal(firstChild.GetToken()->GetString()));
+                    // TODO!!!
+                    //this->AddOp(this->MapUnaryAssignOp(node.GetSym()), this->AddLocal(firstChild.GetToken()->GetString()));
                 }
                 else if (firstChild.GetSym() == Symbol::LSquare)
                 {
                     this->CompileExpression(node.GetSecondChild());
                     this->CompileExpression(firstChild.GetSecondChild());
-                    this->AddOp(this->MapUnaryAssignIdxOp(node.GetSym()), this->AddLocal(firstChild.GetFirstChild().GetToken()->GetString()));
+                    // TODO!!!
+                    //this->AddOp(this->MapUnaryAssignIdxOp(node.GetSym()), this->AddLocal(firstChild.GetFirstChild().GetToken()->GetString()));
                 }
                 else
                 {
@@ -276,14 +280,16 @@ namespace scrpt
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostInc : OpCode::Inc, this->LookupIdentOffset(node.GetFirstChild()));
+            // TODO!!!
+            //this->AddOp(node.IsPostfix() ? OpCode::PostInc : OpCode::Inc, this->LookupIdentOffset(node.GetFirstChild()));
             break;
 
         case Symbol::MinusMinus:
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostDec : OpCode::Dec, this->LookupIdentOffset(node.GetFirstChild()));
+            // TODO!!!
+            //this->AddOp(node.IsPostfix() ? OpCode::PostDec : OpCode::Dec, this->LookupIdentOffset(node.GetFirstChild()));
             break;
 
         case Symbol::LParen:
@@ -510,33 +516,69 @@ namespace scrpt
         return _byteBuffer.size() - 1;
     }
 
-    size_t BytecodeGen::AddOp(OpCode op, int p0)
-    {
-        return this->AddOp(op, (unsigned char*)&p0);
-    }
-
-    size_t BytecodeGen::AddOp(OpCode op, unsigned int p0)
-    {
-        return this->AddOp(op, (unsigned char*)&p0);
-    }
-
-    size_t BytecodeGen::AddOp(OpCode op, float p0)
-    {
-        return this->AddOp(op, (unsigned char*)&p0);
-    }
-
-    size_t BytecodeGen::AddOp(OpCode op, unsigned char* p0)
+    size_t BytecodeGen::AddOp(OpCode op, char reg0)
     {
         size_t ret = _byteBuffer.size();
-
         _byteBuffer.push_back(static_cast<unsigned char>(op));
-        _byteBuffer.push_back(p0[0]);
-        _byteBuffer.push_back(p0[1]);
-        _byteBuffer.push_back(p0[2]);
-        _byteBuffer.push_back(p0[3]);
-        Assert(*((unsigned int*)&(_byteBuffer[ret + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
-
+        _byteBuffer.push_back(static_cast<unsigned char>(reg0));
         return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, char reg1)
+    {
+        size_t ret = _byteBuffer.size();
+        _byteBuffer.push_back(static_cast<unsigned char>(op));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg0));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg1));
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, char reg1, char reg2)
+    {
+        size_t ret = _byteBuffer.size();
+        _byteBuffer.push_back(static_cast<unsigned char>(op));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg0));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg1));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg2));
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, unsigned int data)
+    {
+        size_t ret = this->AddOp(op, reg0);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, float data)
+    {
+        size_t ret = this->AddOp(op, reg0);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, int data)
+    {
+        size_t ret = this->AddOp(op, reg0);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, unsigned int data)
+    {
+        size_t ret = this->AddOp(op);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    void BytecodeGen::AddData(unsigned char* data)
+    {
+        size_t ret = _byteBuffer.size();
+        _byteBuffer.push_back(data[0]);
+        _byteBuffer.push_back(data[1]);
+        _byteBuffer.push_back(data[2]);
+        _byteBuffer.push_back(data[3]);
+        Assert(*((unsigned int*)&(_byteBuffer[ret])) == *(unsigned int*)data, "Data should be correctly packed");
     }
 
     void BytecodeGen::SetOpOperand(size_t opIdx, unsigned int p0)
