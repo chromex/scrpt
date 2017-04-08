@@ -111,7 +111,7 @@ func main() {
 }
 )testCode"));
 
-	ACCUMTEST(TestVM("Quick sort", 1, true, R"testCode(
+	ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
 func main() {
 	numElements = 1000;
     lst = [];
