@@ -112,7 +112,7 @@ namespace scrpt
         // Add an implicit return if there was no explicit one
         if (block.GetLastChild().GetSym() != Symbol::Return)
         {
-            this->AddOp(OpCode::PushNull);
+            this->AddOp(OpCode::LoadNull);
             this->AddOp(OpCode::Ret);
         }
 
@@ -149,7 +149,7 @@ namespace scrpt
             }
             else
             {
-                this->AddOp(OpCode::PushNull);
+                this->AddOp(OpCode::LoadNull);
             }
             this->AddOp(OpCode::Ret);
             break;
@@ -166,7 +166,9 @@ namespace scrpt
         default:
             if (this->CompileExpression(node))
             {
-                this->AddOp(OpCode::Pop);
+                // TODO: Clear the returned register?
+                AssertFail("nop");
+                //this->AddOp(OpCode::Pop);
             }
             else
             {
@@ -183,15 +185,17 @@ namespace scrpt
         switch (node.GetSym())
         {
         case Symbol::Int:
-            this->AddOp(OpCode::PushInt, node.GetToken()->GetInt());
+            this->AddOp(OpCode::LoadInt, node.GetToken()->GetInt());
             break;
 
         case Symbol::Float:
-            this->AddOp(OpCode::PushFloat, node.GetToken()->GetFloat());
+            this->AddOp(OpCode::LoadFloat, node.GetToken()->GetFloat());
             break;
 
         case Symbol::Ident:
-            this->AddOp(OpCode::PushIdent, this->LookupIdentOffset(node));
+            // TODO: Just return the ident register id?
+            AssertFail("nop");
+            //this->AddOp(OpCode::LoadIdent, this->LookupIdentOffset(node));
             break;
 
         case Symbol::Terminal:
@@ -209,16 +213,16 @@ namespace scrpt
                     strId = entry->second;
                 }
 
-                this->AddOp(OpCode::PushString, strId);
+                this->AddOp(OpCode::LoadString, strId);
             }
             break;
 
         case Symbol::True:
-            this->AddOp(OpCode::PushTrue);
+            this->AddOp(OpCode::LoadTrue);
             break;
 
         case Symbol::False:
-            this->AddOp(OpCode::PushFalse);
+            this->AddOp(OpCode::LoadFalse);
             break;
 
         case Symbol::Assign:
@@ -272,14 +276,14 @@ namespace scrpt
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostIncI : OpCode::IncI, this->LookupIdentOffset(node.GetFirstChild()));
+            this->AddOp(node.IsPostfix() ? OpCode::PostInc : OpCode::Inc, this->LookupIdentOffset(node.GetFirstChild()));
             break;
 
         case Symbol::MinusMinus:
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostDecI : OpCode::DecI, this->LookupIdentOffset(node.GetFirstChild()));
+            this->AddOp(node.IsPostfix() ? OpCode::PostDec : OpCode::Dec, this->LookupIdentOffset(node.GetFirstChild()));
             break;
 
         case Symbol::LParen:
@@ -332,7 +336,8 @@ namespace scrpt
         if (!beginExpr.IsEmpty())
         {
             this->CompileExpression(beginExpr);
-            this->AddOp(OpCode::Pop);
+            // TODO: What do? Clear register?
+            //this->AddOp(OpCode::Pop);
         }
 
         // Check
@@ -353,7 +358,8 @@ namespace scrpt
         if (!endExpr.IsEmpty())
         {
             this->CompileExpression(endExpr);
-            this->AddOp(OpCode::Pop);
+            // TODO: What do? Clear register?
+            //this->AddOp(OpCode::Pop);
         }
         this->AddOp(OpCode::Jmp, reentry);
         if (!checkExpr.IsEmpty())
@@ -476,10 +482,12 @@ namespace scrpt
         auto children = node.GetChildren();
         for (auto child = ++children.begin(); child != children.end(); ++child)
         {
+            // TODO: What do with results?!
             this->CompileExpression(*child);
         }
         this->AddOp(OpCode::Call, funcId);
-        for (size_t count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
+        // TODO: What DO?!
+        //for (size_t count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
         this->AddOp(OpCode::RestoreRet);
     }
 
@@ -582,13 +590,13 @@ namespace scrpt
     {
         switch (sym)
         {
-        case Symbol::Assign: return OpCode::AssignI;
-        case Symbol::PlusEq: return OpCode::PlusEqI;
-        case Symbol::MinusEq: return OpCode::MinusEqI;
-        case Symbol::MultEq: return OpCode::MultEqI;
-        case Symbol::DivEq: return OpCode::DivEqI;
-        case Symbol::ModuloEq: return OpCode::ModuloEqI;
-        case Symbol::ConcatEq: return OpCode::ConcatEqI;
+        case Symbol::Assign: return OpCode::Store;
+        case Symbol::PlusEq: return OpCode::PlusEq;
+        case Symbol::MinusEq: return OpCode::MinusEq;
+        case Symbol::MultEq: return OpCode::MultEq;
+        case Symbol::DivEq: return OpCode::DivEq;
+        case Symbol::ModuloEq: return OpCode::ModuloEq;
+        case Symbol::ConcatEq: return OpCode::ConcatEq;
         default:
             AssertFail("Unmapped unary assign op: " << SymbolToString(sym));
             return OpCode::Unknown;
@@ -599,13 +607,13 @@ namespace scrpt
     {
         switch (sym)
         {
-        case Symbol::Assign: return OpCode::AssignIdxI;
-        case Symbol::PlusEq: return OpCode::PlusEqIdxI;
-        case Symbol::MinusEq: return OpCode::MinusEqIdxI;
-        case Symbol::MultEq: return OpCode::MultEqIdxI;
-        case Symbol::DivEq: return OpCode::DivEqIdxI;
-        case Symbol::ModuloEq: return OpCode::ModuloEqIdxI;
-        case Symbol::ConcatEq: return OpCode::ConcatEqIdxI;
+        case Symbol::Assign: return OpCode::StoreIdx;
+        case Symbol::PlusEq: return OpCode::PlusEqIdx;
+        case Symbol::MinusEq: return OpCode::MinusEqIdx;
+        case Symbol::MultEq: return OpCode::MultEqIdx;
+        case Symbol::DivEq: return OpCode::DivEqIdx;
+        case Symbol::ModuloEq: return OpCode::ModuloEqIdx;
+        case Symbol::ConcatEq: return OpCode::ConcatEqIdx;
         default:
             AssertFail("Unmapped unary assign idex op: " << SymbolToString(sym));
             return OpCode::Unknown;

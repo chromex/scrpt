@@ -107,87 +107,71 @@ void scrpt::Decompile(const Bytecode& bytecode)
 
             std::cout << std::string(OpCodeToString(op)).substr(8);
 
-            //float floatVal = *(float *)(data + idx + 1);
-            //int intVal = *(int *)(data + idx + 1);
-            //unsigned int uintVal = *(unsigned int *)(data + idx + 1);
+            char reg0 = *(char*)(data + idx + 1);
+            char reg1 = *(char*)(data + idx + 2);
+            char reg2 = *(char*)(data + idx + 3);
+
+#define DISPLAY_ONE_REG std::cout << " " << (int)reg0; idx += 1; break;
+#define DISPLAY_TWO_REG std::cout << " " << (int)reg0 << " " << (int)reg1; idx += 2; break;
+#define DISPLAY_THREE_REG std::cout << " " << (int)reg0 << " " << (int)reg1 << " " << (int)reg2; idx += 3; break;
+#define DISPLAY_ONE_REG_UINT std::cout << " " << (int)reg0 << " " << *(unsigned int *)(data + idx + 2); idx += 5; break;
+#define DISPLAY_ONE_REG_INT std::cout << " " << (int)reg0 << " " << *(int *)(data + idx + 2); idx += 5; break;
+#define DISPLAY_ONE_REG_FLOAT std::cout << " " << (int)reg0 << " " << *(float *)(data + idx + 2); idx += 5; break;
+#define DISPLAY_UINT std::cout << " " << *(unsigned int *)(data + idx + 1); idx += 4; break;
+
+            // TODO: Add support for named register lookup
 
             switch (op)
             {
-            //case OpCode::PushFloat:
-            //    std::cout << " " << floatVal;
-            //    idx += 4;
-            //    break;
-
-            //case OpCode::PushInt:
-            //case OpCode::PushIdent:
-            //case OpCode::AssignI:
-            //case OpCode::AssignIdxI:
-            //case OpCode::PlusEqI:
-            //case OpCode::PlusEqIdxI:
-            //case OpCode::MinusEqI:
-            //case OpCode::MinusEqIdxI:
-            //case OpCode::MultEqI:
-            //case OpCode::MultEqIdxI:
-            //case OpCode::DivEqI:
-            //case OpCode::DivEqIdxI:
-            //case OpCode::ModuloEqI:
-            //case OpCode::ModuloEqIdxI:
-            //case OpCode::ConcatEqI:
-            //case OpCode::ConcatEqIdxI:
-            //case OpCode::IncI:
-            //case OpCode::DecI:
-            //case OpCode::PostIncI:
-            //case OpCode::PostDecI:
-            //    std::cout << " " << intVal;
-            //    idx += 4;
-            //    break;
-
-            //case OpCode::PushString:
-            //case OpCode::Call:
-            //case OpCode::BrT:
-            //case OpCode::BrF:
-            //case OpCode::Jmp:
-            //case OpCode::MakeList:
-            //    std::cout << " " << uintVal;
-            //    idx += 4;
-            //    break;
-            //}
-
-            //switch (op)
-            //{
-            //case OpCode::Call:
-            //    std::cout << " ; " << bytecode.functions[uintVal].name;
-            //    break;
-
-            //case OpCode::PushIdent:
-            //case OpCode::AssignI:
-            //case OpCode::AssignIdxI:
-            //case OpCode::PlusEqI:
-            //case OpCode::PlusEqIdxI:
-            //case OpCode::MinusEqI:
-            //case OpCode::MinusEqIdxI:
-            //case OpCode::MultEqI:
-            //case OpCode::MultEqIdxI:
-            //case OpCode::DivEqI:
-            //case OpCode::DivEqIdxI:
-            //case OpCode::ModuloEqI:
-            //case OpCode::ModuloEqIdxI:
-            //case OpCode::ConcatEqI:
-            //case OpCode::ConcatEqIdxI:
-            //case OpCode::IncI:
-            //case OpCode::DecI:
-            //case OpCode::PostIncI:
-            //case OpCode::PostDecI:
-            //    {
-            //        const scrpt::FunctionData& fd = bytecode.functions[currentFunction];
-            //        auto local = fd.localLookup.find(intVal);
-            //        if (local != fd.localLookup.end())
-            //        {
-            //            std::cout << " ; " << local->second;
-            //        }
-            //        break;
-            //    }
-            //}
+            case OpCode::LoadNull: DISPLAY_ONE_REG
+            case OpCode::LoadTrue: DISPLAY_ONE_REG
+            case OpCode::LoadFalse: DISPLAY_ONE_REG
+            case OpCode::LoadInt: DISPLAY_ONE_REG_INT
+            case OpCode::LoadFloat: DISPLAY_ONE_REG_FLOAT
+            case OpCode::LoadString: DISPLAY_ONE_REG_UINT
+            case OpCode::Store: DISPLAY_TWO_REG
+            case OpCode::StoreIdx: DISPLAY_THREE_REG
+            case OpCode::Eq: DISPLAY_THREE_REG
+            case OpCode::Or: DISPLAY_THREE_REG
+            case OpCode::And: DISPLAY_THREE_REG
+            case OpCode::Add: DISPLAY_THREE_REG
+            case OpCode::Sub: DISPLAY_THREE_REG
+            case OpCode::Mul: DISPLAY_THREE_REG
+            case OpCode::Div: DISPLAY_THREE_REG
+            case OpCode::Mod: DISPLAY_THREE_REG
+            case OpCode::Concat: DISPLAY_THREE_REG
+            case OpCode::Inc: DISPLAY_ONE_REG
+            case OpCode::Dec: DISPLAY_ONE_REG
+            case OpCode::PostInc: DISPLAY_ONE_REG
+            case OpCode::PostDec: DISPLAY_ONE_REG
+            case OpCode::PlusEq: DISPLAY_TWO_REG
+            case OpCode::PlusEqIdx: DISPLAY_THREE_REG
+            case OpCode::MinusEq: DISPLAY_TWO_REG
+            case OpCode::MinusEqIdx: DISPLAY_THREE_REG
+            case OpCode::MultEq: DISPLAY_TWO_REG
+            case OpCode::MultEqIdx: DISPLAY_THREE_REG
+            case OpCode::DivEq: DISPLAY_TWO_REG
+            case OpCode::DivEqIdx: DISPLAY_THREE_REG
+            case OpCode::ModuloEq: DISPLAY_TWO_REG
+            case OpCode::ModuloEqIdx: DISPLAY_THREE_REG
+            case OpCode::ConcatEq: DISPLAY_TWO_REG
+            case OpCode::ConcatEqIdx: DISPLAY_THREE_REG
+            case OpCode::LT: DISPLAY_THREE_REG
+            case OpCode::GT: DISPLAY_THREE_REG
+            case OpCode::LTE: DISPLAY_THREE_REG
+            case OpCode::GTE: DISPLAY_THREE_REG
+            case OpCode::Ret: DISPLAY_ONE_REG
+            case OpCode::RestoreRet: DISPLAY_ONE_REG
+            case OpCode::BrT: DISPLAY_ONE_REG_UINT
+            case OpCode::BrF: DISPLAY_ONE_REG_UINT
+            case OpCode::Jmp: DISPLAY_UINT
+            case OpCode::Index: DISPLAY_THREE_REG
+            case OpCode::MakeList: DISPLAY_ONE_REG_UINT
+            case OpCode::Call:
+                std::cout << " ; " << bytecode.functions[*(unsigned int *)(data + idx + 1)].name;
+                idx += 4;
+                break;
+            }
 
             std::cout << std::endl;
         }

@@ -8,9 +8,9 @@ namespace scrpt
         LoadNull, // reg0 
         LoadTrue, // reg0 
         LoadFalse, // reg0
-		LoadInt, // int, reg0
-		LoadFloat, // float, reg0
-		LoadString, // unsigned int string id, reg0
+		LoadInt, // reg0, int
+		LoadFloat, // reg0, float
+		LoadString, // reg0, unsigned int string id
 		Store, // reg0, reg1
 		StoreIdx, // reg0, reg1, reg2
         Eq, // reg0, reg1, reg2
@@ -45,11 +45,11 @@ namespace scrpt
 		Call, // unsigned int function offset
         Ret, // reg0
         RestoreRet, // reg0
-		BrT, // unsigned int bytecode location, reg0
-		BrF, // unsigned int bytecode location, reg0
+		BrT, // reg0, unsigned int bytecode location
+		BrF, // reg0, unsigned int bytecode location
 		Jmp, // unsigned int bytecode location
 		Index, // reg0, reg1, reg2
-        MakeList, // TODO
+        MakeList, // reg0, unsigned int number of items
         __Num,
     };
     const char* OpCodeToString(OpCode code);
