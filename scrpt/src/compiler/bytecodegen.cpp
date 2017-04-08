@@ -3,7 +3,6 @@
 #define COMPONENTNAME "BytecodeGen"
 
 // Register machine conversion...
-// * Instructions change to the format: INSTR reg1, reg2, reg3, reg4
 // * Number of registers required is:
 //   * Parameters + locals
 //   * Keep a list and mark free / used as it goes
@@ -110,7 +109,7 @@ namespace scrpt
             this->CompileStatement(statement);
         }
 
-        // Add an implicit return if none there was no explicit one
+        // Add an implicit return if there was no explicit one
         if (block.GetLastChild().GetSym() != Symbol::Return)
         {
             this->AddOp(OpCode::PushNull);

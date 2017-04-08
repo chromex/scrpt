@@ -22,6 +22,12 @@ namespace scrpt
         void CompileIf(const AstNode& node);
         void CompileCall(const AstNode& node);
         void CompileList(const AstNode& node);
+		// TODO: Implement these
+		size_t AddOp(OpCode op, unsigned char reg0);
+		size_t AddOp(OpCode op, unsigned char reg0, unsigned char reg1);
+		size_t AddOp(OpCode op, unsigned char reg0, unsigned char reg1, unsigned char reg2);
+		size_t AddOp(OpCode op, unsigned char reg0, unsigned char reg1, unsigned char reg2, unsigned char reg3);
+		size_t AddOp(OpCode op, unsigned char reg0, unsigned int data);
         size_t AddOp(OpCode op);
         size_t AddOp(OpCode op, int p0);
         size_t AddOp(OpCode op, unsigned int p0);

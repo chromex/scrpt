@@ -10,8 +10,16 @@ void scrpt::Tests::RunTestsBytecodeGen(unsigned int* passed, unsigned int* faile
     AssertNotNull(passed);
     AssertNotNull(failed);
 
+	// LoadInt
+	// Store
+	// Increment
+	// LoadInt
+	// LT
+	// BRT
+	// Return
+
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
-    ACCUMTEST(TestBytecodeGen("Basic Do Loop", false, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Basic Do Loop", true, R"testCode(
 func main() {
     sum = 0;
     do
@@ -22,7 +30,8 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("Basic For Loop", false, R"testCode(
+	// TODO: Re-enable
+    /*ACCUMTEST(TestBytecodeGen("Basic For Loop", false, R"testCode(
 func main() {
     for (sum = 0; sum < 10; sum += 1)
         i = 0;
@@ -62,7 +71,7 @@ func main() {
     if (false) {a = 0;} else {b = 0;}
     if (false) {a = 0;} elif (true) {b = 0;} else {c = 0;}
 }
-)testCode"));
+)testCode"));*/
 }
 
 bool TestBytecodeGen(const char* testName, bool dumpBytecode, const char* source)
