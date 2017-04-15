@@ -9,6 +9,7 @@
 #include <map>
 #include <functional>
 #include <iomanip>
+#include <bitset>
 namespace fs = std::experimental::filesystem;
 
 namespace scrpt { class VM; }
