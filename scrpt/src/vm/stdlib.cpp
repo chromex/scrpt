@@ -52,12 +52,12 @@
 //    vm.AddExternFunc("strlen", 1, [](VM* vm)
 //    {
 //        const char* str = vm->GetParam<const char*>(scrpt::ParamId::_0);
-//        vm->PushInt(StackType::Int, (int)strlen(str));
+//        vm->LoadInt(StackType::Int, (int)strlen(str));
 //    });
 //
 //    vm.AddExternFunc("length", 1, [](VM* vm)
 //    {
 //        List* list = vm->GetParam<List*>(scrpt::ParamId::_0);
-//        vm->PushInt(StackType::Int, (int)list->size());
+//        vm->LoadInt(StackType::Int, (int)list->size());
 //    });
 //}

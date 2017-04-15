@@ -25,11 +25,11 @@ namespace scrpt
 	{
 	}
 
-	//CompilerException::CompilerException(const std::string& message, RuntimeErr err)
-	//	: _message(message)
-	//	, _runtimeErr(err)
-	//{
-	//}
+	CompilerException::CompilerException(const std::string& message, RuntimeErr err)
+		: _message(message)
+		, _runtimeErr(err)
+	{
+	}
 
 	const char* CompilerException::what() const
     {
@@ -111,11 +111,11 @@ namespace scrpt
         return CompilerException(ss.str(), token, err);
     }
 
-	//CompilerException CreateRuntimeEx(const std::string& message, RuntimeErr err)
-	//{
-	//	std::stringstream ss;
-	//	ss << "Runtime Failure: " << RuntimeErrToString(err) << ": " << message;
+	CompilerException CreateRuntimeEx(const std::string& message, RuntimeErr err)
+	{
+		std::stringstream ss;
+		ss << "Runtime Failure: " << RuntimeErrToString(err) << ": " << message;
 
-	//	return CompilerException(ss.str(), err);
-	//}
+		return CompilerException(ss.str(), err);
+	}
 }

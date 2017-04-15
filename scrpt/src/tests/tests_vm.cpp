@@ -4,44 +4,46 @@
 
 #define COMPONENTNAME "Tests_VM"
 
-//static bool TestVM(const char* testName, int resultValue, bool, const char* source);
+static bool TestVM(const char* testName, int resultValue, bool, const char* source);
 
 // TODO: Conways game of life
 
 void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
 {
-//    AssertNotNull(passed);
-//    AssertNotNull(failed);
-//
-//    srand((unsigned int)time(NULL));
-//
-//#define ACCUMTEST(T) T ? ++*passed : ++*failed
-//    ACCUMTEST(TestVM("Simple counting", 100000, false, R"testCode(
-//func main() {
-//    sum = 0;
-//    do
-//    {
-//        ++sum;
-//    } while(sum < 100000);
-//
-//    return sum;
-//}
-//)testCode"));
-//
-//    ACCUMTEST(TestVM("Fibonacci", 317811, false, R"testCode(
-//func main() {
-//    v0 = 0;
-//    v1 = 1;
-//    while (v1 < 300000)
-//    {
-//        t = v0 + v1;
-//        v0 = v1;
-//        v1 = t;
-//    }
-//    return v1;
-//}
-//)testCode"));
-//
+    AssertNotNull(passed);
+    AssertNotNull(failed);
+
+    srand((unsigned int)time(NULL));
+
+#define ACCUMTEST(T) T ? ++*passed : ++*failed
+    ACCUMTEST(TestVM("Simple counting", 100000, false, R"testCode(
+func main() {
+    sum = 0;
+    max = 100000;
+    do
+    {
+        ++sum;
+    } while(sum < max);
+
+    return sum;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Fibonacci", 317811, false, R"testCode(
+func main() {
+    v0 = 0;
+    v1 = 1;
+    max = 300000;
+    while (v1 < max)
+    {
+        t = v0 + v1;
+        v0 = v1;
+        v1 = t;
+    }
+    return v1;
+}
+)testCode"));
+
 //    ACCUMTEST(TestVM("Fibonacci 2", 6765, false, R"testCode(
 //func main() {
 //    return fib(20);
@@ -156,71 +158,71 @@ void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
 //}
 //)testCode"));
 }
-//
+
 //void randomInt(scrpt::VM* vm)
 //{
-//    vm->PushInt(scrpt::StackType::Int, rand() % 100000);
+//    vm->LoadInt(scrpt::StackType::Int, rand() % 100000);
 //}
 //
 //void testextern(scrpt::VM* vm)
 //{
 //    int i = vm->GetParam<int>(scrpt::ParamId::_0);
 //    int i2 = vm->GetParam<int>(scrpt::ParamId::_1);
-//    vm->PushInt(scrpt::StackType::Int, i * 100 + i2);
+//    vm->LoadInt(scrpt::StackType::Int, i * 100 + i2);
 //}
-//
-//LARGE_INTEGER GetTime()
-//{
-//    LARGE_INTEGER time;
-//    QueryPerformanceCounter(&time);
-//    return time;
-//}
-//
-//double ConvertTimeMS(LONGLONG time)
-//{
-//    LARGE_INTEGER freq;
-//    QueryPerformanceFrequency(&freq);
-//    return (time / (double)freq.QuadPart) * 1000.0;
-//}
-//
-//static bool TestVM(const char* testName, int resultValue, bool decompile, const char* source)
-//{
-//    AssertNotNull(testName);
-//    AssertNotNull(source);
-//
-//    std::cout << "V|" << testName << "> ";
-//
-//    bool err = false;
-//    double runtime = 0.0;
-//    try
-//    {
-//		scrpt::VM vm;
-//        scrpt::RegisterStdLib(vm);
-//        vm.AddExternFunc("testextern", 2, testextern);
-//        vm.AddExternFunc("randomInt", 0, randomInt);
-//		vm.AddSource(scrpt::Tests::DuplicateSource(source));
-//		vm.Finalize();
-//        if (decompile) vm.Decompile();
-//        LARGE_INTEGER startTime = GetTime();
-//        scrpt::StackVal* ret = vm.Execute("main");
-//        LARGE_INTEGER endTime = GetTime();
-//        err = ret == nullptr || ret->integer != resultValue;
-//        runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart);
-//    }
-//    catch (scrpt::CompilerException& ex)
-//    {
-//        std::cout << ex.what() << std::endl;
-//        err = true;
-//    }
-//
-//    if (!err)
-//    {
-//        std::cout << "Passed [" << runtime << "]" << std::endl;
-//    }
-//    else
-//    {
-//        std::cout << "<<< Failed >>>" << std::endl;
-//    }
-//
-//    return !err;
-//}
+
+LARGE_INTEGER GetTime()
+{
+    LARGE_INTEGER time;
+    QueryPerformanceCounter(&time);
+    return time;
+}
+
+double ConvertTimeMS(LONGLONG time)
+{
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    return (time / (double)freq.QuadPart) * 1000.0;
+}
+
+static bool TestVM(const char* testName, int resultValue, bool decompile, const char* source)
+{
+    AssertNotNull(testName);
+    AssertNotNull(source);
+
+    std::cout << "V|" << testName << "> ";
+
+    bool err = false;
+    double runtime = 0.0;
+    try
+    {
+		scrpt::VM vm;
+        //scrpt::RegisterStdLib(vm);
+        //vm.AddExternFunc("testextern", 2, testextern);
+        //vm.AddExternFunc("randomInt", 0, randomInt);
+		vm.AddSource(scrpt::Tests::DuplicateSource(source));
+		vm.Finalize();
+        if (decompile) vm.Decompile();
+        LARGE_INTEGER startTime = GetTime();
+        scrpt::StackVal* ret = vm.Execute("main");
+        LARGE_INTEGER endTime = GetTime();
+        err = ret == nullptr || ret->integer != resultValue;
+        runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart);
+    }
+    catch (scrpt::CompilerException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+        err = true;
+    }
+
+    if (!err)
+    {
+        std::cout << "Passed [" << runtime << "]" << std::endl;
+    }
+    else
+    {
+        std::cout << "<<< Failed >>>" << std::endl;
+    }
+
+    return !err;
+}

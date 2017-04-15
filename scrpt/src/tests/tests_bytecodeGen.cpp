@@ -11,7 +11,7 @@ void scrpt::Tests::RunTestsBytecodeGen(unsigned int* passed, unsigned int* faile
     AssertNotNull(failed);
 
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
-    ACCUMTEST(TestBytecodeGen("Basic Do Loop", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Basic Do Loop", false, R"testCode(
 func main() {
     sum = 0;
     do
@@ -22,20 +22,20 @@ func main() {
 }
 )testCode"));
 
-	ACCUMTEST(TestBytecodeGen("Basic For Loop", true, R"testCode(
+	ACCUMTEST(TestBytecodeGen("Basic For Loop", false, R"testCode(
 func main() {
     for (sum = 0; sum < 10; sum += 1)
         i = 0;
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("Basic While Loop", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Basic While Loop", false, R"testCode(
 func main() {
     while (true) {}
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("Basic Bracket", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Basic Bracket", false, R"testCode(
 func main() {
     i = 0;
     {
@@ -45,7 +45,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("For Loop Emtpy Children", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("For Loop Emtpy Children", false, R"testCode(
 func main() {
     for (i = 0; ; ++i) {}
 
@@ -56,7 +56,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("Basic If", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Basic If", false, R"testCode(
 func main() {
     if (true) {a = 0;}
     if (false) {a = 0;} else {b = 0;}
@@ -64,7 +64,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("Assignment", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Assignment", false, R"testCode(
 func main() {
     a = 4;
     b = 2;
@@ -73,7 +73,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("Parameters", true, R"testCode(
+    ACCUMTEST(TestBytecodeGen("Parameters", false, R"testCode(
 func main(one, two) {
     a = one;
     two += a;
