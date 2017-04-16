@@ -464,49 +464,48 @@ namespace scrpt
             /// Concat
             ///
             case OpCode::Concat:
-                this->ThrowErr(RuntimeErr::NotImplemented); break;
-    //        {
-    //            StackObj* v1 = _stackPointer - 2; 
-    //            StackObj* v2 = _stackPointer - 1; 
-    //            StackType t1 = v1->v.type; 
-    //            StackType t2 = v2->v.type; 
-    //            if (t1 != StackType::DynamicString && t1 != StackType::StaticString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-    //            std::stringstream ss(
-    //                t1 == StackType::StaticString ? _bytecode.strings[(unsigned int)v1->v.integer] : *v1->v.ref->string, 
-    //                std::ios_base::ate | std::ios_base::out);
-    //            switch (t2)
-    //            {
-    //            case StackType::Boolean:
-    //                ss << (v2->v.integer == 0 ? "false" : "true");
-    //                break;
-    //            case StackType::DynamicString:
-    //                ss << *v2->v.ref->string;
-    //                break;
-    //            case StackType::Float:
-    //                ss << v2->v.fp;
-    //                break;
-    //            case StackType::Int:
-    //                ss << v2->v.integer;
-    //                break;
-    //            case StackType::List:
-    //                this->ThrowErr(RuntimeErr::NotImplemented);
-    //                break;
-    //            case StackType::Map:
-    //                this->ThrowErr(RuntimeErr::NotImplemented);
-    //                break;
-    //            case StackType::Null:
-    //                ss << "null";
-    //                break;
-    //            case StackType::StaticString:
-    //                ss << _bytecode.strings[(unsigned int)v2->v.integer];
-    //                break;
-    //            default:
-    //                ThrowErr(RuntimeErr::NotImplemented);
-    //            }
-				//POP2;
-    //            this->LoadString(ss.str().c_str());
-    //        }
-    //        break;
+            {
+                StackObj* v1 = _framePointer + REG0; 
+                StackObj* v2 = _framePointer + REG1;
+                StackType t1 = v1->v.type; 
+                StackType t2 = v2->v.type; 
+                if (t1 != StackType::DynamicString && t1 != StackType::StaticString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                std::stringstream ss(
+                    t1 == StackType::StaticString ? _bytecode.strings[(unsigned int)v1->v.integer] : *v1->v.ref->string, 
+                    std::ios_base::ate | std::ios_base::out);
+                switch (t2)
+                {
+                case StackType::Boolean:
+                    ss << (v2->v.integer == 0 ? "false" : "true");
+                    break;
+                case StackType::DynamicString:
+                    ss << *v2->v.ref->string;
+                    break;
+                case StackType::Float:
+                    ss << v2->v.fp;
+                    break;
+                case StackType::Int:
+                    ss << v2->v.integer;
+                    break;
+                case StackType::List:
+                    this->ThrowErr(RuntimeErr::NotImplemented);
+                    break;
+                case StackType::Map:
+                    this->ThrowErr(RuntimeErr::NotImplemented);
+                    break;
+                case StackType::Null:
+                    ss << "null";
+                    break;
+                case StackType::StaticString:
+                    ss << _bytecode.strings[(unsigned int)v2->v.integer];
+                    break;
+                default:
+                    ThrowErr(RuntimeErr::NotImplemented);
+                }
+                this->LoadString(REG2, ss.str().c_str());
+                _ip += 3;
+            }
+            break;
 
             /// 
             /// Prefix Increment Identifier

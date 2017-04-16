@@ -44,6 +44,14 @@ func main() {
 }
 )testCode"));
 
+    ACCUMTEST(TestVM("Leak test", 7, false, R"testCode(
+func main() {
+    str1 = "foo";
+    str2 = str1 # "bar";
+    return 7;
+}
+)testCode"));
+
 //    ACCUMTEST(TestVM("Fibonacci 2", 6765, false, R"testCode(
 //func main() {
 //    return fib(20);
