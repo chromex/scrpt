@@ -58,6 +58,7 @@ namespace scrpt
     {
         std::string name;
         unsigned char nParam;
+        size_t nLocalRegisters;
         unsigned int entry;
         bool external;
         std::function<void(VM*)> func;

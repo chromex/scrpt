@@ -22,7 +22,7 @@ namespace scrpt
         Assert(_functionLookup.find(name) == _functionLookup.end(), "Extern already registered");
 
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ name, nParam, 0xFFFFFFFF, true, func });
+        _functions.push_back(FunctionData{ name, nParam, 0, 0xFFFFFFFF, true, func });
     }
 
     void BytecodeGen::Consume(const AstNode& ast)
@@ -72,7 +72,7 @@ namespace scrpt
         }
 
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0xFFFFFFFF, false });
+        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0, 0xFFFFFFFF, false });
     }
 
     void BytecodeGen::CompileFunction(const AstNode& node)
@@ -85,6 +85,7 @@ namespace scrpt
 
         // Start function scope
         this->PushScope();
+        _paramOffset = -2;
 
         // Get the params
         auto children = node.GetChildren();
@@ -693,10 +694,6 @@ namespace scrpt
     void BytecodeGen::PushScope()
     {
         _scopeStack.push_back(std::map<std::string, char>());
-        if (_scopeStack.size() == 1)
-        {
-            _paramOffset = -2;
-        }
     }
 
     // Updated
@@ -719,6 +716,7 @@ namespace scrpt
             {
                 _registers.set(idx);
                 if (lock) _lockedRegisters.set(idx);
+                _fd->nLocalRegisters = std::max(_fd->nLocalRegisters, idx + 1);
                 return (char)idx;
             }
         }

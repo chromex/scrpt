@@ -187,7 +187,7 @@ namespace scrpt
             // TODO: Push params
             this->PushStackFrame(0, 0);
             _framePointer = _stackPointer;
-            this->PushNull(nLocals - fd.nParam); // TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!! Need register count !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            this->PushNull(fd.nLocalRegisters);
             this->Run();
             // TODO: Pop params
 
