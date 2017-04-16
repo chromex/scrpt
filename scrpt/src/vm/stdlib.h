@@ -2,5 +2,5 @@
 
 namespace scrpt
 {
-    //void RegisterStdLib(VM& vm);
+    void RegisterStdLib(VM& vm);
 }

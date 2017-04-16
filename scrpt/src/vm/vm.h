@@ -41,6 +41,8 @@ namespace scrpt
         void Decompile();
         StackVal* Execute(const char* funcName);
 
+        void SetExternResult(StackType type, int val);
+
         void PushNull(size_t num = 1);
         void LoadNull(char reg);
         void LoadInt(char reg, StackType type, int val);
@@ -72,7 +74,7 @@ namespace scrpt
 
         inline void PushStackFrame(unsigned int returnIp, int framePointerOffset);
         inline void LoadString(char reg, unsigned int id);
-        inline void PushList(List* list);
+        inline void LoadList(char reg, List* list);
         inline void ThrowErr(RuntimeErr err) const;
         StackObj* GetParamBase(ParamId id);
 

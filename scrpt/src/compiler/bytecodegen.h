@@ -22,7 +22,7 @@ namespace scrpt
         void CompileIf(const AstNode& node);
         void CompileReturn(const AstNode& node);
         char CompileCall(const AstNode& node);
-        void CompileList(const AstNode& node);
+        char CompileList(const AstNode& node);
         size_t AddOp(OpCode op);
         size_t AddOp(OpCode op, char reg0);
         size_t AddOp(OpCode op, char reg0, char reg1);
@@ -32,7 +32,6 @@ namespace scrpt
         size_t AddOp(OpCode op, char reg0, int data);
         size_t AddOp(OpCode op, unsigned int data);
         void AddData(unsigned char* data);
-        // TODO: These need an offset
         void SetOpOperand(size_t opIdx, int offset, unsigned int p0);
         void SetOpOperand(size_t opIdx, int offset, unsigned char* p0);
         inline void Verify(const AstNode& node, Symbol sym) const;

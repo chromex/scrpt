@@ -307,16 +307,17 @@ namespace scrpt
         case Symbol::LSquare:
             if (node.IsConstant())
             {
-                // TODO: Needs update
-                this->CompileList(node);
+                outReg = this->CompileList(node);
             }
             else
             {
-                // TODO: Needs update
                 Assert(node.GetChildren().size() == 2, "Unexpected number of children");
-                this->CompileExpression(node.GetFirstChild());
-                this->CompileExpression(node.GetSecondChild());
-                this->AddOp(OpCode::Index);
+                reg0 = GetRegResult(this->CompileExpression(node.GetFirstChild()));
+                reg1 = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                outReg = this->ClaimRegister(node);
+                this->AddOp(OpCode::Index, reg0, reg1, outReg);
+                this->ReleaseRegister(reg0);
+                this->ReleaseRegister(reg1);
             }
             break;
 
@@ -527,8 +528,8 @@ namespace scrpt
         return reg;
     }
 
-    // TODO: Needs update
-    void BytecodeGen::CompileList(const AstNode& node)
+    // Updated
+    char BytecodeGen::CompileList(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::LSquare, "Unexpected node");
 
@@ -536,9 +537,14 @@ namespace scrpt
         auto children = node.GetChildren();
         for (auto child = children.begin(); child != children.end(); ++child)
         {
-            this->CompileExpression(*child);
+            char reg = GetRegResult(this->CompileExpression(*child));
+            this->AddOp(OpCode::Push, reg);
+            this->ReleaseRegister(reg);
         }
-        this->AddOp(OpCode::MakeList, (unsigned int)children.size());
+
+        char reg = this->ClaimRegister(node);
+        this->AddOp(OpCode::MakeList, reg, (unsigned int)children.size());
+        return reg;
     }
 
     size_t BytecodeGen::AddOp(OpCode op)

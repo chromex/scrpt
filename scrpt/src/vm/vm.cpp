@@ -5,8 +5,6 @@
 
 using namespace scrpt;
 
-// TODO: Register conversion: calls, lists, stack management
-
 __forceinline bool IsRefCounted(scrpt::StackType t)
 {
 	return (t == scrpt::StackType::DynamicString || t == scrpt::StackType::List || t == scrpt::StackType::Map);
@@ -66,6 +64,17 @@ __forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
 	{
 		++destVal.ref->refCount;
 	}
+}
+
+__forceinline void BlindMove(StackObj* src, StackObj* dest)
+{
+    AssertNotNull(src);
+    AssertNotNull(dest);
+
+    dest->v.type = src->v.type;
+    dest->v.ref = src->v.ref;
+    src->v.type = StackType::Null;
+    src->v.ref = nullptr;
 }
 
 __forceinline void Move(StackObj* src, StackObj* dest)
@@ -200,6 +209,13 @@ namespace scrpt
         {
 			throw CreateRuntimeEx(funcName, RuntimeErr::FailedFunctionLookup);
         }
+    }
+
+    void VM::SetExternResult(StackType type, int val)
+    {
+        Deref(&_returnValue.v);
+        _returnValue.v.type = type;
+        _returnValue.v.integer = val;
     }
 
     #define INCREMENTOP(IntOp, FloatOp) \
@@ -473,7 +489,7 @@ namespace scrpt
                 StackType t2 = v2->v.type; 
                 if (t1 != StackType::DynamicString && t1 != StackType::StaticString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                 std::stringstream ss(
-                    t1 == StackType::StaticString ? _bytecode.strings[(unsigned int)v1->v.integer] : *v1->v.ref->string, 
+                    t1 == StackType::StaticString ? v1->v.staticString : v1->v.ref->string->c_str(), 
                     std::ios_base::ate | std::ios_base::out);
                 switch (t2)
                 {
@@ -499,7 +515,7 @@ namespace scrpt
                     ss << "null";
                     break;
                 case StackType::StaticString:
-                    ss << _bytecode.strings[(unsigned int)v2->v.integer];
+                    ss << v2->v.staticString;
                     break;
                 default:
                     ThrowErr(RuntimeErr::NotImplemented);
@@ -646,18 +662,13 @@ namespace scrpt
                     }
                     else
                     {
-                        this->ThrowErr(RuntimeErr::NotImplemented); break;
+                        // TODO: Re-entrant externals
+                        StackObj* startingStack = _stackPointer;
+                        _currentExternArgN = fd.nParam;
 
-                        //// TODO: Re-entrant externals
-                        //StackObj* startingStack = _stackPointer;
-                        //_currentExternArgN = fd.nParam;
-
-                        //fd.func(this);
-                        //// TODO: Support for no return value
-                        //// TODO: Error on more than one return value
-                        //Copy(_stackPointer - 1, &_returnValue);
-                        //POP1;
-                        //_ip += 4;
+                        fd.func(this);
+                        // TODO: Support for no return value
+                        _ip += 4;
                     }
                 }
                 break;
@@ -719,54 +730,50 @@ namespace scrpt
             /// Index An Object
             ///
             case OpCode::Index:
-                //{
-                //    StackObj* index = _stackPointer - 1;
-                //    StackObj* object = _stackPointer - 2;
-                //    StackType indexType = index->v.type;
-                //    StackType objectType = object->v.type;
-                //    if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                //    if (objectType != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                //    List* list = object->v.ref->list;
-                //    int idx = index->v.integer;
-                //    if (idx < 0)
-                //    {
-                //        this->ThrowErr(RuntimeErr::NotImplemented);
-                //    }
-                //    
-                //    if (idx < list->size())
-                //    {
-                //        StackObj obj;
-                //        Copy(&list->at(idx), &obj);
-                //        Move(&obj, _stackPointer - 2);
-                //        POP1;
-                //    }
-                //    else
-                //    {
-                //        POP2;
-                //        this->PushNull();
-                //    }
-                //}
-                //break;
-                this->ThrowErr(RuntimeErr::NotImplemented); break;
+                {
+                    StackObj* index = _framePointer + REG1;
+                    StackObj* object = _framePointer + REG0;
+                    StackType indexType = index->v.type;
+                    StackType objectType = object->v.type;
+                    if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    if (objectType != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    List* list = object->v.ref->list;
+                    int idx = index->v.integer;
+                    if (idx < 0)
+                    {
+                        this->ThrowErr(RuntimeErr::NotImplemented);
+                    }
+                    
+                    if (idx < list->size())
+                    {
+                        Copy(&list->at(idx), _framePointer + REG2);
+                    }
+                    else
+                    {
+                        this->LoadNull(REG2);
+                    }
+
+                    _ip += 3;
+                }
+                break;
 
             ///
             /// Make list
             ///
             case OpCode::MakeList:
-                //{
-                //    // TODO: Max list size must be less than intmax and stack size
-                //    unsigned int size = GetOperand(unsigned int);
-                //    List* list = new List(size);
-                //    for (int index = -(int)size; index < 0; ++index)
-                //    {
-                //        Copy(_stackPointer + index, &(*list)[index + size]);
-                //    }
-                //    POPN(size);
-                //    this->PushList(list);
-                //}
-                //_ip += 4;
-                //break;
-                this->ThrowErr(RuntimeErr::NotImplemented); break;
+                {
+                    // TODO: Max list size must be less than intmax and stack size
+                    unsigned int size = GetOperand(unsigned int);
+                    List* list = new List(size);
+                    for (int index = -(int)size; index < 0; ++index)
+                    {
+                        BlindMove(_stackPointer + index, &(*list)[index + size]);
+                    }
+                    POPN(size);
+                    this->LoadList(REG0, list);
+                }
+                _ip += 5;
+                break;
 
             ///
             /// Push Register
@@ -852,17 +859,17 @@ namespace scrpt
         StackVal& v = (_framePointer + reg)->v;
         Deref(&v);
         v.type = StackType::StaticString;
-        v.integer = id;
+        v.staticString = _bytecode.strings[id].c_str();
     }
 
-    void VM::PushList(List* list)
+    void VM::LoadList(char reg, List* list)
     {
         AssertNotNull(list);
 
-        CHECKSTACK
-        _stackPointer->v.type = StackType::List;
-        _stackPointer->v.ref = new StackRef{ 1, list };
-        ++_stackPointer;
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = StackType::List;
+        v.ref = new StackRef{ 1, list };
     }
 
     StackObj* VM::GetParamBase(ParamId id)

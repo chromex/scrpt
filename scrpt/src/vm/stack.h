@@ -39,6 +39,7 @@ namespace scrpt
         union
         {
             StackRef* ref;
+            const char* staticString;
             unsigned int id;
             int integer;
             float fp;

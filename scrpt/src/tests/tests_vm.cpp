@@ -55,14 +55,6 @@ func fib(n) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Leak test", 7, false, R"testCode(
-func main() {
-    str1 = "foo";
-    str2 = str1 # "bar";
-    return 7;
-}
-)testCode"));
-
     ACCUMTEST(TestVM("Simple call", 1, false, R"testCode(
 func main() {
     if (Test(1, 2, 3))
@@ -90,14 +82,14 @@ func Fact(v) {
 }
 )testCode"));
 
-//    ACCUMTEST(TestVM("FFI", 1234, false, R"testCode(
-//func main() {
-//    for (i = 0; i < 10000; ++i)
-//        testextern(12, 34);
-//
-//    return testextern(12, 34);
-//}
-//)testCode"));
+    ACCUMTEST(TestVM("FFI", 1234, false, R"testCode(
+func main() {
+    for (i = 0; i < 10000; ++i)
+        testextern(12, 34);
+
+    return testextern(12, 34);
+}
+)testCode"));
 
     ACCUMTEST(TestVM("Strings", 1, false, R"testCode(
 func main() {
@@ -114,70 +106,77 @@ func test(str) {
 }
 )testCode"));
 
-//    ACCUMTEST(TestVM("Concat", 12, false, R"testCode(
-//func main() {
-//    a = "hello world" # "!";
-//    return strlen(a);
-//}
-//)testCode"));
-//
-//	ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
-//func main() {
-//	numElements = 1000;
-//    lst = [];
-//    for (count = 0; count < numElements; ++count)
-//        lst #= randomInt();
-//    quickSort(lst, 0, length(lst) - 1);
-//	correct = true;
-//	for (count = 0; count < length(lst) - 1 && correct; ++count)
-//		if (lst[count] > lst[count+1]) correct = false;
-//    if (correct) return 1;
-//	return 0;
-//}
-//
-//func quickSort(list, left, right) {
-//    index = partition(list, left, right);
-//    if (left < index - 1)
-//        quickSort(list, left, index - 1);
-//    if (index < right)
-//        quickSort(list, index, right);
-//}
-//
-//func partition(list, left, right) {
-//    i = left;
-//    j = right;
-//    pivot = list[(left + right) / 2];
-//
-//    while (i <= j) {
-//        while (list[i] < pivot)
-//            ++i;
-//        while (list[j] > pivot)
-//            --j;
-//        if (i <= j) {
-//            tmp = list[i];
-//            list[i] = list[j];
-//            list[j] = tmp;
-//            ++i;
-//            --j;
-//        }
-//    }
-//
-//    return i;
-//}
-//)testCode"));
+    ACCUMTEST(TestVM("Concat", 12, false, R"testCode(
+func main() {
+    a = "hello world" # "!";
+    return strlen(a);
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("List Test", 5, false, R"testCode(
+func main() {
+    lst = [1, true, 5, ["yes"], [], "no"];
+    return lst[2];
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
+func main() {
+	numElements = 1000;
+    lst = [];
+    for (count = 0; count < numElements; ++count)
+        lst #= randomInt();
+    quickSort(lst, 0, length(lst) - 1);
+	correct = true;
+	for (count = 0; count < length(lst) - 1 && correct; ++count)
+		if (lst[count] > lst[count+1]) correct = false;
+    if (correct) return 1;
+	return 0;
 }
 
-//void randomInt(scrpt::VM* vm)
-//{
-//    vm->LoadInt(scrpt::StackType::Int, rand() % 100000);
-//}
-//
-//void testextern(scrpt::VM* vm)
-//{
-//    int i = vm->GetParam<int>(scrpt::ParamId::_0);
-//    int i2 = vm->GetParam<int>(scrpt::ParamId::_1);
-//    vm->LoadInt(scrpt::StackType::Int, i * 100 + i2);
-//}
+func quickSort(list, left, right) {
+    index = partition(list, left, right);
+    if (left < index - 1)
+        quickSort(list, left, index - 1);
+    if (index < right)
+        quickSort(list, index, right);
+}
+
+func partition(list, left, right) {
+    i = left;
+    j = right;
+    pivot = list[(left + right) / 2];
+
+    while (i <= j) {
+        while (list[i] < pivot)
+            ++i;
+        while (list[j] > pivot)
+            --j;
+        if (i <= j) {
+            tmp = list[i];
+            list[i] = list[j];
+            list[j] = tmp;
+            ++i;
+            --j;
+        }
+    }
+
+    return i;
+}
+)testCode"));
+}
+
+void randomInt(scrpt::VM* vm)
+{
+    vm->SetExternResult(scrpt::StackType::Int, rand() % 100000);
+}
+
+void testextern(scrpt::VM* vm)
+{
+    int i = vm->GetParam<int>(scrpt::ParamId::_0);
+    int i2 = vm->GetParam<int>(scrpt::ParamId::_1);
+    vm->SetExternResult(scrpt::StackType::Int, i * 100 + i2);
+}
 
 LARGE_INTEGER GetTime()
 {
@@ -205,9 +204,9 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
     try
     {
 		scrpt::VM vm;
-        //scrpt::RegisterStdLib(vm);
-        //vm.AddExternFunc("testextern", 2, testextern);
-        //vm.AddExternFunc("randomInt", 0, randomInt);
+        scrpt::RegisterStdLib(vm);
+        vm.AddExternFunc("testextern", 2, testextern);
+        vm.AddExternFunc("randomInt", 0, randomInt);
 		vm.AddSource(scrpt::Tests::DuplicateSource(source));
 		vm.Finalize();
         if (decompile) vm.Decompile();
