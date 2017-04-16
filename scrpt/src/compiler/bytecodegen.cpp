@@ -295,8 +295,7 @@ namespace scrpt
         case Symbol::LParen:
             if (node.IsPostfix())
             {
-                // TODO: Needs update
-                this->CompileCall(node);
+                outReg = this->CompileCall(node);
             }
             else
             {
@@ -490,8 +489,8 @@ namespace scrpt
         this->ReleaseRegister(reg);
     }
 
-    // TODO: Needs update
-    void BytecodeGen::CompileCall(const AstNode& node)
+    // Updated
+    char BytecodeGen::CompileCall(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::LParen, "Unexpected node");
         Assert(node.GetChildren().size() >= 1, "Unexpected child count on Call node");
@@ -516,13 +515,16 @@ namespace scrpt
         auto children = node.GetChildren();
         for (auto child = ++children.begin(); child != children.end(); ++child)
         {
-            // TODO: What do with results?!
-            this->CompileExpression(*child);
+            char reg = GetRegResult(this->CompileExpression(*child));
+            this->AddOp(OpCode::Push, reg);
+            this->ReleaseRegister(reg);
         }
         this->AddOp(OpCode::Call, funcId);
-        // TODO: What DO?!
-        //for (size_t count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
-        this->AddOp(OpCode::RestoreRet);
+        if (nParam > 0) this->AddOp(OpCode::PopN, (char)nParam);
+
+        char reg = this->ClaimRegister(node);
+        this->AddOp(OpCode::RestoreRet, reg);
+        return reg;
     }
 
     // TODO: Needs update
@@ -623,7 +625,7 @@ namespace scrpt
         _byteBuffer[opIdx + offset + 2] = p0[1];
         _byteBuffer[opIdx + offset + 3] = p0[2];
         _byteBuffer[opIdx + offset + 4] = p0[3];
-        Assert(*((unsigned int*)&(_byteBuffer[opIdx + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
+        Assert(*((unsigned int*)&(_byteBuffer[opIdx + offset + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
     }
 
     void BytecodeGen::Verify(const AstNode& node, Symbol sym) const

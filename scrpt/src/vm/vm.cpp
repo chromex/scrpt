@@ -107,6 +107,8 @@ __forceinline void Move(StackObj* src, StackObj* dest)
 #define REG1 *((char*)(data + _ip + 2))
 #define REG2 *((char*)(data + _ip + 3))
 
+#define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) this->ThrowErr(RuntimeErr::StackOverflow);
+
 namespace scrpt
 {
     VM::VM()
@@ -630,34 +632,35 @@ namespace scrpt
             /// Call Function
             ///
             case OpCode::Call:
-                //{
-                //    unsigned int funcId = GetOperand(unsigned int);
-                //    const FunctionData& fd = _bytecode.functions[funcId];
-                //    if (!fd.external)
-                //    {
-                //        // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
-                //        int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
-                //        this->PushStackFrame(_ip + 5, framePointerOffset);
-                //        _framePointer = _stackPointer;
-                //        this->PushNull(fd.localLookup.size() - fd.nParam);
-                //        _ip = fd.entry - 1;
-                //    }
-                //    else
-                //    {
-                //        // TODO: Re-entrant externals
-                //        StackObj* startingStack = _stackPointer;
-                //        _currentExternArgN = fd.nParam;
+                {
+                    unsigned int funcId = *((unsigned int*)(data + _ip + 1));
+                    const FunctionData& fd = _bytecode.functions[funcId];
+                    if (!fd.external)
+                    {
+                        // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
+                        int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
+                        this->PushStackFrame(_ip + 5, framePointerOffset);
+                        _framePointer = _stackPointer;
+                        this->PushNull(fd.nLocalRegisters);
+                        _ip = fd.entry - 1;
+                    }
+                    else
+                    {
+                        this->ThrowErr(RuntimeErr::NotImplemented); break;
 
-                //        fd.func(this);
-                //        // TODO: Support for no return value
-                //        // TODO: Error on more than one return value
-                //        Copy(_stackPointer - 1, &_returnValue);
-                //        POP1;
-                //        _ip += 4;
-                //    }
-                //}
-                //break;
-                this->ThrowErr(RuntimeErr::NotImplemented); break;
+                        //// TODO: Re-entrant externals
+                        //StackObj* startingStack = _stackPointer;
+                        //_currentExternArgN = fd.nParam;
+
+                        //fd.func(this);
+                        //// TODO: Support for no return value
+                        //// TODO: Error on more than one return value
+                        //Copy(_stackPointer - 1, &_returnValue);
+                        //POP1;
+                        //_ip += 4;
+                    }
+                }
+                break;
 
             /// 
             /// Return
@@ -765,6 +768,24 @@ namespace scrpt
                 //break;
                 this->ThrowErr(RuntimeErr::NotImplemented); break;
 
+            ///
+            /// Push Register
+            ///
+            case OpCode::Push:
+                CHECKSTACK
+                BlindCopy(_framePointer + REG0, _stackPointer);
+                ++_stackPointer;
+                ++_ip;
+                break;
+
+            ///
+            /// Pop Num
+            ///
+            case OpCode::PopN:
+                POPN(REG0);
+                ++_ip;
+                break;
+
             default:
                 this->ThrowErr(RuntimeErr::NotImplemented);
                 break;
@@ -773,8 +794,6 @@ namespace scrpt
             ++_ip;
         }
     }
-
-    #define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) this->ThrowErr(RuntimeErr::StackOverflow);
 
     void VM::PushStackFrame(unsigned int returnIp, int framePointerOffset)
     {

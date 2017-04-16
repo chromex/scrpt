@@ -51,7 +51,9 @@ const char* scrpt::OpCodeToString(OpCode code)
 		ENUM_CASE_TO_STRING(OpCode::BrF); 
 		ENUM_CASE_TO_STRING(OpCode::Jmp); 
 		ENUM_CASE_TO_STRING(OpCode::Index); 
-		ENUM_CASE_TO_STRING(OpCode::MakeList);
+        ENUM_CASE_TO_STRING(OpCode::MakeList);
+        ENUM_CASE_TO_STRING(OpCode::Push);
+        ENUM_CASE_TO_STRING(OpCode::PopN);
 
     default:
         AssertFail("Missing case for OpCode");
@@ -118,6 +120,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
 #define DISPLAY_ONE_REG_INT std::cout << " " << (int)reg0 << " " << *(int *)(data + idx + 2); idx += 5; break;
 #define DISPLAY_ONE_REG_FLOAT std::cout << " " << (int)reg0 << " " << *(float *)(data + idx + 2); idx += 5; break;
 #define DISPLAY_UINT std::cout << " " << *(unsigned int *)(data + idx + 1); idx += 4; break;
+#define DISPLAY_CHAR std::cout << " " << (int)reg0; idx += 1; break;
 
             // TODO: Add support for named register lookup
 
@@ -171,6 +174,8 @@ void scrpt::Decompile(const Bytecode& bytecode)
                 std::cout << " ; " << bytecode.functions[*(unsigned int *)(data + idx + 1)].name;
                 idx += 4;
                 break;
+            case OpCode::Push: DISPLAY_ONE_REG
+            case OpCode::PopN: DISPLAY_CHAR
             }
 
             std::cout << std::endl;

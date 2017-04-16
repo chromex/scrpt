@@ -44,6 +44,17 @@ func main() {
 }
 )testCode"));
 
+    ACCUMTEST(TestVM("Fibonacci 2", 6765, false, R"testCode(
+func main() {
+    return fib(20);
+}
+
+func fib(n) {
+    if (n > 2) return fib(n - 1) + fib(n - 2);
+    return 1;
+}
+)testCode"));
+
     ACCUMTEST(TestVM("Leak test", 7, false, R"testCode(
 func main() {
     str1 = "foo";
@@ -52,44 +63,33 @@ func main() {
 }
 )testCode"));
 
-//    ACCUMTEST(TestVM("Fibonacci 2", 6765, false, R"testCode(
-//func main() {
-//    return fib(20);
-//}
-//
-//func fib(n) {
-//    if (n > 2) return fib(n - 1) + fib(n - 2);
-//    return 1;
-//}
-//)testCode"));
-//
-//    ACCUMTEST(TestVM("Simple call", 1, false, R"testCode(
-//func main() {
-//    if (Test(1, 2, 3))
-//        return 1;
-//    
-//    return 0;
-//}
-//
-//func Test(a, b, c) {
-//    sum = a + b + c;
-//    return sum == 6;
-//}
-//)testCode"));
-//
-//    ACCUMTEST(TestVM("Factorial", 479001600, false, R"testCode(
-//func main() {
-//    return Fact(12);
-//}
-//
-//func Fact(v) {
-//    if (v == 0)
-//        return 1;
-//    else
-//        return v * Fact(v - 1);
-//}
-//)testCode"));
-//
+    ACCUMTEST(TestVM("Simple call", 1, false, R"testCode(
+func main() {
+    if (Test(1, 2, 3))
+        return 1;
+    
+    return 0;
+}
+
+func Test(a, b, c) {
+    sum = a + b + c;
+    return sum == 6;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Factorial", 479001600, false, R"testCode(
+func main() {
+    return Fact(12);
+}
+
+func Fact(v) {
+    if (v == 0)
+        return 1;
+    else
+        return v * Fact(v - 1);
+}
+)testCode"));
+
 //    ACCUMTEST(TestVM("FFI", 1234, false, R"testCode(
 //func main() {
 //    for (i = 0; i < 10000; ++i)
@@ -98,22 +98,22 @@ func main() {
 //    return testextern(12, 34);
 //}
 //)testCode"));
-//
-//    ACCUMTEST(TestVM("Strings", 1, false, R"testCode(
-//func main() {
-//    for (i = 0; i < 10000; ++i)
-//    {
-//        test("whut");
-//    }
-//
-//    return 1;
-//}
-//
-//func test(str) {
-//    return str;
-//}
-//)testCode"));
-//
+
+    ACCUMTEST(TestVM("Strings", 1, false, R"testCode(
+func main() {
+    for (i = 0; i < 10000; ++i)
+    {
+        test("whut");
+    }
+
+    return 1;
+}
+
+func test(str) {
+    return str;
+}
+)testCode"));
+
 //    ACCUMTEST(TestVM("Concat", 12, false, R"testCode(
 //func main() {
 //    a = "hello world" # "!";
