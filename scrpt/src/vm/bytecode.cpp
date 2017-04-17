@@ -62,6 +62,22 @@ const char* scrpt::OpCodeToString(OpCode code)
     return nullptr;
 }
 
+std::string DisplayRegisterName(const scrpt::FunctionData& fd, char reg)
+{
+    std::stringstream ss;
+    auto entry = fd.localLookup.find(reg);
+    if (entry != fd.localLookup.end())
+    {
+        ss << entry->second << ":" << (int)reg;
+    }
+    else
+    {
+        ss << (int)reg;
+    }
+
+    return ss.str();
+}
+
 void scrpt::Decompile(const Bytecode& bytecode)
 {
     std::cout << "[STRINGS]" << std::endl;
@@ -113,69 +129,69 @@ void scrpt::Decompile(const Bytecode& bytecode)
             char reg1 = *(char*)(data + idx + 2);
             char reg2 = *(char*)(data + idx + 3);
 
-#define DISPLAY_ONE_REG std::cout << " " << (int)reg0; idx += 1; break;
-#define DISPLAY_TWO_REG std::cout << " " << (int)reg0 << " " << (int)reg1; idx += 2; break;
-#define DISPLAY_THREE_REG std::cout << " " << (int)reg0 << " " << (int)reg1 << " " << (int)reg2; idx += 3; break;
-#define DISPLAY_ONE_REG_UINT std::cout << " " << (int)reg0 << " " << *(unsigned int *)(data + idx + 2); idx += 5; break;
-#define DISPLAY_ONE_REG_INT std::cout << " " << (int)reg0 << " " << *(int *)(data + idx + 2); idx += 5; break;
-#define DISPLAY_ONE_REG_FLOAT std::cout << " " << (int)reg0 << " " << *(float *)(data + idx + 2); idx += 5; break;
-#define DISPLAY_UINT std::cout << " " << *(unsigned int *)(data + idx + 1); idx += 4; break;
-#define DISPLAY_CHAR std::cout << " " << (int)reg0; idx += 1; break;
+            const FunctionData& fd = bytecode.functions[currentFunction];
 
-            // TODO: Add support for named register lookup
+#define DISPLAY_ONE_REG std::cout << " " << DisplayRegisterName(fd, reg0); idx += 1;
+#define DISPLAY_TWO_REG std::cout << " " << DisplayRegisterName(fd, reg0) << " " << DisplayRegisterName(fd, reg1); idx += 2;
+#define DISPLAY_THREE_REG std::cout << " " << DisplayRegisterName(fd, reg0) << " " << DisplayRegisterName(fd, reg1) << " " << DisplayRegisterName(fd, reg2); idx += 3;
+#define DISPLAY_ONE_REG_UINT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(unsigned int *)(data + idx + 2); idx += 5;
+#define DISPLAY_ONE_REG_INT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(int *)(data + idx + 2); idx += 5;
+#define DISPLAY_ONE_REG_FLOAT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(float *)(data + idx + 2); idx += 5;
+#define DISPLAY_UINT std::cout << " " << *(unsigned int *)(data + idx + 1); idx += 4;
+#define DISPLAY_CHAR std::cout << " " << (int)reg0; idx += 1; 
 
             switch (op)
             {
-            case OpCode::LoadNull: DISPLAY_ONE_REG
-            case OpCode::LoadTrue: DISPLAY_ONE_REG
-            case OpCode::LoadFalse: DISPLAY_ONE_REG
-            case OpCode::LoadInt: DISPLAY_ONE_REG_INT
-            case OpCode::LoadFloat: DISPLAY_ONE_REG_FLOAT
-            case OpCode::LoadString: DISPLAY_ONE_REG_UINT
-            case OpCode::Store: DISPLAY_TWO_REG
-            case OpCode::StoreIdx: DISPLAY_THREE_REG
-            case OpCode::Eq: DISPLAY_THREE_REG
-            case OpCode::Or: DISPLAY_THREE_REG
-            case OpCode::And: DISPLAY_THREE_REG
-            case OpCode::Add: DISPLAY_THREE_REG
-            case OpCode::Sub: DISPLAY_THREE_REG
-            case OpCode::Mul: DISPLAY_THREE_REG
-            case OpCode::Div: DISPLAY_THREE_REG
-            case OpCode::Mod: DISPLAY_THREE_REG
-            case OpCode::Concat: DISPLAY_THREE_REG
-            case OpCode::Inc: DISPLAY_ONE_REG
-            case OpCode::Dec: DISPLAY_ONE_REG
-            case OpCode::PostInc: DISPLAY_ONE_REG
-            case OpCode::PostDec: DISPLAY_ONE_REG
-            case OpCode::PlusEq: DISPLAY_TWO_REG
-            case OpCode::PlusEqIdx: DISPLAY_THREE_REG
-            case OpCode::MinusEq: DISPLAY_TWO_REG
-            case OpCode::MinusEqIdx: DISPLAY_THREE_REG
-            case OpCode::MultEq: DISPLAY_TWO_REG
-            case OpCode::MultEqIdx: DISPLAY_THREE_REG
-            case OpCode::DivEq: DISPLAY_TWO_REG
-            case OpCode::DivEqIdx: DISPLAY_THREE_REG
-            case OpCode::ModuloEq: DISPLAY_TWO_REG
-            case OpCode::ModuloEqIdx: DISPLAY_THREE_REG
-            case OpCode::ConcatEq: DISPLAY_TWO_REG
-            case OpCode::ConcatEqIdx: DISPLAY_THREE_REG
-            case OpCode::LT: DISPLAY_THREE_REG
-            case OpCode::GT: DISPLAY_THREE_REG
-            case OpCode::LTE: DISPLAY_THREE_REG
-            case OpCode::GTE: DISPLAY_THREE_REG
-            case OpCode::Ret: DISPLAY_ONE_REG
-            case OpCode::RestoreRet: DISPLAY_ONE_REG
-            case OpCode::BrT: DISPLAY_ONE_REG_UINT
-            case OpCode::BrF: DISPLAY_ONE_REG_UINT
-            case OpCode::Jmp: DISPLAY_UINT
-            case OpCode::Index: DISPLAY_THREE_REG
-            case OpCode::MakeList: DISPLAY_ONE_REG_UINT
+            case OpCode::LoadNull: DISPLAY_ONE_REG; break;
+            case OpCode::LoadTrue: DISPLAY_ONE_REG; break;
+            case OpCode::LoadFalse: DISPLAY_ONE_REG; break;
+            case OpCode::LoadInt: DISPLAY_ONE_REG_INT; break;
+            case OpCode::LoadFloat: DISPLAY_ONE_REG_FLOAT; break;
+            case OpCode::LoadString: DISPLAY_ONE_REG_UINT; break;
+            case OpCode::Store: DISPLAY_TWO_REG; break;
+            case OpCode::StoreIdx: DISPLAY_THREE_REG; break;
+            case OpCode::Eq: DISPLAY_THREE_REG; break;
+            case OpCode::Or: DISPLAY_THREE_REG; break;
+            case OpCode::And: DISPLAY_THREE_REG; break;
+            case OpCode::Add: DISPLAY_THREE_REG; break;
+            case OpCode::Sub: DISPLAY_THREE_REG; break;
+            case OpCode::Mul: DISPLAY_THREE_REG; break;
+            case OpCode::Div: DISPLAY_THREE_REG; break;
+            case OpCode::Mod: DISPLAY_THREE_REG; break;
+            case OpCode::Concat: DISPLAY_THREE_REG; break;
+            case OpCode::Inc: DISPLAY_ONE_REG; break;
+            case OpCode::Dec: DISPLAY_ONE_REG; break;
+            case OpCode::PostInc: DISPLAY_ONE_REG; break;
+            case OpCode::PostDec: DISPLAY_ONE_REG; break;
+            case OpCode::PlusEq: DISPLAY_TWO_REG; break;
+            case OpCode::PlusEqIdx: DISPLAY_THREE_REG; break;
+            case OpCode::MinusEq: DISPLAY_TWO_REG; break;
+            case OpCode::MinusEqIdx: DISPLAY_THREE_REG; break;
+            case OpCode::MultEq: DISPLAY_TWO_REG; break;
+            case OpCode::MultEqIdx: DISPLAY_THREE_REG; break;
+            case OpCode::DivEq: DISPLAY_TWO_REG; break;
+            case OpCode::DivEqIdx: DISPLAY_THREE_REG; break;
+            case OpCode::ModuloEq: DISPLAY_TWO_REG; break;
+            case OpCode::ModuloEqIdx: DISPLAY_THREE_REG; break;
+            case OpCode::ConcatEq: DISPLAY_TWO_REG; break;
+            case OpCode::ConcatEqIdx: DISPLAY_THREE_REG; break;
+            case OpCode::LT: DISPLAY_THREE_REG; break;
+            case OpCode::GT: DISPLAY_THREE_REG; break;
+            case OpCode::LTE: DISPLAY_THREE_REG; break;
+            case OpCode::GTE: DISPLAY_THREE_REG; break;
+            case OpCode::Ret: DISPLAY_ONE_REG; break;
+            case OpCode::RestoreRet: DISPLAY_ONE_REG; break;
+            case OpCode::BrT: DISPLAY_ONE_REG_UINT; break;
+            case OpCode::BrF: DISPLAY_ONE_REG_UINT; break;
+            case OpCode::Jmp: DISPLAY_UINT; break;
+            case OpCode::Index: DISPLAY_THREE_REG; break;
+            case OpCode::MakeList: DISPLAY_ONE_REG_UINT; break;
             case OpCode::Call:
-                std::cout << " ; " << bytecode.functions[*(unsigned int *)(data + idx + 1)].name;
-                idx += 4;
+                DISPLAY_UINT;
+                std::cout << " ; " << bytecode.functions[*(unsigned int *)(data + idx - 3)].name;
                 break;
-            case OpCode::Push: DISPLAY_ONE_REG
-            case OpCode::PopN: DISPLAY_CHAR
+            case OpCode::Push: DISPLAY_ONE_REG; break;
+            case OpCode::PopN: DISPLAY_CHAR; break;
             }
 
             std::cout << std::endl;
