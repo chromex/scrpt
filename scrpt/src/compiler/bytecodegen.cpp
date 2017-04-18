@@ -2,13 +2,6 @@
 
 #define COMPONENTNAME "BytecodeGen"
 
-// Register machine conversion...
-// * Registers for non param / ident values are nulled out during runtime
-// * Local registers are cleaned up on return
-
-// Registers
-// * Parameters get their default negative offset as they do already
-
 namespace scrpt
 {
     BytecodeGen::BytecodeGen()
@@ -329,7 +322,6 @@ namespace scrpt
         return std::make_tuple(success, outReg);
     }
 
-    // Updated
     void BytecodeGen::CompileFor(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::For, "Unexpected node");
@@ -379,7 +371,6 @@ namespace scrpt
         this->PopScope();
     }
 
-    // Updated
     void BytecodeGen::CompileWhile(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::While, "Unexpected node");
@@ -403,7 +394,6 @@ namespace scrpt
         this->PopScope();
     }
 
-    // Updated
     void BytecodeGen::CompileDo(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::Do, "Unexpected node");
@@ -422,7 +412,6 @@ namespace scrpt
         this->PopScope();
     }
 
-    // Updated
     void BytecodeGen::CompileIf(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::If, "Unexpected node");
@@ -472,7 +461,6 @@ namespace scrpt
         }
     }
 
-    // Updated
     void BytecodeGen::CompileReturn(const AstNode& node)
     {
         Assert(node.GetChildren().size() < 2, "Unexpected number of children");
@@ -490,7 +478,6 @@ namespace scrpt
         this->ReleaseRegister(reg);
     }
 
-    // Updated
     char BytecodeGen::CompileCall(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::LParen, "Unexpected node");
@@ -528,7 +515,6 @@ namespace scrpt
         return reg;
     }
 
-    // Updated
     char BytecodeGen::CompileList(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::LSquare, "Unexpected node");
@@ -704,7 +690,6 @@ namespace scrpt
         _scopeStack.push_back(std::map<std::string, char>());
     }
 
-    // Updated
     void BytecodeGen::PopScope()
     {
         Assert(_scopeStack.size() > 0, "Can't pop an empty stack");
@@ -754,7 +739,6 @@ namespace scrpt
         return std::get<1>(result);
     }
 
-    // Updated
     char BytecodeGen::AddParam(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
@@ -772,7 +756,6 @@ namespace scrpt
         return offset;
     }
 
-    // Updated
     char BytecodeGen::AddLocal(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
@@ -789,7 +772,6 @@ namespace scrpt
         return offset;
     }
 
-    // Updated
     char BytecodeGen::LookupIdentOffset(const AstNode& node) const
     {
         Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
@@ -803,7 +785,6 @@ namespace scrpt
         return offset;
     }
 
-    // Updated
     bool BytecodeGen::LookupIdentOffset(const char* ident, char* id) const
     {
         AssertNotNull(ident);
