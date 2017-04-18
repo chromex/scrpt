@@ -2,6 +2,8 @@
 
 #define COMPONENTNAME "BytecodeGen"
 
+const size_t MAX_PARAM = 125;
+
 namespace scrpt
 {
     BytecodeGen::BytecodeGen()
@@ -12,6 +14,7 @@ namespace scrpt
     void BytecodeGen::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
     {
         AssertNotNull(name);
+        Assert(nParam <= MAX_PARAM, "Function takes invalid number of parameters");
         Assert(_functionLookup.find(name) == _functionLookup.end(), "Extern already registered");
 
         _functionLookup[name] = (unsigned int)_functions.size();
@@ -59,7 +62,7 @@ namespace scrpt
         }
 
         size_t nParam = children.size() - 2;
-        if (nParam > 255)
+        if (nParam > MAX_PARAM)
         {
             CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, ident.GetToken());
         }
@@ -155,7 +158,7 @@ namespace scrpt
             }
             else
             {
-                AssertFail("Unhandled Symbol in statement compilation: " << SymbolToString(node.GetToken()->GetSym()));
+                AssertFail("Unhandled Symbol in compilation: " << SymbolToString(node.GetToken()->GetSym()));
             }
         }
     }
@@ -494,6 +497,11 @@ namespace scrpt
         }
 
         unsigned int funcId = funcIter->second;
+
+        if (nParam > MAX_PARAM)
+        {
+            throw CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, node.GetToken());
+        }
 
         if ((unsigned char)nParam != _functions[funcId].nParam)
         {

@@ -212,13 +212,9 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
         if (decompile) vm.Decompile();
         LARGE_INTEGER startTime = GetTime();
         scrpt::StackVal* ret = vm.Execute("main");
-        for (int count = 0; count < 99; ++count)
-        {
-            vm.Execute("main");
-        }
         LARGE_INTEGER endTime = GetTime();
         err = ret == nullptr || ret->integer != resultValue;
-        runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart) / 100.0;
+        runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart);
     }
     catch (scrpt::CompilerException& ex)
     {
