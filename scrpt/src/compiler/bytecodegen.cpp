@@ -2,6 +2,8 @@
 
 #define COMPONENTNAME "BytecodeGen"
 
+const size_t MAX_PARAM = 125;
+
 namespace scrpt
 {
     BytecodeGen::BytecodeGen()
@@ -12,10 +14,11 @@ namespace scrpt
     void BytecodeGen::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
     {
         AssertNotNull(name);
+        Assert(nParam <= MAX_PARAM, "Function takes invalid number of parameters");
         Assert(_functionLookup.find(name) == _functionLookup.end(), "Extern already registered");
 
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ name, nParam, 0xFFFFFFFF, true, func });
+        _functions.push_back(FunctionData{ name, nParam, 0, 0xFFFFFFFF, true, func });
     }
 
     void BytecodeGen::Consume(const AstNode& ast)
@@ -59,13 +62,13 @@ namespace scrpt
         }
 
         size_t nParam = children.size() - 2;
-        if (nParam > 255)
+        if (nParam > MAX_PARAM)
         {
             CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, ident.GetToken());
         }
 
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0xFFFFFFFF, false });
+        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0, 0xFFFFFFFF, false });
     }
 
     void BytecodeGen::CompileFunction(const AstNode& node)
@@ -78,6 +81,7 @@ namespace scrpt
 
         // Start function scope
         this->PushScope();
+        _paramOffset = -2;
 
         // Get the params
         auto children = node.GetChildren();
@@ -99,11 +103,13 @@ namespace scrpt
             this->CompileStatement(statement);
         }
 
-        // Add an implicit return if none there was no explicit one
+        // Add an implicit return if there was no explicit one
         if (block.GetLastChild().GetSym() != Symbol::Return)
         {
-            this->AddOp(OpCode::PushNull);
-            this->AddOp(OpCode::Ret);
+            char reg = this->ClaimRegister(block);
+            this->AddOp(OpCode::LoadNull, reg);
+            this->AddOp(OpCode::Ret, reg);
+            this->ReleaseRegister(reg);
         }
 
         this->PopScope();
@@ -132,16 +138,7 @@ namespace scrpt
             break;
 
         case Symbol::Return:
-            Assert(node.GetChildren().size() < 2, "Unexpected number of children");
-            if (node.GetChildren().size() > 0)
-            {
-                this->CompileExpression(node.GetFirstChild());
-            }
-            else
-            {
-                this->AddOp(OpCode::PushNull);
-            }
-            this->AddOp(OpCode::Ret);
+            this->CompileReturn(node);
             break;
 
         case Symbol::LBracket:
@@ -154,34 +151,40 @@ namespace scrpt
             break;
 
         default:
-            if (this->CompileExpression(node))
+            auto result = this->CompileExpression(node);
+            if (std::get<0>(result))
             {
-                this->AddOp(OpCode::Pop);
+                this->ReleaseRegister(std::get<1>(result));
             }
             else
             {
-                AssertFail("Unhandled Symbol in statement compilation: " << SymbolToString(node.GetToken()->GetSym()));
+                AssertFail("Unhandled Symbol in compilation: " << SymbolToString(node.GetToken()->GetSym()));
             }
         }
     }
 
     // TODO: Unary -
     // TODO: Need to special case all assignments when target operand is not an ident (including ++, --)
-    bool BytecodeGen::CompileExpression(const AstNode& node)
+    // TODO: Error on PlusEq, MinusEq, etc. when the LHS has not been previously declared
+    std::tuple<bool, char> BytecodeGen::CompileExpression(const AstNode& node)
     {
         bool success = true;
+        char outReg = 0, reg0, reg1;
+
         switch (node.GetSym())
         {
         case Symbol::Int:
-            this->AddOp(OpCode::PushInt, node.GetToken()->GetInt());
+            outReg = this->ClaimRegister(node);
+            this->AddOp(OpCode::LoadInt, outReg, node.GetToken()->GetInt());
             break;
 
         case Symbol::Float:
-            this->AddOp(OpCode::PushFloat, node.GetToken()->GetFloat());
+            outReg = this->ClaimRegister(node);
+            this->AddOp(OpCode::LoadFloat, outReg, node.GetToken()->GetFloat());
             break;
 
         case Symbol::Ident:
-            this->AddOp(OpCode::PushIdent, this->LookupIdentOffset(node));
+            outReg = this->LookupIdentOffset(node);
             break;
 
         case Symbol::Terminal:
@@ -199,16 +202,19 @@ namespace scrpt
                     strId = entry->second;
                 }
 
-                this->AddOp(OpCode::PushString, strId);
+                outReg = this->ClaimRegister(node);
+                this->AddOp(OpCode::LoadString, outReg, strId);
             }
             break;
 
         case Symbol::True:
-            this->AddOp(OpCode::PushTrue);
+            outReg = this->ClaimRegister(node);
+            this->AddOp(OpCode::LoadTrue, outReg);
             break;
 
         case Symbol::False:
-            this->AddOp(OpCode::PushFalse);
+            outReg = this->ClaimRegister(node);
+            this->AddOp(OpCode::LoadFalse, outReg);
             break;
 
         case Symbol::Assign:
@@ -223,14 +229,19 @@ namespace scrpt
                 const AstNode& firstChild = node.GetFirstChild();
                 if (firstChild.GetSym() == Symbol::Ident)
                 {
-                    this->CompileExpression(node.GetSecondChild());
-                    this->AddOp(this->MapUnaryAssignOp(node.GetSym()), this->AddLocal(firstChild.GetToken()->GetString()));
+                    char reg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                    outReg = this->AddLocal(firstChild);
+                    this->AddOp(this->MapUnaryAssignOp(node.GetSym()), outReg, reg);
+                    this->ReleaseRegister(reg);
                 }
                 else if (firstChild.GetSym() == Symbol::LSquare)
                 {
-                    this->CompileExpression(node.GetSecondChild());
-                    this->CompileExpression(firstChild.GetSecondChild());
-                    this->AddOp(this->MapUnaryAssignIdxOp(node.GetSym()), this->AddLocal(firstChild.GetFirstChild().GetToken()->GetString()));
+                    char rhsReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                    char indexReg = GetRegResult(this->CompileExpression(firstChild.GetSecondChild()));
+                    outReg = this->AddLocal(firstChild.GetFirstChild());
+                    this->AddOp(this->MapUnaryAssignIdxOp(node.GetSym()), outReg, indexReg, rhsReg);
+                    this->ReleaseRegister(rhsReg);
+                    this->ReleaseRegister(indexReg);
                 }
                 else
                 {
@@ -253,29 +264,34 @@ namespace scrpt
         case Symbol::GreaterThan:
         case Symbol::GreaterThanEq:
             Assert(node.GetChildren().size() == 2, "Unexpected number of children");
-            this->CompileExpression(node.GetFirstChild());
-            this->CompileExpression(node.GetSecondChild());
-            this->AddOp(this->MapBinaryOp(node.GetSym()));
+            reg0 = GetRegResult(this->CompileExpression(node.GetFirstChild()));
+            reg1 = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+            outReg = this->ClaimRegister(node);
+            this->AddOp(this->MapBinaryOp(node.GetSym()), reg0, reg1, outReg);
+            this->ReleaseRegister(reg0);
+            this->ReleaseRegister(reg1);
             break;
 
         case Symbol::PlusPlus:
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostIncI : OpCode::IncI, this->LookupIdentOffset(node.GetFirstChild()));
+            outReg = this->LookupIdentOffset(node.GetFirstChild());
+            this->AddOp(node.IsPostfix() ? OpCode::PostInc : OpCode::Inc, outReg);
             break;
 
         case Symbol::MinusMinus:
             Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Non ident assignment not yet supported");
 
             Assert(node.GetChildren().size() == 1, "Unexpected number of children");
-            this->AddOp(node.IsPostfix() ? OpCode::PostDecI : OpCode::DecI, this->LookupIdentOffset(node.GetFirstChild()));
+            outReg = this->LookupIdentOffset(node.GetFirstChild());
+            this->AddOp(node.IsPostfix() ? OpCode::PostDec : OpCode::Dec, outReg);
             break;
 
         case Symbol::LParen:
             if (node.IsPostfix())
             {
-                this->CompileCall(node);
+                outReg = this->CompileCall(node);
             }
             else
             {
@@ -287,14 +303,17 @@ namespace scrpt
         case Symbol::LSquare:
             if (node.IsConstant())
             {
-                this->CompileList(node);
+                outReg = this->CompileList(node);
             }
             else
             {
                 Assert(node.GetChildren().size() == 2, "Unexpected number of children");
-                this->CompileExpression(node.GetFirstChild());
-                this->CompileExpression(node.GetSecondChild());
-                this->AddOp(OpCode::Index);
+                reg0 = GetRegResult(this->CompileExpression(node.GetFirstChild()));
+                reg1 = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                outReg = this->ClaimRegister(node);
+                this->AddOp(OpCode::Index, reg0, reg1, outReg);
+                this->ReleaseRegister(reg0);
+                this->ReleaseRegister(reg1);
             }
             break;
 
@@ -303,7 +322,7 @@ namespace scrpt
             success = false;
         }
 
-        return success;
+        return std::make_tuple(success, outReg);
     }
 
     void BytecodeGen::CompileFor(const AstNode& node)
@@ -321,8 +340,8 @@ namespace scrpt
         // Begin
         if (!beginExpr.IsEmpty())
         {
-            this->CompileExpression(beginExpr);
-            this->AddOp(OpCode::Pop);
+            char reg = GetRegResult(this->CompileExpression(beginExpr));
+            this->ReleaseRegister(reg);
         }
 
         // Check
@@ -330,8 +349,9 @@ namespace scrpt
         size_t brIdx = 0;
         if (!checkExpr.IsEmpty())
         {
-            this->CompileExpression(checkExpr);
-            brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+            char reg = GetRegResult(this->CompileExpression(checkExpr));
+            brIdx = this->AddOp(OpCode::BrF, reg, unsigned int(0xFFFFFFFF));
+            this->ReleaseRegister(reg);
         }
 
         // Block
@@ -342,13 +362,13 @@ namespace scrpt
         // End 
         if (!endExpr.IsEmpty())
         {
-            this->CompileExpression(endExpr);
-            this->AddOp(OpCode::Pop);
+            char reg = GetRegResult(this->CompileExpression(endExpr));
+            this->ReleaseRegister(reg);
         }
         this->AddOp(OpCode::Jmp, reentry);
         if (!checkExpr.IsEmpty())
         {
-            this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+            this->SetOpOperand(brIdx, 1, (unsigned int)_byteBuffer.size());
         }
 
         this->PopScope();
@@ -365,13 +385,14 @@ namespace scrpt
         this->PushScope();
 
         unsigned int reentry = (unsigned int)_byteBuffer.size();
-        this->CompileExpression(checkExpr);
-        size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+        char checkReg = GetRegResult(this->CompileExpression(checkExpr));
+        size_t brIdx = this->AddOp(OpCode::BrF, checkReg, unsigned int(0xFFFFFFFF));
+        this->ReleaseRegister(checkReg);
         this->PushScope();
         this->CompileStatement(blockStatement);
         this->PopScope();
         this->AddOp(OpCode::Jmp, reentry);
-        this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+        this->SetOpOperand(brIdx, 1, (unsigned int)_byteBuffer.size());
 
         this->PopScope();
     }
@@ -387,8 +408,9 @@ namespace scrpt
         this->PushScope();
         this->CompileStatement(node.GetFirstChild());
         this->PopScope();
-        this->CompileExpression(node.GetSecondChild());
-        this->AddOp(OpCode::BrT, reentry);
+        char checkReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+        this->AddOp(OpCode::BrT, checkReg, reentry);
+        this->ReleaseRegister(checkReg);
 
         this->PopScope();
     }
@@ -409,8 +431,9 @@ namespace scrpt
         {
             auto checkExpr = *childIter++;
             auto blockStatement = *childIter++;
-            this->CompileExpression(checkExpr);
-            size_t brIdx = this->AddOp(OpCode::BrF, unsigned int(0xFFFFFFFF));
+            char checkReg = GetRegResult(this->CompileExpression(checkExpr));
+            size_t brIdx = this->AddOp(OpCode::BrF, checkReg, unsigned int(0xFFFFFFFF));
+            this->ReleaseRegister(checkReg);
             this->PushScope();
             this->CompileStatement(blockStatement);
             this->PopScope();
@@ -418,7 +441,7 @@ namespace scrpt
             {
                 statementEndJmps.push_back(this->AddOp(OpCode::Jmp, unsigned int(0xFFFFFFFF)));
             }
-            this->SetOpOperand(brIdx, (unsigned int)_byteBuffer.size());
+            this->SetOpOperand(brIdx, 1, (unsigned int)_byteBuffer.size());
         }
 
         // Else block
@@ -437,11 +460,28 @@ namespace scrpt
         // Set the exit jmps for the individual sections
         for (size_t offset : statementEndJmps)
         {
-            this->SetOpOperand(offset, (unsigned int)_byteBuffer.size());
+            this->SetOpOperand(offset, 0, (unsigned int)_byteBuffer.size());
         }
     }
 
-    void BytecodeGen::CompileCall(const AstNode& node)
+    void BytecodeGen::CompileReturn(const AstNode& node)
+    {
+        Assert(node.GetChildren().size() < 2, "Unexpected number of children");
+        char reg;
+        if (node.GetChildren().size() > 0)
+        {
+            reg = GetRegResult(this->CompileExpression(node.GetFirstChild()));
+        }
+        else
+        {
+            reg = this->ClaimRegister(node);
+            this->AddOp(OpCode::LoadNull, reg);
+        }
+        this->AddOp(OpCode::Ret, reg);
+        this->ReleaseRegister(reg);
+    }
+
+    char BytecodeGen::CompileCall(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::LParen, "Unexpected node");
         Assert(node.GetChildren().size() >= 1, "Unexpected child count on Call node");
@@ -458,6 +498,11 @@ namespace scrpt
 
         unsigned int funcId = funcIter->second;
 
+        if (nParam > MAX_PARAM)
+        {
+            throw CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, node.GetToken());
+        }
+
         if ((unsigned char)nParam != _functions[funcId].nParam)
         {
             throw CreateBytecodeGenEx(BytecodeGenErr::IncorrectCallArity, node.GetToken());
@@ -466,14 +511,19 @@ namespace scrpt
         auto children = node.GetChildren();
         for (auto child = ++children.begin(); child != children.end(); ++child)
         {
-            this->CompileExpression(*child);
+            char reg = GetRegResult(this->CompileExpression(*child));
+            this->AddOp(OpCode::Push, reg);
+            this->ReleaseRegister(reg);
         }
         this->AddOp(OpCode::Call, funcId);
-        for (size_t count = 0; count < nParam; ++count) this->AddOp(OpCode::Pop);
-        this->AddOp(OpCode::RestoreRet);
+        if (nParam > 0) this->AddOp(OpCode::PopN, (char)nParam);
+
+        char reg = this->ClaimRegister(node);
+        this->AddOp(OpCode::RestoreRet, reg);
+        return reg;
     }
 
-    void BytecodeGen::CompileList(const AstNode& node)
+    char BytecodeGen::CompileList(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::LSquare, "Unexpected node");
 
@@ -481,9 +531,14 @@ namespace scrpt
         auto children = node.GetChildren();
         for (auto child = children.begin(); child != children.end(); ++child)
         {
-            this->CompileExpression(*child);
+            char reg = GetRegResult(this->CompileExpression(*child));
+            this->AddOp(OpCode::Push, reg);
+            this->ReleaseRegister(reg);
         }
-        this->AddOp(OpCode::MakeList, (unsigned int)children.size());
+
+        char reg = this->ClaimRegister(node);
+        this->AddOp(OpCode::MakeList, reg, (unsigned int)children.size());
+        return reg;
     }
 
     size_t BytecodeGen::AddOp(OpCode op)
@@ -492,49 +547,85 @@ namespace scrpt
         return _byteBuffer.size() - 1;
     }
 
-    size_t BytecodeGen::AddOp(OpCode op, int p0)
-    {
-        return this->AddOp(op, (unsigned char*)&p0);
-    }
-
-    size_t BytecodeGen::AddOp(OpCode op, unsigned int p0)
-    {
-        return this->AddOp(op, (unsigned char*)&p0);
-    }
-
-    size_t BytecodeGen::AddOp(OpCode op, float p0)
-    {
-        return this->AddOp(op, (unsigned char*)&p0);
-    }
-
-    size_t BytecodeGen::AddOp(OpCode op, unsigned char* p0)
+    size_t BytecodeGen::AddOp(OpCode op, char reg0)
     {
         size_t ret = _byteBuffer.size();
-
         _byteBuffer.push_back(static_cast<unsigned char>(op));
-        _byteBuffer.push_back(p0[0]);
-        _byteBuffer.push_back(p0[1]);
-        _byteBuffer.push_back(p0[2]);
-        _byteBuffer.push_back(p0[3]);
-        Assert(*((unsigned int*)&(_byteBuffer[ret + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
-
+        _byteBuffer.push_back(static_cast<unsigned char>(reg0));
         return ret;
     }
 
-    void BytecodeGen::SetOpOperand(size_t opIdx, unsigned int p0)
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, char reg1)
     {
-        this->SetOpOperand(opIdx, (unsigned char*)&p0);
+        size_t ret = _byteBuffer.size();
+        _byteBuffer.push_back(static_cast<unsigned char>(op));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg0));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg1));
+        return ret;
     }
 
-    void BytecodeGen::SetOpOperand(size_t opIdx, unsigned char* p0)
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, char reg1, char reg2)
+    {
+        size_t ret = _byteBuffer.size();
+        _byteBuffer.push_back(static_cast<unsigned char>(op));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg0));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg1));
+        _byteBuffer.push_back(static_cast<unsigned char>(reg2));
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, unsigned int data)
+    {
+        size_t ret = this->AddOp(op, reg0);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, float data)
+    {
+        size_t ret = this->AddOp(op, reg0);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, char reg0, int data)
+    {
+        size_t ret = this->AddOp(op, reg0);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    size_t BytecodeGen::AddOp(OpCode op, unsigned int data)
+    {
+        size_t ret = this->AddOp(op);
+        this->AddData((unsigned char*)&data);
+        return ret;
+    }
+
+    void BytecodeGen::AddData(unsigned char* data)
+    {
+        size_t ret = _byteBuffer.size();
+        _byteBuffer.push_back(data[0]);
+        _byteBuffer.push_back(data[1]);
+        _byteBuffer.push_back(data[2]);
+        _byteBuffer.push_back(data[3]);
+        Assert(*((unsigned int*)&(_byteBuffer[ret])) == *(unsigned int*)data, "Data should be correctly packed");
+    }
+
+    void BytecodeGen::SetOpOperand(size_t opIdx, int offset, unsigned int p0)
+    {
+        this->SetOpOperand(opIdx, offset, (unsigned char*)&p0);
+    }
+
+    void BytecodeGen::SetOpOperand(size_t opIdx, int offset, unsigned char* p0)
     {
         Assert(_byteBuffer.size() > opIdx, "Index out of bounds");
 
-        _byteBuffer[opIdx + 1] = p0[0];
-        _byteBuffer[opIdx + 2] = p0[1];
-        _byteBuffer[opIdx + 3] = p0[2];
-        _byteBuffer[opIdx + 4] = p0[3];
-        Assert(*((unsigned int*)&(_byteBuffer[opIdx + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
+        _byteBuffer[opIdx + offset + 1] = p0[0];
+        _byteBuffer[opIdx + offset + 2] = p0[1];
+        _byteBuffer[opIdx + offset + 3] = p0[2];
+        _byteBuffer[opIdx + offset + 4] = p0[3];
+        Assert(*((unsigned int*)&(_byteBuffer[opIdx + offset + 1])) == *(unsigned int*)p0, "Data should be correctly packed...");
     }
 
     void BytecodeGen::Verify(const AstNode& node, Symbol sym) const
@@ -572,13 +663,13 @@ namespace scrpt
     {
         switch (sym)
         {
-        case Symbol::Assign: return OpCode::AssignI;
-        case Symbol::PlusEq: return OpCode::PlusEqI;
-        case Symbol::MinusEq: return OpCode::MinusEqI;
-        case Symbol::MultEq: return OpCode::MultEqI;
-        case Symbol::DivEq: return OpCode::DivEqI;
-        case Symbol::ModuloEq: return OpCode::ModuloEqI;
-        case Symbol::ConcatEq: return OpCode::ConcatEqI;
+        case Symbol::Assign: return OpCode::Store;
+        case Symbol::PlusEq: return OpCode::PlusEq;
+        case Symbol::MinusEq: return OpCode::MinusEq;
+        case Symbol::MultEq: return OpCode::MultEq;
+        case Symbol::DivEq: return OpCode::DivEq;
+        case Symbol::ModuloEq: return OpCode::ModuloEq;
+        case Symbol::ConcatEq: return OpCode::ConcatEq;
         default:
             AssertFail("Unmapped unary assign op: " << SymbolToString(sym));
             return OpCode::Unknown;
@@ -589,13 +680,13 @@ namespace scrpt
     {
         switch (sym)
         {
-        case Symbol::Assign: return OpCode::AssignIdxI;
-        case Symbol::PlusEq: return OpCode::PlusEqIdxI;
-        case Symbol::MinusEq: return OpCode::MinusEqIdxI;
-        case Symbol::MultEq: return OpCode::MultEqIdxI;
-        case Symbol::DivEq: return OpCode::DivEqIdxI;
-        case Symbol::ModuloEq: return OpCode::ModuloEqIdxI;
-        case Symbol::ConcatEq: return OpCode::ConcatEqIdxI;
+        case Symbol::Assign: return OpCode::StoreIdx;
+        case Symbol::PlusEq: return OpCode::PlusEqIdx;
+        case Symbol::MinusEq: return OpCode::MinusEqIdx;
+        case Symbol::MultEq: return OpCode::MultEqIdx;
+        case Symbol::DivEq: return OpCode::DivEqIdx;
+        case Symbol::ModuloEq: return OpCode::ModuloEqIdx;
+        case Symbol::ConcatEq: return OpCode::ConcatEqIdx;
         default:
             AssertFail("Unmapped unary assign idex op: " << SymbolToString(sym));
             return OpCode::Unknown;
@@ -604,26 +695,64 @@ namespace scrpt
 
     void BytecodeGen::PushScope()
     {
-        _scopeStack.push_back(std::map<std::string, int>());
-        if (_scopeStack.size() == 1)
-        {
-            _paramOffset = -2;
-            _localOffset = 0;
-        }
+        _scopeStack.push_back(std::map<std::string, char>());
     }
 
     void BytecodeGen::PopScope()
     {
         Assert(_scopeStack.size() > 0, "Can't pop an empty stack");
+        auto scope  = _scopeStack.back();
+        for (auto entry : scope)
+        {
+            this->ReleaseRegister(entry.second, true);
+        }
         _scopeStack.pop_back();
     }
 
-    int BytecodeGen::AddParam(const AstNode& node)
+    char BytecodeGen::ClaimRegister(const AstNode& node, bool lock)
+    {
+        for (size_t idx = 0; idx < _registers.size(); ++idx)
+        {
+            if (!_registers.test(idx))
+            {
+                _registers.set(idx);
+                if (lock) _lockedRegisters.set(idx);
+                _fd->nLocalRegisters = std::max(_fd->nLocalRegisters, idx + 1);
+                return (char)idx;
+            }
+        }
+
+        throw CreateBytecodeGenEx(BytecodeGenErr::InsufficientRegisters, node.GetToken());
+    }
+
+    void BytecodeGen::ReleaseRegister(char reg, bool unlock)
+    {
+        if (reg < 0)
+        {
+            // Ignore negative registers since they are parameter registers
+            return;
+        }
+
+        Assert(_registers.test(reg), "Releasing unclaimed register");
+        Assert(!unlock || _lockedRegisters.test(reg), "Unlocking a non-locked register");
+        if (unlock || !_lockedRegisters.test(reg))
+        {
+            _registers.reset(reg);
+            _lockedRegisters.reset(reg);
+        }
+    }
+
+    char BytecodeGen::GetRegResult(const std::tuple<bool, char>& result)
+    {
+        return std::get<1>(result);
+    }
+
+    char BytecodeGen::AddParam(const AstNode& node)
     {
         Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
         Assert(_scopeStack.size() == 1, "Params can only be added at root scope");
 
-        int offset;
+        char offset;
         const char* ident = node.GetToken()->GetString();
         if (this->LookupIdentOffset(ident, &offset))
         {
@@ -635,14 +764,15 @@ namespace scrpt
         return offset;
     }
 
-    int BytecodeGen::AddLocal(const char* ident)
+    char BytecodeGen::AddLocal(const AstNode& node)
     {
-        AssertNotNull(ident);
+        Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
 
-        int offset;
+        const char* ident = node.GetToken()->GetString();
+        char offset;
         if (!this->LookupIdentOffset(ident, &offset))
         {
-            offset = _localOffset++;
+            offset = this->ClaimRegister(node, true);
             _scopeStack.back()[ident] = offset; 
             _fd->localLookup[offset] = ident;
         }
@@ -650,11 +780,11 @@ namespace scrpt
         return offset;
     }
 
-    int BytecodeGen::LookupIdentOffset(const AstNode& node) const
+    char BytecodeGen::LookupIdentOffset(const AstNode& node) const
     {
         Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
 
-        int offset;
+        char offset;
         if (!this->LookupIdentOffset(node.GetToken()->GetString(), &offset))
         {
             throw CreateBytecodeGenEx(BytecodeGenErr::UndeclaredIdentifierReference, node.GetToken());
@@ -663,7 +793,7 @@ namespace scrpt
         return offset;
     }
 
-    bool BytecodeGen::LookupIdentOffset(const char* ident, int* id) const
+    bool BytecodeGen::LookupIdentOffset(const char* ident, char* id) const
     {
         AssertNotNull(ident);
         AssertNotNull(id);

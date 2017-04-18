@@ -19,10 +19,11 @@ void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
     ACCUMTEST(TestVM("Simple counting", 100000, false, R"testCode(
 func main() {
     sum = 0;
+    max = 100000;
     do
     {
         ++sum;
-    } while(sum < 100000);
+    } while(sum < max);
 
     return sum;
 }
@@ -32,7 +33,8 @@ func main() {
 func main() {
     v0 = 0;
     v1 = 1;
-    while (v1 < 300000)
+    max = 300000;
+    while (v1 < max)
     {
         t = v0 + v1;
         v0 = v1;
@@ -111,7 +113,14 @@ func main() {
 }
 )testCode"));
 
-	ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
+    ACCUMTEST(TestVM("List Test", 5, false, R"testCode(
+func main() {
+    lst = [1, true, 5, ["yes"], [], "no"];
+    return lst[2];
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
 func main() {
 	numElements = 1000;
     lst = [];
@@ -159,14 +168,14 @@ func partition(list, left, right) {
 
 void randomInt(scrpt::VM* vm)
 {
-    vm->PushInt(scrpt::StackType::Int, rand() % 100000);
+    vm->SetExternResult(scrpt::StackType::Int, rand() % 100000);
 }
 
 void testextern(scrpt::VM* vm)
 {
     int i = vm->GetParam<int>(scrpt::ParamId::_0);
     int i2 = vm->GetParam<int>(scrpt::ParamId::_1);
-    vm->PushInt(scrpt::StackType::Int, i * 100 + i2);
+    vm->SetExternResult(scrpt::StackType::Int, i * 100 + i2);
 }
 
 LARGE_INTEGER GetTime()

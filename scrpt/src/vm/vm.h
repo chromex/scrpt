@@ -41,10 +41,13 @@ namespace scrpt
         void Decompile();
         StackVal* Execute(const char* funcName);
 
+        void SetExternResult(StackType type, int val);
+
         void PushNull(size_t num = 1);
-        void PushInt(StackType type, int val);
-        void PushFloat(float val);
-        void PushString(const char* string);
+        void LoadNull(char reg);
+        void LoadInt(char reg, StackType type, int val);
+        void LoadFloat(char reg, float val);
+        void LoadString(char reg, const char* string);
         template<typename T> T GetParam(ParamId id);
         template<> int GetParam<int>(ParamId id);
         template<> float GetParam<float>(ParamId id);
@@ -70,12 +73,12 @@ namespace scrpt
         void Run();
 
         inline void PushStackFrame(unsigned int returnIp, int framePointerOffset);
-        inline void PushString(unsigned int id);
-        inline void PushList(List* list);
+        inline void LoadString(char reg, unsigned int id);
+        inline void LoadList(char reg, List* list);
         inline void ThrowErr(RuntimeErr err) const;
         StackObj* GetParamBase(ParamId id);
 
-        void ConditionalJump(int test, unsigned int dest);
+        void ConditionalJump(StackObj* obj, int test, unsigned int dest);
     };
 
     template<>

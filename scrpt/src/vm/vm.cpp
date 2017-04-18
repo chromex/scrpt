@@ -66,6 +66,17 @@ __forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
 	}
 }
 
+__forceinline void BlindMove(StackObj* src, StackObj* dest)
+{
+    AssertNotNull(src);
+    AssertNotNull(dest);
+
+    dest->v.type = src->v.type;
+    dest->v.ref = src->v.ref;
+    src->v.type = StackType::Null;
+    src->v.ref = nullptr;
+}
+
 __forceinline void Move(StackObj* src, StackObj* dest)
 {
 	AssertNotNull(src);
@@ -100,6 +111,12 @@ __forceinline void Move(StackObj* src, StackObj* dest)
 		POP1 \
 	} \
 }
+
+#define REG0 *((char*)(data + _ip + 1))
+#define REG1 *((char*)(data + _ip + 2))
+#define REG2 *((char*)(data + _ip + 3))
+
+#define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) this->ThrowErr(RuntimeErr::StackOverflow);
 
 namespace scrpt
 {
@@ -181,7 +198,7 @@ namespace scrpt
             // TODO: Push params
             this->PushStackFrame(0, 0);
             _framePointer = _stackPointer;
-            this->PushNull(nLocals - fd.nParam);
+            this->PushNull(fd.nLocalRegisters);
             this->Run();
             // TODO: Pop params
 
@@ -192,25 +209,32 @@ namespace scrpt
         {
 			throw CreateRuntimeEx(funcName, RuntimeErr::FailedFunctionLookup);
         }
-	}
+    }
 
-	#define INCREMENTOP(IntOp, FloatOp) \
+    void VM::SetExternResult(StackType type, int val)
+    {
+        Deref(&_returnValue.v);
+        _returnValue.v.type = type;
+        _returnValue.v.integer = val;
+    }
+
+    #define INCREMENTOP(IntOp, FloatOp) \
     { \
-        StackObj* obj = _framePointer + GetOperand(int); \
+        StackObj* obj = _framePointer + REG0; \
         StackType t = obj->v.type; \
         if (t == StackType::Int) \
-            this->PushInt(StackType::Int, IntOp); \
+            this->LoadInt(REG0, StackType::Int, IntOp); \
         else if (t == StackType::Float) \
-            this->PushFloat(FloatOp); \
+            this->LoadFloat(REG0, FloatOp); \
         else \
 			this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
-        _ip += 4; \
+        ++_ip; \
     } 
 
-	#define MATHOP(Op) \
+    #define MATHOP(Op) \
     { \
-        StackObj* v1 = _stackPointer - 2; \
-        StackObj* v2 = _stackPointer - 1; \
+        StackObj* v1 = _framePointer + REG0; \
+        StackObj* v2 = _framePointer + REG1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
         if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
@@ -218,46 +242,41 @@ namespace scrpt
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
 			int result = v1->v.integer Op v2->v.integer; \
-			POP2; \
-            this->PushInt(StackType::Int, result); \
+            this->LoadInt(REG2, StackType::Int, result); \
         } \
         else \
         { \
             float fv1 = t1 == StackType::Float ? v1->v.fp : (float)v1->v.integer; \
             float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer; \
-			POP2; \
-            this->PushFloat(fv1 Op fv2); \
+            this->LoadFloat(REG2, fv1 Op fv2); \
         } \
+        _ip += 3;\
     }
 
-	#define ASSIGNMATHOP(Op) \
+    #define ASSIGNMATHOP(Op) \
     {\
-        StackObj* target = _framePointer + GetOperand(int);\
-        StackObj* value = _stackPointer - 1;\
+        StackObj* target = _framePointer + REG0;\
+        StackObj* value = _framePointer + REG1;\
         StackType t1 = target->v.type;\
         StackType t2 = value->v.type;\
         if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
         if (t1 == StackType::Float)\
         {\
-            float result = target->v.fp Op t2 == StackType::Float ? value->v.fp : (float)value->v.integer;\
-			POP1; \
-            this->PushFloat(result);\
+            target->v.fp Op (t2 == StackType::Float ? value->v.fp : (float)value->v.integer);\
         }\
         else\
         {\
-            int result = target->v.integer Op t2 == StackType::Int ? value->v.integer : (int)value->v.fp;\
-			POP1;\
-            this->PushInt(StackType::Int, result);\
+            target->v.integer Op (t2 == StackType::Int ? value->v.integer : (int)value->v.fp);\
         }\
-        _ip += 4;\
+        _ip += 2;\
     }
 
-	#define COMPOP(Op)  \
+    #define COMPOP(Op)  \
     { \
         bool result; \
-        StackObj* v1 = _stackPointer - 2; \
-        StackObj* v2 = _stackPointer - 1; \
+        StackObj* v1 = _framePointer + REG0; \
+        StackObj* v2 = _framePointer + REG1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
         if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
@@ -272,20 +291,20 @@ namespace scrpt
             float fv2 = t2 == StackType::Float ? v2->v.fp : (float)v2->v.integer; \
             result = fv1 Op fv2; \
         } \
-        POP2; \
-        this->PushInt(StackType::Boolean, result); \
+        this->LoadInt(REG2, StackType::Boolean, result); \
+        _ip += 3;\
     }
 
-	#define BOOLOP(Op) \
+    #define BOOLOP(Op) \
     { \
-        StackObj* v1 = _stackPointer - 2; \
-        StackObj* v2 = _stackPointer - 1; \
+        StackObj* v1 = _framePointer + REG0; \
+        StackObj* v2 = _framePointer + REG1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
         if (t1 != StackType::Boolean && t2 != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
 		int result = v1->v.integer Op v2->v.integer; \
-        POP2; \
-        this->PushInt(StackType::Boolean, result); \
+        this->LoadInt(REG2, StackType::Boolean, result); \
+        _ip += 3;\
     }
 
     void VM::Run()
@@ -295,7 +314,7 @@ namespace scrpt
         bool running = true;
         while (running)
         {
-            #define GetOperand(Type) *((Type*)(data + _ip + 1))
+            #define GetOperand(Type) *((Type*)(data + _ip + 2))
             switch ((const OpCode)(data[_ip]))
             {
             case OpCode::Unknown: this->ThrowErr(RuntimeErr::NotImplemented); break;
@@ -303,59 +322,114 @@ namespace scrpt
             /// 
             /// Push Null
             ///
-            case OpCode::PushNull: this->PushNull(); break;
+            case OpCode::LoadNull: this->LoadNull(REG0); ++_ip; break;
 
             /// 
             /// Push True
             ///
-            case OpCode::PushTrue: this->PushInt(StackType::Boolean, 1); break;
+            case OpCode::LoadTrue: this->LoadInt(REG0, StackType::Boolean, 1); ++_ip; break;
 
             /// 
             /// Push False
             ///
-            case OpCode::PushFalse: this->PushInt(StackType::Boolean, 0); break;
+            case OpCode::LoadFalse: this->LoadInt(REG0, StackType::Boolean, 0); ++_ip; break;
 
             /// 
-            /// Pop
+            /// Push Integer
             ///
-            case OpCode::Pop: POP1; break;
+            case OpCode::LoadInt:
+                this->LoadInt(REG0, StackType::Int, GetOperand(int));
+                _ip += 5;
+                break;
+
+            /// 
+            /// Push Float
+            ///
+            case OpCode::LoadFloat:
+                this->LoadFloat(REG0, GetOperand(float));
+                _ip += 5;
+                break;
+
+            /// 
+            /// Push String
+            ///
+            case OpCode::LoadString:
+                this->LoadString(REG0, GetOperand(unsigned int));
+                _ip += 5;
+                break;
+
+            /// 
+            /// Identifier Assign
+            ///
+            case OpCode::Store:
+                Copy(_framePointer + REG1, _framePointer + REG0);
+                _ip += 2;
+                break;
+
+            ///
+            /// Indexed Identifier Assignment
+            ///
+            case OpCode::StoreIdx:
+            {
+                int index = (_framePointer + REG1)->v.integer;
+                StackObj* value = _framePointer + REG2;
+                StackObj* target = _framePointer + REG0;
+                if (target->v.type != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+
+                List* list = target->v.ref->list;
+                if (index < 0)
+                {
+                    this->ThrowErr(RuntimeErr::NotImplemented);
+                }
+
+                if (index >= list->size())
+                {
+                    list->resize(index + 1, StackObj());
+                }
+
+                StackObj* targetVal = &list->at(index);
+                Copy(value, targetVal);
+
+                _ip += 3;
+            }
+            break;
 
             /// 
             /// Equals
             ///
             case OpCode::Eq:
+            {
+                bool result;
+                StackObj* v1 = (_framePointer + REG0);
+                StackObj* v2 = (_framePointer + REG1);
+                StackType t1 = v1->v.type;
+                StackType t2 = v2->v.type;
+
+                if (t1 == t2)
                 {
-                    bool result;
-                    StackObj* v1 = _stackPointer - 2;
-                    StackObj* v2 = _stackPointer - 1;
-                    StackType t1 = v1->v.type;
-                    StackType t2 = v2->v.type;
-
-                    if (t1 == t2)
+                    switch (t1)
                     {
-                        switch (t1)
-                        {
-                        case StackType::Boolean:
-                        case StackType::Int:
-                            result = v1->v.integer == v2->v.integer;
-                            break;
-                        case StackType::Float:
-                            result = v1->v.fp == v2->v.fp;
-                            break;
-                        default:
-                            this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                            break;
-                        }
+                    case StackType::Boolean:
+                    case StackType::Int:
+                        result = v1->v.integer == v2->v.integer;
+                        break;
+                    case StackType::Float:
+                        result = v1->v.fp == v2->v.fp;
+                        break;
+                    default:
+                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        break;
                     }
-                    else
-                    {
-                        this->ThrowErr(RuntimeErr::OperandMismatch);
-                    }
-
-					POP2;
-                    this->PushInt(StackType::Boolean, result);
                 }
-                break;
+                else
+                {
+                    this->ThrowErr(RuntimeErr::OperandMismatch);
+                }
+
+                this->LoadInt(REG2, StackType::Boolean, result);
+                _ip += 3;
+            }
+            break;
 
             /// 
             /// Or
@@ -409,13 +483,13 @@ namespace scrpt
             ///
             case OpCode::Concat:
             {
-                StackObj* v1 = _stackPointer - 2; 
-                StackObj* v2 = _stackPointer - 1; 
+                StackObj* v1 = _framePointer + REG0; 
+                StackObj* v2 = _framePointer + REG1;
                 StackType t1 = v1->v.type; 
                 StackType t2 = v2->v.type; 
                 if (t1 != StackType::DynamicString && t1 != StackType::StaticString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                 std::stringstream ss(
-                    t1 == StackType::StaticString ? _bytecode.strings[(unsigned int)v1->v.integer] : *v1->v.ref->string, 
+                    t1 == StackType::StaticString ? v1->v.staticString : v1->v.ref->string->c_str(), 
                     std::ios_base::ate | std::ios_base::out);
                 switch (t2)
                 {
@@ -441,15 +515,106 @@ namespace scrpt
                     ss << "null";
                     break;
                 case StackType::StaticString:
-                    ss << _bytecode.strings[(unsigned int)v2->v.integer];
+                    ss << v2->v.staticString;
                     break;
                 default:
                     ThrowErr(RuntimeErr::NotImplemented);
                 }
-				POP2;
-                this->PushString(ss.str().c_str());
+                this->LoadString(REG2, ss.str().c_str());
+                _ip += 3;
             }
             break;
+
+            /// 
+            /// Prefix Increment Identifier
+            ///
+            case OpCode::Inc:
+                INCREMENTOP(++obj->v.integer, ++obj->v.fp);
+                break;
+
+            /// 
+            /// Prefix Decrement Identifier
+            ///
+            case OpCode::Dec:
+                INCREMENTOP(--obj->v.integer, --obj->v.fp);
+                break;
+
+            /// 
+            /// Postfix Increment Identifier
+            ///
+            case OpCode::PostInc:
+                INCREMENTOP(obj->v.integer++, obj->v.fp++);
+                break;
+
+            /// 
+            /// Postfix Decrement Identifier
+            ///
+            case OpCode::PostDec:
+                INCREMENTOP(obj->v.integer--, obj->v.fp--);
+                break;
+
+            /// 
+            /// Identifier Add Assign
+            ///
+            case OpCode::PlusEq:
+                ASSIGNMATHOP(+=);
+                break;
+
+            case OpCode::PlusEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
+
+            /// 
+            /// Identifier Subtract Assign
+            ///
+            case OpCode::MinusEq:
+                ASSIGNMATHOP(-=);
+                break;
+
+            case OpCode::MinusEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
+
+            /// 
+            /// Identifier Multiply Assign
+            ///
+            case OpCode::MultEq:
+                ASSIGNMATHOP(*=);
+                break;
+
+            case OpCode::MultEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
+
+            /// 
+            /// Identifier Divide Assign
+            ///
+            case OpCode::DivEq:
+                ASSIGNMATHOP(/=);
+                break;
+
+            case OpCode::DivEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
+
+            /// 
+            /// Identifier Modulo Assign
+            ///
+            case OpCode::ModuloEq: this->ThrowErr(RuntimeErr::NotImplemented); break;
+
+            case OpCode::ModuloEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
+
+            /// 
+            /// Identifier Concatenate Assign
+            ///
+            case OpCode::ConcatEq:
+                {
+                    // TODO: This doesn't properly concat lists, rather it would append the list as a unit
+                    StackObj* target = _framePointer + REG0;
+                    StackObj* value = _framePointer + REG1;
+                    StackType t1 = target->v.type;
+                    StackType t2 = value->v.type;
+                    if (t1 != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    StackObj obj(StackType::Null, nullptr);
+                    Copy(value, &obj);
+                    target->v.ref->list->push_back(obj);
+                }
+                _ip += 2;
+                break;
+
+            case OpCode::ConcatEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
 
             /// 
             /// Less Than
@@ -480,12 +645,40 @@ namespace scrpt
                 break;
 
             /// 
+            /// Call Function
+            ///
+            case OpCode::Call:
+                {
+                    unsigned int funcId = *((unsigned int*)(data + _ip + 1));
+                    const FunctionData& fd = _bytecode.functions[funcId];
+                    if (!fd.external)
+                    {
+                        // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
+                        int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
+                        this->PushStackFrame(_ip + 5, framePointerOffset);
+                        _framePointer = _stackPointer;
+                        this->PushNull(fd.nLocalRegisters);
+                        _ip = fd.entry - 1;
+                    }
+                    else
+                    {
+                        // TODO: Re-entrant externals
+                        StackObj* startingStack = _stackPointer;
+                        _currentExternArgN = fd.nParam;
+
+                        fd.func(this);
+                        // TODO: Support for no return value
+                        _ip += 4;
+                    }
+                }
+                break;
+
+            /// 
             /// Return
             ///
             case OpCode::Ret:
                 {
-                    Copy(_stackPointer - 1, &_returnValue);
-					POP1; // return value
+                    Copy(_framePointer + REG0, &_returnValue);
                     while (_stackPointer > _framePointer)
                     {
                         POP1;
@@ -508,8 +701,29 @@ namespace scrpt
             /// Restore Return Value
             ///
             case OpCode::RestoreRet:
-                this->PushNull();
-                Move(&_returnValue, _stackPointer - 1);
+                Move(&_returnValue, _framePointer + REG0);
+                ++_ip;
+                break;
+
+            /// 
+            /// Branch True
+            ///
+            case OpCode::BrT:
+                this->ConditionalJump(_framePointer + REG0, 1, GetOperand(unsigned int));
+                break;
+
+            /// 
+            /// Branch False
+            ///
+            case OpCode::BrF:
+                this->ConditionalJump(_framePointer + REG0, 0, GetOperand(unsigned int));
+                break;
+
+            /// 
+            /// Jump
+            ///
+            case OpCode::Jmp:
+                _ip = *((unsigned int*)(data + _ip + 1)) - 1;
                 break;
 
             ///
@@ -517,8 +731,8 @@ namespace scrpt
             ///
             case OpCode::Index:
                 {
-                    StackObj* index = _stackPointer - 1;
-                    StackObj* object = _stackPointer - 2;
+                    StackObj* index = _framePointer + REG1;
+                    StackObj* object = _framePointer + REG0;
                     StackType indexType = index->v.type;
                     StackType objectType = object->v.type;
                     if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
@@ -532,16 +746,14 @@ namespace scrpt
                     
                     if (idx < list->size())
                     {
-                        StackObj obj;
-                        Copy(&list->at(idx), &obj);
-                        Move(&obj, _stackPointer - 2);
-                        POP1;
+                        Copy(&list->at(idx), _framePointer + REG2);
                     }
                     else
                     {
-                        POP2;
-                        this->PushNull();
+                        this->LoadNull(REG2);
                     }
+
+                    _ip += 3;
                 }
                 break;
 
@@ -555,219 +767,30 @@ namespace scrpt
                     List* list = new List(size);
                     for (int index = -(int)size; index < 0; ++index)
                     {
-                        Copy(_stackPointer + index, &(*list)[index + size]);
+                        BlindMove(_stackPointer + index, &(*list)[index + size]);
                     }
                     POPN(size);
-                    this->PushList(list);
+                    this->LoadList(REG0, list);
                 }
-                _ip += 4;
-                break;
-
-            /// 
-            /// Push Integer
-            ///
-            case OpCode::PushInt: 
-                this->PushInt(StackType::Int, GetOperand(int)); 
-                _ip += 4;
-                break;
-
-            /// 
-            /// Push Float
-            ///
-            case OpCode::PushFloat: 
-                this->PushFloat(GetOperand(float)); 
-                _ip += 4;
-                break;
-
-            /// 
-            /// Push String
-            ///
-            case OpCode::PushString:
-                this->PushString(GetOperand(unsigned int));
-                _ip += 4;
-                break;
-
-            /// 
-            /// Push Ident Value
-            ///
-            case OpCode::PushIdent:
-                {
-                    BlindCopy(_framePointer + GetOperand(int), _stackPointer);
-					++_stackPointer;
-                }
-                _ip += 4;
-                break;
-
-            /// 
-            /// Call Function
-            ///
-            case OpCode::Call:
-                {
-                    unsigned int funcId = GetOperand(unsigned int);
-                    const FunctionData& fd = _bytecode.functions[funcId];
-                    if (!fd.external)
-                    {
-                        // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
-                        int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
-                        this->PushStackFrame(_ip + 5, framePointerOffset);
-                        _framePointer = _stackPointer;
-                        this->PushNull(fd.localLookup.size() - fd.nParam);
-                        _ip = fd.entry - 1;
-                    }
-                    else
-                    {
-                        // TODO: Re-entrant externals
-                        StackObj* startingStack = _stackPointer;
-                        _currentExternArgN = fd.nParam;
-
-                        fd.func(this);
-                        // TODO: Support for no return value
-                        // TODO: Error on more than one return value
-                        Copy(_stackPointer - 1, &_returnValue);
-                        POP1; 
-                        _ip += 4;
-                    }
-                }
-                break;
-
-            /// 
-            /// Identifier Assign
-            ///
-            case OpCode::AssignI: 
-                Copy(_stackPointer - 1, _framePointer + GetOperand(int));
-                _ip += 4;
+                _ip += 5;
                 break;
 
             ///
-            /// Indexed Identifier Assignment
+            /// Push Register
             ///
-            case OpCode::AssignIdxI:
-                {
-                    int index = (_stackPointer - 1)->v.integer;
-                    StackObj* value = _stackPointer - 2;
-                    StackObj* target = _framePointer + GetOperand(int);
-                    if (target->v.type != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-
-                    List* list = target->v.ref->list;
-                    if (index < 0)
-                    {
-                        this->ThrowErr(RuntimeErr::NotImplemented);
-                    }
-
-                    if (index >= list->size())
-                    {
-                        list->resize(index + 1, StackObj());
-                    }
-
-                    StackObj* targetVal = &list->at(index);
-                    Copy(value, targetVal);
-                    POP1;
-
-                    _ip += 4;
-                }
+            case OpCode::Push:
+                CHECKSTACK
+                BlindCopy(_framePointer + REG0, _stackPointer);
+                ++_stackPointer;
+                ++_ip;
                 break;
 
-            /// 
-            /// Identifier Add Assign
             ///
-            case OpCode::PlusEqI:
-                ASSIGNMATHOP(+=);
-                break;
-
-            /// 
-            /// Identifier Subtract Assign
+            /// Pop Num
             ///
-            case OpCode::MinusEqI:
-                ASSIGNMATHOP(-=);
-                break;
-
-            /// 
-            /// Identifier Multiply Assign
-            ///
-            case OpCode::MultEqI:
-                ASSIGNMATHOP(*=);
-                break;
-
-            /// 
-            /// Identifier Divide Assign
-            ///
-            case OpCode::DivEqI:
-                ASSIGNMATHOP(/=);
-                break;
-
-            /// 
-            /// Identifier Modulo Assign
-            ///
-            case OpCode::ModuloEqI: this->ThrowErr(RuntimeErr::NotImplemented); break;
-
-            /// 
-            /// Identifier Concatenate Assign
-            ///
-            case OpCode::ConcatEqI: 
-                {
-                    // TODO: This doesn't properly concat lists, rather it would append the list as a unit
-                    StackObj* target = _framePointer + GetOperand(int); 
-                    StackObj* value = _stackPointer - 1; 
-                    StackType t1 = target->v.type; 
-                    StackType t2 = value->v.type; 
-                    if (t1 != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                    StackObj obj(StackType::Null, nullptr);
-                    Copy(value, &obj);
-                    target->v.ref->list->push_back(obj);
-                    POP1;
-                    this->PushNull();
-                    Copy(target, value);
-                }
-                _ip += 4;
-                break;
-
-            /// 
-            /// Prefix Increment Identifier
-            ///
-            case OpCode::IncI:
-                INCREMENTOP(++obj->v.integer, ++obj->v.fp);
-                break;
-
-            /// 
-            /// Prefix Decrement Identifier
-            ///
-            case OpCode::DecI:
-                INCREMENTOP(--obj->v.integer, --obj->v.fp);
-                break;
-
-            /// 
-            /// Postfix Increment Identifier
-            ///
-            case OpCode::PostIncI:
-                INCREMENTOP(obj->v.integer++, obj->v.fp++);
-                break;
-
-            /// 
-            /// Postfix Decrement Identifier
-            ///
-            case OpCode::PostDecI:
-                INCREMENTOP(obj->v.integer--, obj->v.fp--);
-                break;
-
-            /// 
-            /// Branch True
-            ///
-            case OpCode::BrT:
-                this->ConditionalJump(1, GetOperand(unsigned int));
-                break;
-
-            /// 
-            /// Branch False
-            ///
-            case OpCode::BrF:
-                this->ConditionalJump(0, GetOperand(unsigned int));
-                break;
-
-            /// 
-            /// Jump
-            ///
-            case OpCode::Jmp:
-                _ip = GetOperand(unsigned int) - 1;
+            case OpCode::PopN:
+                POPN(REG0);
+                ++_ip;
                 break;
 
             default:
@@ -778,8 +801,6 @@ namespace scrpt
             ++_ip;
         }
     }
-
-    #define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) this->ThrowErr(RuntimeErr::StackOverflow);
 
     void VM::PushStackFrame(unsigned int returnIp, int framePointerOffset)
     {
@@ -800,48 +821,55 @@ namespace scrpt
         }
     }
 
-    void VM::PushInt(StackType type, int val)
+    void VM::LoadNull(char reg)
     {
-        CHECKSTACK
-        _stackPointer->v.type = type;
-        _stackPointer->v.integer = val;
-        ++_stackPointer;
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = StackType::Null;
     }
 
-    void VM::PushFloat(float val)
+    void VM::LoadInt(char reg, StackType type, int val)
     {
-        CHECKSTACK
-        _stackPointer->v.type = StackType::Float;
-        _stackPointer->v.fp = val;
-        ++_stackPointer;
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = type;
+        v.integer = val;
     }
 
-    void VM::PushString(const char* string)
+    void VM::LoadFloat(char reg, float val)
+    {
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = StackType::Float;
+        v.fp = val;
+    }
+
+    void VM::LoadString(char reg, const char* string)
     {
         AssertNotNull(string);
-        
-        CHECKSTACK
-        _stackPointer->v.type = StackType::DynamicString;
-        _stackPointer->v.ref = new StackRef{ 1, new std::string(string) };
-        ++_stackPointer;
+
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = StackType::DynamicString;
+        v.ref = new StackRef{ 1, new std::string(string) };
     }
 
-    void VM::PushString(unsigned int id)
+    void VM::LoadString(char reg, unsigned int id)
     {
-        CHECKSTACK
-        _stackPointer->v.type = StackType::StaticString;
-        _stackPointer->v.integer = id;
-        ++_stackPointer;
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = StackType::StaticString;
+        v.staticString = _bytecode.strings[id].c_str();
     }
 
-    void VM::PushList(List* list)
+    void VM::LoadList(char reg, List* list)
     {
         AssertNotNull(list);
 
-        CHECKSTACK
-        _stackPointer->v.type = StackType::List;
-        _stackPointer->v.ref = new StackRef{ 1, list };
-        ++_stackPointer;
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = StackType::List;
+        v.ref = new StackRef{ 1, list };
     }
 
     StackObj* VM::GetParamBase(ParamId id)
@@ -862,9 +890,8 @@ namespace scrpt
         throw CreateRuntimeEx("", err);
     }
 
-    void VM::ConditionalJump(int test, unsigned int dest)
+    void VM::ConditionalJump(StackObj* obj, int test, unsigned int dest)
     {
-        StackObj *obj = _stackPointer - 1;
         if (obj->v.type != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
         if (obj->v.integer == test)
         {
@@ -872,9 +899,8 @@ namespace scrpt
         }
         else
         {
-            _ip += 4;
+            _ip += 5;
         }
-        POP1;
     }
 
 	const char* StackTypeToString(StackType type)

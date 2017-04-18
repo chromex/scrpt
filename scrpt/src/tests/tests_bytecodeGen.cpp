@@ -22,7 +22,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestBytecodeGen("Basic For Loop", false, R"testCode(
+	ACCUMTEST(TestBytecodeGen("Basic For Loop", false, R"testCode(
 func main() {
     for (sum = 0; sum < 10; sum += 1)
         i = 0;
@@ -61,6 +61,22 @@ func main() {
     if (true) {a = 0;}
     if (false) {a = 0;} else {b = 0;}
     if (false) {a = 0;} elif (true) {b = 0;} else {c = 0;}
+}
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Assignment", false, R"testCode(
+func main() {
+    a = 4;
+    b = 2;
+    b += ++a * 3;
+    return b;
+}
+)testCode"));
+
+    ACCUMTEST(TestBytecodeGen("Parameters", false, R"testCode(
+func main(one, two) {
+    a = one;
+    two += a;
 }
 )testCode"));
 }
