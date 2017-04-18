@@ -32,3 +32,16 @@ V|FFI> Passed [0.59206]
 V|Strings> Passed [0.573752]
 V|Concat> Passed [0.00341334]
 V|Quick sort> Passed [1.50683]
+
+4/17/17 - desktop
+=======
+V|Simple counting> Passed [1.80555]
+V|Fibonacci> Passed [0.00098211]
+V|Fibonacci 2> Passed [0.958599]
+V|Simple call> Passed [0.000138706]
+V|Factorial> Passed [0.000866056]
+V|FFI> Passed [0.609579]
+V|Strings> Passed [0.547139]
+V|Concat> Passed [0.000958837]
+V|List Test> Passed [0.000742866]
+V|Quick sort> Passed [0.943504]
