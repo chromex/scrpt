@@ -22,8 +22,13 @@ __forceinline void Deref(StackVal* val)
 		{
 			switch (type)
 			{
-			case StackType::DynamicString: delete ref->string; break;
-			case StackType::List: delete ref->list; break;
+			case StackType::DynamicString: 
+                delete ref->string; 
+                break;
+			case StackType::List: 
+                for (auto entry : *ref->list) Deref(&entry.v);
+                delete ref->list; 
+                break;
 			// TODO: Need error on not impl for switch
 			}
 			delete ref;
