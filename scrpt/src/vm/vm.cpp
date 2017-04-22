@@ -199,8 +199,15 @@ namespace scrpt
             this->PushStackFrame(0, 0);
             _framePointer = _stackPointer;
             this->PushNull(fd.nLocalRegisters);
-            this->Run();
-            // TODO: Pop params
+            try
+            {
+                this->Run();
+                // TODO: Pop params
+            }
+            catch (CompilerException& cex)
+            {
+                throw CreateRuntimeEx(this->CreateCallstack(_ip), cex.GetRuntimeErr());
+            }
 
             Assert(_stackPointer == &_stack[0], "Stack must be empty after executing");
             return &_returnValue.v;
@@ -888,6 +895,67 @@ namespace scrpt
     {
         // TODO: Create stack trace
         throw CreateRuntimeEx("", err);
+    }
+
+    const FunctionData& VM::LookupFunction(unsigned int ip) const
+    {
+        Assert(_bytecode.functions.size() > 0, "Cannot perform lookup with no functions");
+
+        for (size_t idx = 0; idx < _bytecode.functions.size() - 1; ++idx)
+        {
+            if (_bytecode.functions[idx].entry <= ip && _bytecode.functions[idx + 1].entry > ip)
+            {
+                return _bytecode.functions[idx];
+            }
+        }
+
+        return _bytecode.functions.back();
+    }
+
+    void VM::FormatCallstackFunction(unsigned int ip, std::stringstream& ss) const
+    {
+        const FunctionData& fd = this->LookupFunction(ip);
+        ss << "> " << fd.name << "(";
+        for (int idx = 0; idx < fd.nParam; ++idx)
+        {
+            auto entry = fd.localLookup.find(-1 - fd.nParam + idx);
+            Assert(entry != fd.localLookup.end(), "Failed to find param in local lookup");
+            ss << entry->second;
+
+            if (idx + 1 < fd.nParam)
+            {
+                ss << ", ";
+            }
+        }
+        ss << ")" << std::endl;
+    }
+
+    std::string VM::CreateCallstack(unsigned int startingIp)
+    {
+        std::stringstream ss;
+        ss << std::endl;
+        this->FormatCallstackFunction(startingIp, ss);
+
+        while (_stackPointer > _stackRoot)
+        {
+            if (_stackPointer == _framePointer)
+            {
+                StackObj* stackFrame = _stackPointer - 1;
+                if (stackFrame->frame.framePointerOffset != 0)
+                {
+                    this->FormatCallstackFunction(stackFrame->frame.returnIp, ss);
+                    _framePointer -= stackFrame->frame.framePointerOffset;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            POP1
+        }
+
+        return ss.str();
     }
 
     void VM::ConditionalJump(StackObj* obj, int test, unsigned int dest)

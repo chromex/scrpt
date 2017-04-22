@@ -76,6 +76,9 @@ namespace scrpt
         inline void LoadString(char reg, unsigned int id);
         inline void LoadList(char reg, List* list);
         inline void ThrowErr(RuntimeErr err) const;
+        const FunctionData& LookupFunction(unsigned int ip) const;
+        void FormatCallstackFunction(unsigned int ip, std::stringstream& ss) const;
+        std::string CreateCallstack(unsigned int startingIp);
         StackObj* GetParamBase(ParamId id);
 
         void ConditionalJump(StackObj* obj, int test, unsigned int dest);

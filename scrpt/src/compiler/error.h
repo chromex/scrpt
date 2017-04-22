@@ -15,6 +15,7 @@ namespace scrpt
         ParseErr GetParseErr() const;
         LexErr GetLexErr() const;
         BytecodeGenErr GetBytecodeGenErr() const;
+        RuntimeErr GetRuntimeErr() const;
 
     private:
         std::string _message;

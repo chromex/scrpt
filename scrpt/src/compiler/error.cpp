@@ -56,6 +56,11 @@ namespace scrpt
         return _bytecodeGenErr;
     }
 
+    RuntimeErr CompilerException::GetRuntimeErr() const
+    {
+        return _runtimeErr;
+    }
+
     CompilerException CreateLexerEx(LexErr err, std::shared_ptr<Token> token)
     {
         AssertNotNull(token);
