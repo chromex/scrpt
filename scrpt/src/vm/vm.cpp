@@ -893,7 +893,6 @@ namespace scrpt
 
     void VM::ThrowErr(RuntimeErr err) const
     {
-        // TODO: Create stack trace
         throw CreateRuntimeEx("", err);
     }
 
