@@ -25,7 +25,7 @@ func main() {
         ++sum;
     } while(sum < max);
 
-    return sum;
+            return sum;
 }
 )testCode"));
 
@@ -147,7 +147,7 @@ func partition(list, left, right) {
     j = right;
     pivot = list[(left + right) / 2];
 
-    while (i <= j) {
+            while (i <= j) {
         while (list[i] < pivot)
             ++i;
         while (list[j] > pivot)
@@ -162,6 +162,34 @@ func partition(list, left, right) {
     }
 
     return i;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Basic Maps", 1, false, R"testCode(
+func main() {
+	map = {};
+    staticmap = {"one": 2, "whoa": [true, []]};
+    map["bar"] = "foo";
+    map["baz"] = staticmap;
+    staticmap["three"] = 1234;
+    map["far"] = staticmap.one;
+    return 1;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("First class function", 7, false, R"testCode(
+func main() {
+    fun = Gen();
+    lst = [fun, 2];
+	return lst[0](3, 4);
+}
+
+func TestFunc(one, two) {
+    return one + two;
+}
+
+func Gen() {
+    return TestFunc;
 }
 )testCode"));
 }

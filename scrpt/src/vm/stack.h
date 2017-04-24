@@ -8,6 +8,7 @@ namespace scrpt
         Boolean,
         Int,
         Float,
+        Func,
         StaticString,
         DynamicString,
         List,
@@ -18,6 +19,7 @@ namespace scrpt
     union StackObj;
     typedef std::vector<StackObj> Stack;
     typedef std::vector<StackObj> List; 
+    typedef std::unordered_map<std::string, StackObj> Map;
 
     struct StackRef
     {
@@ -27,6 +29,7 @@ namespace scrpt
             void* value;
             std::string* string;
             List* list;
+            Map* map;
         };
     };
 

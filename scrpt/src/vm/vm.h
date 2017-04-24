@@ -17,6 +17,7 @@ namespace scrpt
         UnexpectedParamType,
         BadParamRequest,
         NotImplemented,
+        IncorrectArity,
 	};
 	const char* RuntimeErrToString(RuntimeErr err);
 
@@ -55,6 +56,7 @@ namespace scrpt
         template<> const char* GetParam<const char*>(ParamId id);
         template<> List* GetParam<List*>(ParamId id);
         template<> StackVal* GetParam<StackVal*>(ParamId id);
+        const FunctionData& GetFunction(unsigned int id) const;
 
     private:
 		std::unique_ptr<Parser> _parser;
@@ -75,6 +77,7 @@ namespace scrpt
         inline void PushStackFrame(unsigned int returnIp, int framePointerOffset);
         inline void LoadString(char reg, unsigned int id);
         inline void LoadList(char reg, List* list);
+        inline void LoadMap(char reg, Map* map);
         inline void ThrowErr(RuntimeErr err) const;
         const FunctionData& LookupFunction(unsigned int ip) const;
         void FormatCallstackFunction(unsigned int ip, std::stringstream& ss) const;

@@ -11,6 +11,7 @@ namespace scrpt
 		LoadInt, // reg0, int
 		LoadFloat, // reg0, float
 		LoadString, // reg0, unsigned int string id
+        LoadFunc, // reg0, unsigned int function id
 		Store, // reg0, reg1
 		StoreIdx, // reg0, reg1, reg2
         Eq, // reg0, reg1, reg2
@@ -42,7 +43,7 @@ namespace scrpt
         GT, // reg0, reg1, reg2
         LTE, // reg0, reg1, reg2
         GTE, // reg0, reg1, reg2
-		Call, // unsigned int function offset
+        Call, // reg0, char num params
         Ret, // reg0
         RestoreRet, // reg0
 		BrT, // reg0, unsigned int bytecode location
@@ -50,6 +51,7 @@ namespace scrpt
 		Jmp, // unsigned int bytecode location
 		Index, // reg0, reg1, reg2
         MakeList, // reg0, unsigned int number of items
+        MakeMap, // reg0, unsigned int number of items
         Push, // reg0
         PopN, // char number of pops
         __Num,

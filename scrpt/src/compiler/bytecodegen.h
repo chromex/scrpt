@@ -23,6 +23,7 @@ namespace scrpt
         void CompileReturn(const AstNode& node);
         char CompileCall(const AstNode& node);
         char CompileList(const AstNode& node);
+        char CompileMap(const AstNode& node);
         size_t AddOp(OpCode op);
         size_t AddOp(OpCode op, char reg0);
         size_t AddOp(OpCode op, char reg0, char reg1);
@@ -48,6 +49,7 @@ namespace scrpt
         char AddLocal(const AstNode& node);
         bool LookupIdentOffset(const char* ident, char* id) const;
         char LookupIdentOffset(const AstNode& node) const;
+        unsigned int GetStringId(const char* str);
 
         std::vector<unsigned char> _byteBuffer;
         std::vector<FunctionData> _functions;

@@ -12,7 +12,8 @@ const char* scrpt::OpCodeToString(OpCode code)
 		ENUM_CASE_TO_STRING(OpCode::LoadFalse); 
 		ENUM_CASE_TO_STRING(OpCode::LoadInt);  
 		ENUM_CASE_TO_STRING(OpCode::LoadFloat); 
-		ENUM_CASE_TO_STRING(OpCode::LoadString); 
+        ENUM_CASE_TO_STRING(OpCode::LoadString);
+        ENUM_CASE_TO_STRING(OpCode::LoadFunc);
 		ENUM_CASE_TO_STRING(OpCode::Store); 
 		ENUM_CASE_TO_STRING(OpCode::StoreIdx); 
 		ENUM_CASE_TO_STRING(OpCode::Eq); 
@@ -44,7 +45,7 @@ const char* scrpt::OpCodeToString(OpCode code)
 		ENUM_CASE_TO_STRING(OpCode::GT); 
 		ENUM_CASE_TO_STRING(OpCode::LTE); 
 		ENUM_CASE_TO_STRING(OpCode::GTE); 
-		ENUM_CASE_TO_STRING(OpCode::Call);
+        ENUM_CASE_TO_STRING(OpCode::Call);
 		ENUM_CASE_TO_STRING(OpCode::Ret); 
 		ENUM_CASE_TO_STRING(OpCode::RestoreRet); 
 		ENUM_CASE_TO_STRING(OpCode::BrT); 
@@ -52,6 +53,7 @@ const char* scrpt::OpCodeToString(OpCode code)
 		ENUM_CASE_TO_STRING(OpCode::Jmp); 
 		ENUM_CASE_TO_STRING(OpCode::Index); 
         ENUM_CASE_TO_STRING(OpCode::MakeList);
+        ENUM_CASE_TO_STRING(OpCode::MakeMap);
         ENUM_CASE_TO_STRING(OpCode::Push);
         ENUM_CASE_TO_STRING(OpCode::PopN);
 
@@ -137,6 +139,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
 #define DISPLAY_ONE_REG_UINT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(unsigned int *)(data + idx + 2); idx += 5;
 #define DISPLAY_ONE_REG_INT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(int *)(data + idx + 2); idx += 5;
 #define DISPLAY_ONE_REG_FLOAT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(float *)(data + idx + 2); idx += 5;
+#define DISPLAY_ONE_REG_CHAR std::cout << " " << DisplayRegisterName(fd, reg0) << " " << (int)*(char *)(data + idx + 2); idx += 2;
 #define DISPLAY_UINT std::cout << " " << *(unsigned int *)(data + idx + 1); idx += 4;
 #define DISPLAY_CHAR std::cout << " " << (int)reg0; idx += 1; 
 
@@ -148,6 +151,10 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::LoadInt: DISPLAY_ONE_REG_INT; break;
             case OpCode::LoadFloat: DISPLAY_ONE_REG_FLOAT; break;
             case OpCode::LoadString: DISPLAY_ONE_REG_UINT; break;
+            case OpCode::LoadFunc: 
+                DISPLAY_ONE_REG_UINT;
+                std::cout << " ; " << bytecode.functions[*(unsigned int *)(data + idx - 3)].name;
+                break;
             case OpCode::Store: DISPLAY_TWO_REG; break;
             case OpCode::StoreIdx: DISPLAY_THREE_REG; break;
             case OpCode::Eq: DISPLAY_THREE_REG; break;
@@ -186,10 +193,8 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::Jmp: DISPLAY_UINT; break;
             case OpCode::Index: DISPLAY_THREE_REG; break;
             case OpCode::MakeList: DISPLAY_ONE_REG_UINT; break;
-            case OpCode::Call:
-                DISPLAY_UINT;
-                std::cout << " ; " << bytecode.functions[*(unsigned int *)(data + idx - 3)].name;
-                break;
+            case OpCode::MakeMap: DISPLAY_ONE_REG_UINT; break;
+            case OpCode::Call: DISPLAY_ONE_REG_CHAR; break;
             case OpCode::Push: DISPLAY_ONE_REG; break;
             case OpCode::PopN: DISPLAY_CHAR; break;
             }

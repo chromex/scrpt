@@ -5,9 +5,9 @@
 
 using namespace scrpt;
 
-__forceinline bool IsRefCounted(scrpt::StackType t)
+__forceinline bool IsRefCounted(StackType t)
 {
-	return (t == scrpt::StackType::DynamicString || t == scrpt::StackType::List || t == scrpt::StackType::Map);
+	return (t == StackType::DynamicString || t == StackType::List || t == StackType::Map);
 }
 
 __forceinline void Deref(StackVal* val)
@@ -29,7 +29,12 @@ __forceinline void Deref(StackVal* val)
                 for (auto entry : *ref->list) Deref(&entry.v);
                 delete ref->list; 
                 break;
-			// TODO: Need error on not impl for switch
+            case StackType::Map:
+                for (auto entry : *ref->map) Deref(&entry.second.v);
+                delete ref->map;
+                break;
+            default:
+                AssertFail("Unhandled ref type");
 			}
 			delete ref;
 			val->ref = nullptr;
@@ -39,7 +44,7 @@ __forceinline void Deref(StackVal* val)
 }
 
 // Does not dereference the destination location
-__forceinline void BlindCopy(scrpt::StackObj* src, scrpt::StackObj* dest)
+__forceinline void BlindCopy(StackObj* src, StackObj* dest)
 {
 	AssertNotNull(src);
 	AssertNotNull(dest);
@@ -55,7 +60,7 @@ __forceinline void BlindCopy(scrpt::StackObj* src, scrpt::StackObj* dest)
 }
 
 // Does dereference the destination location
-__forceinline void Copy(scrpt::StackObj* src, scrpt::StackObj* dest)
+__forceinline void Copy(StackObj* src, StackObj* dest)
 {
 	AssertNotNull(src);
 	AssertNotNull(dest);
@@ -332,22 +337,22 @@ namespace scrpt
             case OpCode::Unknown: this->ThrowErr(RuntimeErr::NotImplemented); break;
 
             /// 
-            /// Push Null
+            /// Load Null
             ///
             case OpCode::LoadNull: this->LoadNull(REG0); ++_ip; break;
 
             /// 
-            /// Push True
+            /// Load True
             ///
             case OpCode::LoadTrue: this->LoadInt(REG0, StackType::Boolean, 1); ++_ip; break;
 
             /// 
-            /// Push False
+            /// Load False
             ///
             case OpCode::LoadFalse: this->LoadInt(REG0, StackType::Boolean, 0); ++_ip; break;
 
             /// 
-            /// Push Integer
+            /// Load Integer
             ///
             case OpCode::LoadInt:
                 this->LoadInt(REG0, StackType::Int, GetOperand(int));
@@ -355,7 +360,7 @@ namespace scrpt
                 break;
 
             /// 
-            /// Push Float
+            /// Load Float
             ///
             case OpCode::LoadFloat:
                 this->LoadFloat(REG0, GetOperand(float));
@@ -363,10 +368,18 @@ namespace scrpt
                 break;
 
             /// 
-            /// Push String
+            /// Load String
             ///
             case OpCode::LoadString:
                 this->LoadString(REG0, GetOperand(unsigned int));
+                _ip += 5;
+                break;
+
+            ///
+            /// Load Function
+            ///
+            case OpCode::LoadFunc:
+                this->LoadInt(REG0, StackType::Func, GetOperand(unsigned int));
                 _ip += 5;
                 break;
 
@@ -383,24 +396,50 @@ namespace scrpt
             ///
             case OpCode::StoreIdx:
             {
-                int index = (_framePointer + REG1)->v.integer;
-                StackObj* value = _framePointer + REG2;
                 StackObj* target = _framePointer + REG0;
-                if (target->v.type != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-
-                List* list = target->v.ref->list;
-                if (index < 0)
+                StackObj* indexObj = _framePointer + REG1;
+                StackObj* value = _framePointer + REG2;
+                StackType targetType = target->v.type;
+                StackType indexType = indexObj->v.type;
+                if (targetType == StackType::List)
                 {
-                    this->ThrowErr(RuntimeErr::NotImplemented);
-                }
+                    if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    int index = indexObj->v.integer;
 
-                if (index >= list->size())
+                    List* list = target->v.ref->list;
+                    if (index < 0)
+                    {
+                        this->ThrowErr(RuntimeErr::NotImplemented);
+                    }
+
+                    if (index >= list->size())
+                    {
+                        list->resize(index + 1, StackObj());
+                    }
+
+                    StackObj* targetVal = &list->at(index);
+                    Copy(value, targetVal);
+                }
+                else if (targetType == StackType::Map)
                 {
-                    list->resize(index + 1, StackObj());
+                    Map* map = target->v.ref->map;
+                    if (indexType == StackType::StaticString)
+                    {
+                        Copy(value, &(*map)[indexObj->v.staticString]);
+                    }
+                    else if (indexType == StackType::DynamicString)
+                    {
+                        Copy(value, &(*map)[*indexObj->v.ref->string]);
+                    }
+                    else
+                    {
+                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    }
                 }
-
-                StackObj* targetVal = &list->at(index);
-                Copy(value, targetVal);
+                else
+                {
+                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                }
 
                 _ip += 3;
             }
@@ -661,13 +700,15 @@ namespace scrpt
             ///
             case OpCode::Call:
                 {
-                    unsigned int funcId = *((unsigned int*)(data + _ip + 1));
-                    const FunctionData& fd = _bytecode.functions[funcId];
+                    StackObj* handle = _framePointer + REG0;
+                    if (handle->v.type != StackType::Func) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    const FunctionData& fd = _bytecode.functions[handle->v.id];
+                    if (fd.nParam != REG1) this->ThrowErr(RuntimeErr::IncorrectArity);
                     if (!fd.external)
                     {
                         // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
                         int framePointerOffset = (int)(_stackPointer - _framePointer + 1);
-                        this->PushStackFrame(_ip + 5, framePointerOffset);
+                        this->PushStackFrame(_ip + 3, framePointerOffset);
                         _framePointer = _stackPointer;
                         this->PushNull(fd.nLocalRegisters);
                         _ip = fd.entry - 1;
@@ -680,7 +721,7 @@ namespace scrpt
 
                         fd.func(this);
                         // TODO: Support for no return value
-                        _ip += 4;
+                        _ip += 2;
                     }
                 }
                 break;
@@ -747,22 +788,49 @@ namespace scrpt
                     StackObj* object = _framePointer + REG0;
                     StackType indexType = index->v.type;
                     StackType objectType = object->v.type;
-                    if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                    if (objectType != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                    List* list = object->v.ref->list;
-                    int idx = index->v.integer;
-                    if (idx < 0)
+                    if (objectType == StackType::List)
                     {
-                        this->ThrowErr(RuntimeErr::NotImplemented);
+                        if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        List* list = object->v.ref->list;
+                        int idx = index->v.integer;
+                        if (idx < 0)
+                        {
+                            this->ThrowErr(RuntimeErr::NotImplemented);
+                        }
+
+                        if (idx < list->size())
+                        {
+                            Copy(&list->at(idx), _framePointer + REG2);
+                        }
+                        else
+                        {
+                            this->LoadNull(REG2);
+                        }
                     }
-                    
-                    if (idx < list->size())
+                    else if (objectType == StackType::Map)
                     {
-                        Copy(&list->at(idx), _framePointer + REG2);
+                        if (indexType != StackType::StaticString && indexType != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        Map* map = object->v.ref->map;
+                        if (indexType == StackType::StaticString)
+                        {
+                            auto entry = map->find(index->v.staticString);
+                            if (entry != map->end())
+                                Copy(&entry->second, _framePointer + REG2);
+                            else
+                                LoadNull(REG2);
+                        }
+                        else if (indexType == StackType::DynamicString)
+                        {
+                            auto entry = map->find(*index->v.ref->string);
+                            if (entry != map->end())
+                                Copy(&entry->second, _framePointer + REG2);
+                            else
+                                LoadNull(REG2);
+                        }
                     }
                     else
                     {
-                        this->LoadNull(REG2);
+                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
                     }
 
                     _ip += 3;
@@ -783,6 +851,28 @@ namespace scrpt
                     }
                     POPN(size);
                     this->LoadList(REG0, list);
+                }
+                _ip += 5;
+                break;
+
+            ///
+            /// Make map
+            ///
+            case OpCode::MakeMap:
+                {
+                    unsigned int size = GetOperand(unsigned int);
+                    Map* map = new Map();
+                    for (int index = -(int)size; index < 0; index += 2)
+                    {
+                        StackObj* keyObj = _stackPointer + index;
+                        StackObj* valueObj = _stackPointer + index + 1;
+
+                        if (keyObj->v.type != StackType::StaticString && keyObj->v.type != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        const char* key = keyObj->v.type == StackType::StaticString ? keyObj->v.staticString : keyObj->v.ref->string->c_str();
+                        BlindMove(valueObj, &(*map)[key]);
+                    }
+                    POPN(size);
+                    this->LoadMap(REG0, map);
                 }
                 _ip += 5;
                 break;
@@ -866,6 +956,11 @@ namespace scrpt
         v.ref = new StackRef{ 1, new std::string(string) };
     }
 
+    const FunctionData& VM::GetFunction(unsigned int id) const
+    {
+        return _bytecode.functions[id];
+    }
+
     void VM::LoadString(char reg, unsigned int id)
     {
         StackVal& v = (_framePointer + reg)->v;
@@ -882,6 +977,16 @@ namespace scrpt
         Deref(&v);
         v.type = StackType::List;
         v.ref = new StackRef{ 1, list };
+    }
+
+    inline void VM::LoadMap(char reg, Map* map)
+    {
+        AssertNotNull(map);
+
+        StackVal& v = (_framePointer + reg)->v;
+        Deref(&v);
+        v.type = StackType::Map;
+        v.ref = new StackRef{ 1, map };
     }
 
     StackObj* VM::GetParamBase(ParamId id)
@@ -982,7 +1087,8 @@ namespace scrpt
 			ENUM_CASE_TO_STRING(StackType::Null);
 			ENUM_CASE_TO_STRING(StackType::Boolean);
 			ENUM_CASE_TO_STRING(StackType::Int);
-			ENUM_CASE_TO_STRING(StackType::Float);
+            ENUM_CASE_TO_STRING(StackType::Float);
+            ENUM_CASE_TO_STRING(StackType::Func);
 			ENUM_CASE_TO_STRING(StackType::StaticString);
 			ENUM_CASE_TO_STRING(StackType::DynamicString);
 			ENUM_CASE_TO_STRING(StackType::List);
@@ -1008,6 +1114,7 @@ namespace scrpt
             ENUM_CASE_TO_STRING(RuntimeErr::UnexpectedParamType);
             ENUM_CASE_TO_STRING(RuntimeErr::BadParamRequest);
             ENUM_CASE_TO_STRING(RuntimeErr::NotImplemented);
+            ENUM_CASE_TO_STRING(RuntimeErr::IncorrectArity);
 
 		default:
 			AssertFail("Missing case for RuntimeErr");

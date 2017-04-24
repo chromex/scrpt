@@ -142,6 +142,7 @@ namespace scrpt
             break;
 
         case Symbol::LBracket:
+            // TODO: This needs to either error or support statement level map decl
             this->PushScope();
             for (auto child : node.GetChildren())
             {
@@ -184,24 +185,24 @@ namespace scrpt
             break;
 
         case Symbol::Ident:
-            outReg = this->LookupIdentOffset(node);
+            if (!this->LookupIdentOffset(node.GetToken()->GetString(), &outReg))
+            {
+                auto funcIter = _functionLookup.find(node.GetToken()->GetString());
+                if (funcIter != _functionLookup.end())
+                {
+                    outReg = this->ClaimRegister(node);
+                    this->AddOp(OpCode::LoadFunc, outReg, funcIter->second);
+                }
+                else
+                {
+                    throw CreateBytecodeGenEx(BytecodeGenErr::UndeclaredIdentifierReference, node.GetToken());
+                }
+            }
             break;
 
         case Symbol::Terminal:
             {
-                unsigned int strId = 0;
-                const char* str = node.GetToken()->GetString();
-                auto entry = _stringLookup.find(str);
-                if (entry == _stringLookup.end())
-                {
-                    strId = _stringLookup[str] = (unsigned int)_strings.size();
-                    _strings.push_back(str);
-                }
-                else
-                {
-                    strId = entry->second;
-                }
-
+                unsigned int strId = this->GetStringId(node.GetToken()->GetString());
                 outReg = this->ClaimRegister(node);
                 this->AddOp(OpCode::LoadString, outReg, strId);
             }
@@ -225,6 +226,7 @@ namespace scrpt
         case Symbol::ModuloEq:
         case Symbol::ConcatEq:
             {
+                // TODO: Support dotted assignment
                 Assert(node.GetChildren().size() == 2, "Unexpected number of children");
                 const AstNode& firstChild = node.GetFirstChild();
                 if (firstChild.GetSym() == Symbol::Ident)
@@ -310,6 +312,26 @@ namespace scrpt
                 Assert(node.GetChildren().size() == 2, "Unexpected number of children");
                 reg0 = GetRegResult(this->CompileExpression(node.GetFirstChild()));
                 reg1 = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                outReg = this->ClaimRegister(node);
+                this->AddOp(OpCode::Index, reg0, reg1, outReg);
+                this->ReleaseRegister(reg0);
+                this->ReleaseRegister(reg1);
+            }
+            break;
+
+        case Symbol::LBracket:
+            Assert(node.IsConstant(), "No such thing as a non-constant LBracket expression");
+            outReg = this->CompileMap(node);
+            break;
+
+        case Symbol::Dot:
+            {
+                Assert(node.GetChildren().size() == 2, "Unexpected number of children");
+                Assert(node.GetSecondChild().GetSym() == Symbol::Ident, "Unexpected second child");
+                unsigned int strId = this->GetStringId(node.GetSecondChild().GetToken()->GetString());
+                reg0 = GetRegResult(this->CompileExpression(node.GetFirstChild()));
+                reg1 = this->ClaimRegister(node.GetSecondChild());
+                this->AddOp(OpCode::LoadString, outReg, strId);
                 outReg = this->ClaimRegister(node);
                 this->AddOp(OpCode::Index, reg0, reg1, outReg);
                 this->ReleaseRegister(reg0);
@@ -486,28 +508,13 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::LParen, "Unexpected node");
         Assert(node.GetChildren().size() >= 1, "Unexpected child count on Call node");
 
-        auto ident = node.GetFirstChild();
-        this->Verify(ident, Symbol::Ident);
         size_t nParam = node.GetChildren().size() - 1;
-
-        auto funcIter = _functionLookup.find(node.GetFirstChild().GetToken()->GetString());
-        if (funcIter == _functionLookup.end())
-        {
-            throw CreateBytecodeGenEx(BytecodeGenErr::UndeclaredFunctionReference, node.GetToken());
-        }
-
-        unsigned int funcId = funcIter->second;
-
         if (nParam > MAX_PARAM)
         {
             throw CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, node.GetToken());
         }
 
-        if ((unsigned char)nParam != _functions[funcId].nParam)
-        {
-            throw CreateBytecodeGenEx(BytecodeGenErr::IncorrectCallArity, node.GetToken());
-        }
-
+        // Compile parameters for the call
         auto children = node.GetChildren();
         for (auto child = ++children.begin(); child != children.end(); ++child)
         {
@@ -515,10 +522,14 @@ namespace scrpt
             this->AddOp(OpCode::Push, reg);
             this->ReleaseRegister(reg);
         }
-        this->AddOp(OpCode::Call, funcId);
+
+        char reg = GetRegResult(this->CompileExpression(node.GetFirstChild()));
+        this->AddOp(OpCode::Call, reg, (char)nParam);
+        this->ReleaseRegister(reg);
+
         if (nParam > 0) this->AddOp(OpCode::PopN, (char)nParam);
 
-        char reg = this->ClaimRegister(node);
+        reg = this->ClaimRegister(node);
         this->AddOp(OpCode::RestoreRet, reg);
         return reg;
     }
@@ -538,6 +549,26 @@ namespace scrpt
 
         char reg = this->ClaimRegister(node);
         this->AddOp(OpCode::MakeList, reg, (unsigned int)children.size());
+        return reg;
+    }
+
+    char BytecodeGen::CompileMap(const AstNode& node)
+    {
+        Assert(node.GetSym() == Symbol::LBracket, "Unexpected node");
+        Assert(node.IsConstant(), "Unexpected node");
+        Assert(node.GetChildren().size() % 2 == 0, "Map should have an even child count");
+
+        // TODO: Check child count
+        auto children = node.GetChildren();
+        for (auto child = children.begin(); child != children.end(); ++child)
+        {
+            char reg = GetRegResult(this->CompileExpression(*child));
+            this->AddOp(OpCode::Push, reg);
+            this->ReleaseRegister(reg);
+        }
+
+        char reg = this->ClaimRegister(node);
+        this->AddOp(OpCode::MakeMap, reg, (unsigned int)children.size());
         return reg;
     }
 
@@ -791,6 +822,23 @@ namespace scrpt
         }
 
         return offset;
+    }
+
+    unsigned int BytecodeGen::GetStringId(const char* str)
+    {
+        unsigned int strId = 0;
+        auto entry = _stringLookup.find(str);
+        if (entry == _stringLookup.end())
+        {
+            strId = _stringLookup[str] = (unsigned int)_strings.size();
+            _strings.push_back(str);
+        }
+        else
+        {
+            strId = entry->second;
+        }
+        
+        return strId;
     }
 
     bool BytecodeGen::LookupIdentOffset(const char* ident, char* id) const

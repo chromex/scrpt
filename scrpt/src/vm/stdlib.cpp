@@ -12,6 +12,12 @@ void ToString(scrpt::VM* vm, scrpt::StackVal* val, std::stringstream& ss)
     case scrpt::StackType::Boolean: ss << (val->integer == 0 ? "false" : "true"); break;
     case scrpt::StackType::Int: ss << val->integer; break;
     case scrpt::StackType::Float: ss << val->fp; break;
+    case scrpt::StackType::Func:
+        {
+            auto fd = vm->GetFunction(val->id);
+            ss << "<" << fd.name << "/" << (int)fd.nParam << ">";
+        }
+        break;
     case scrpt::StackType::DynamicString: ss << *val->ref->string; break;
     case scrpt::StackType::StaticString: ss << val->staticString; break;
     case scrpt::StackType::List:
@@ -27,6 +33,22 @@ void ToString(scrpt::VM* vm, scrpt::StackVal* val, std::stringstream& ss)
                 showComma = true;
             }
             ss << "]";
+        }
+        break;
+    case scrpt::StackType::Map:
+        {
+            scrpt::Map* map = val->ref->map;
+            ss << "{";
+            bool showComma = false;
+            for (auto entry : *map)
+            {
+                if (showComma)
+                    ss << ", ";
+                ss << entry.first << ": ";
+                ToString(vm, &entry.second.v, ss);
+                showComma = true;
+            }
+            ss << "}";
         }
         break;
 
