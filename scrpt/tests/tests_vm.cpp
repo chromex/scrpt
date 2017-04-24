@@ -1,4 +1,4 @@
-#include "../scrpt.h"
+#include "scrpt.h"
 #include "tests.h"
 #include <windows.h>
 

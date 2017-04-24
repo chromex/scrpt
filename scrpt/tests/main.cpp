@@ -1,5 +1,5 @@
 #include "scrpt.h"
-#include "tests\tests.h"
+#include "tests.h"
 
 int main(int argc, char** argv)
 {
@@ -8,6 +8,5 @@ int main(int argc, char** argv)
 #endif
 
     scrpt::RunTests();
-
     system("pause");
 }

@@ -26,26 +26,26 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -143,40 +143,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\scrpt\src\compiler\ast.cpp" />
-    <ClCompile Include="..\..\scrpt\src\compiler\bytecodegen.cpp" />
-    <ClCompile Include="..\..\scrpt\src\compiler\lexer.cpp" />
-    <ClCompile Include="..\..\scrpt\src\main.cpp" />
-    <ClCompile Include="..\..\scrpt\src\tests\tests_bytecodeGen.cpp" />
-    <ClCompile Include="..\..\scrpt\src\tests\tests_lexer.cpp" />
-    <ClCompile Include="..\..\scrpt\src\tests\tests_parser.cpp" />
-    <ClCompile Include="..\..\scrpt\src\tests\tests_vm.cpp" />
-    <ClCompile Include="..\..\scrpt\src\util\fileio.cpp" />
-    <ClCompile Include="..\..\scrpt\src\util\trace.cpp" />
-    <ClCompile Include="..\..\scrpt\src\tests\tests.cpp" />
-    <ClCompile Include="..\..\scrpt\src\compiler\parser.cpp" />
-    <ClCompile Include="..\..\scrpt\src\compiler\error.cpp" />
-    <ClCompile Include="..\..\scrpt\src\vm\bytecode.cpp" />
-    <ClCompile Include="..\..\scrpt\src\vm\stdlib.cpp" />
-    <ClCompile Include="..\..\scrpt\src\vm\vm.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\compiler\ast.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\compiler\bytecodegen.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\compiler\lexer.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\util\fileio.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\util\trace.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\compiler\parser.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\compiler\error.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\vm\bytecode.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\vm\stdlib.cpp" />
+    <ClCompile Include="..\..\..\scrpt\src\vm\vm.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\scrpt\src\compiler\ast.h" />
-    <ClInclude Include="..\..\scrpt\src\compiler\bytecodegen.h" />
-    <ClInclude Include="..\..\scrpt\src\compiler\lexer.h" />
-    <ClInclude Include="..\..\scrpt\src\scrpt.h" />
-    <ClInclude Include="..\..\scrpt\src\util\fileio.h" />
-    <ClInclude Include="..\..\scrpt\src\util\trace.h" />
-    <ClInclude Include="..\..\scrpt\src\tests\tests.h" />
-    <ClInclude Include="..\..\scrpt\src\compiler\parser.h" />
-    <ClInclude Include="..\..\scrpt\src\compiler\error.h" />
-    <ClInclude Include="..\..\scrpt\src\vm\bytecode.h" />
-    <ClInclude Include="..\..\scrpt\src\vm\stack.h" />
-    <ClInclude Include="..\..\scrpt\src\vm\stdlib.h" />
-    <ClInclude Include="..\..\scrpt\src\vm\vm.h" />
+    <ClInclude Include="..\..\..\scrpt\src\compiler\ast.h" />
+    <ClInclude Include="..\..\..\scrpt\src\compiler\bytecodegen.h" />
+    <ClInclude Include="..\..\..\scrpt\src\compiler\lexer.h" />
+    <ClInclude Include="..\..\..\scrpt\src\scrpt.h" />
+    <ClInclude Include="..\..\..\scrpt\src\util\fileio.h" />
+    <ClInclude Include="..\..\..\scrpt\src\util\trace.h" />
+    <ClInclude Include="..\..\..\scrpt\src\compiler\parser.h" />
+    <ClInclude Include="..\..\..\scrpt\src\compiler\error.h" />
+    <ClInclude Include="..\..\..\scrpt\src\vm\bytecode.h" />
+    <ClInclude Include="..\..\..\scrpt\src\vm\stack.h" />
+    <ClInclude Include="..\..\..\scrpt\src\vm\stdlib.h" />
+    <ClInclude Include="..\..\..\scrpt\src\vm\vm.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\scrpt\grammer.txt" />
+    <Text Include="..\..\..\scrpt\grammer.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
