@@ -61,7 +61,7 @@ namespace scrpt
         bool ParseContinue();
         bool ParseSwitch();
         bool ParseCase();
-        bool ParseConstant();
+        bool ParseConstant(bool expect);
         bool ParseParens();
         bool ParseList();
         bool ParseDict();

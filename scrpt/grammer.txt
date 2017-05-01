@@ -22,9 +22,9 @@ key_value_pair = terminal, ":", expression;
 dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
 list = "[", [ expression, { ",", expression }, [ "," ] ], "]";
 
-index = "[", [ expression ], [ ":", [ expression ] ], "]";
+index = "[", expression, "]";
 call = "(", [ expression, { ",", expression } ], ")";
-dot_expand = ".", ident;
+dot_expand = ( "." | ":" ), ident;
 
 block = "{", { statement }, "}";
 
@@ -41,7 +41,7 @@ continue = "continue", ";";
 parens = "(", expression, ")";
 
 ex_term = ident | constant | parens;
-ex_postfix = ex_term, { ( index | call | dot_expand | "++" | "--" ) } | ex_term;
+ex_postfix = ex_term, { ( index | call | dot_expand | colon_expand | "++" | "--" ) } | ex_term;
 ex_prefix = ( "!" | "++" | "--" | "-" ), ex_prefix | ex7;
 ex_mul = ex_prefix, ( "*" | "/" | "%" ), ex_mul | ex_prefix;
 ex_add = ex_mul, ( "+" | "-" ), ex_add | ex_mul;

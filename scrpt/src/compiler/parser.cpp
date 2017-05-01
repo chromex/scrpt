@@ -380,7 +380,7 @@ namespace scrpt
             return true;
         }
 
-        return this->ParseConstant() || this->ParseParens();
+        return this->ParseConstant(false) || this->ParseParens();
     }
 
     bool Parser::ParseCall()
@@ -410,15 +410,7 @@ namespace scrpt
         if (this->Accept(Symbol::LSquare, &token))
         {
             _currentNode = _currentNode->SwapUnaryOp(token, true);
-            this->ParseExpression(false);
-            if (this->Accept(Symbol::Colon, true))
-            {
-                this->PopNode();
-                this->ParseExpression(false);
-            }
-
-            // TODO: Error on nothing?
-
+            this->ParseExpression(true);
             this->Expect(Symbol::RSquare);
             this->PopNode();
             return true;
@@ -430,7 +422,8 @@ namespace scrpt
     bool Parser::ParseDotExpand()
     {
         std::shared_ptr<Token> token;
-        if (this->Accept(Symbol::Dot, &token))
+        if (this->Accept(Symbol::Dot, &token) ||
+            this->Accept(Symbol::Colon, &token))
         {
             _currentNode = _currentNode->SwapUnaryOp(token, true);
             if (!this->Accept(Symbol::Ident, true))
@@ -600,7 +593,9 @@ namespace scrpt
     {
         if (this->Accept(Symbol::Case, true))
         {
-            this->ParseExpression(true);
+            // TODO: This should be more restrictive than constant -- maps and lists shouldn't
+            // be allowed
+            this->ParseConstant(true);
             this->Expect(Symbol::Colon);
             while (this->ParseStatement(false)) {}
             this->PopNode();
@@ -610,7 +605,7 @@ namespace scrpt
         return false;
     }
 
-    bool Parser::ParseConstant()
+    bool Parser::ParseConstant(bool expect)
     {
         if (this->Accept(Symbol::True, true) ||
             this->Accept(Symbol::False, true) ||
@@ -629,6 +624,7 @@ namespace scrpt
             return true;
         }
 
+        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -669,7 +665,7 @@ namespace scrpt
         {
             _currentNode->SetConstant();
             bool allowMore = true;
-            while (allowMore && this->ParseExpression(false))
+            while (allowMore && this->ParseExTerm())
             {
                 this->Expect(Symbol::Colon);
                 this->ParseExpression(true);

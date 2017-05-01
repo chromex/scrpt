@@ -331,7 +331,7 @@ namespace scrpt
                 unsigned int strId = this->GetStringId(node.GetSecondChild().GetToken()->GetString());
                 reg0 = GetRegResult(this->CompileExpression(node.GetFirstChild()));
                 reg1 = this->ClaimRegister(node.GetSecondChild());
-                this->AddOp(OpCode::LoadString, outReg, strId);
+                this->AddOp(OpCode::LoadString, reg1, strId);
                 outReg = this->ClaimRegister(node);
                 this->AddOp(OpCode::Index, reg0, reg1, outReg);
                 this->ReleaseRegister(reg0);
@@ -508,10 +508,38 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::LParen, "Unexpected node");
         Assert(node.GetChildren().size() >= 1, "Unexpected child count on Call node");
 
-        size_t nParam = node.GetChildren().size() - 1;
+        auto firstChild = node.GetFirstChild();
+        bool classCall = firstChild.GetSym() == Symbol::Colon;
+
+        size_t nParam = classCall ? node.GetChildren().size() : node.GetChildren().size() - 1;
         if (nParam > MAX_PARAM)
         {
             throw CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, node.GetToken());
+        }
+
+        // Get the function handle
+        char funcReg;
+        if (classCall)
+        {
+            // If the LHS is a ":" then we special case for a class call (implicit this)
+            Assert(firstChild.GetChildren().size() == 2, "Unexpected child count on ClassCall node");
+            Assert(firstChild.GetSecondChild().GetSym() == Symbol::Ident, "Unexpected second child");
+
+            unsigned int strId = this->GetStringId(firstChild.GetSecondChild().GetToken()->GetString());
+
+            char sourceReg = GetRegResult(this->CompileExpression(firstChild.GetFirstChild()));
+            char indexReg = this->ClaimRegister(firstChild.GetSecondChild());
+            this->AddOp(OpCode::LoadString, indexReg, strId);
+            funcReg = this->ClaimRegister(node);
+            this->AddOp(OpCode::Index, sourceReg, indexReg, funcReg);
+            this->AddOp(OpCode::Push, sourceReg);
+            this->ReleaseRegister(sourceReg);
+            this->ReleaseRegister(indexReg);
+        }
+        else
+        {
+            // Otherwise just compile the LHS as an expression
+            funcReg = GetRegResult(this->CompileExpression(firstChild));
         }
 
         // Compile parameters for the call
@@ -523,13 +551,12 @@ namespace scrpt
             this->ReleaseRegister(reg);
         }
 
-        char reg = GetRegResult(this->CompileExpression(node.GetFirstChild()));
-        this->AddOp(OpCode::Call, reg, (char)nParam);
-        this->ReleaseRegister(reg);
+        this->AddOp(OpCode::Call, funcReg, (char)nParam);
+        this->ReleaseRegister(funcReg);
 
         if (nParam > 0) this->AddOp(OpCode::PopN, (char)nParam);
 
-        reg = this->ClaimRegister(node);
+        char reg = this->ClaimRegister(node);
         this->AddOp(OpCode::RestoreRet, reg);
         return reg;
     }

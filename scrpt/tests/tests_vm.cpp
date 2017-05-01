@@ -192,6 +192,30 @@ func Gen() {
     return TestFunc;
 }
 )testCode"));
+
+    // TODO: Update this to use += in Vec_Add
+    ACCUMTEST(TestVM("Class calls", 29, false, R"testCode(
+func main() {
+    v1 = MakeVec(3, 7);
+    v2 = MakeVec(7, 12);
+    wrap = {"v1": v1};
+    wrap.v1:Add(v2);
+    return v1.x + v1.y;
+}
+
+func MakeVec(x, y) {
+    return {
+        "x": x,
+        "y": y,
+        "Add": Vec_Add,
+    };
+}
+
+func Vec_Add(this, other) {
+    this["x"] = this.x + other.x;
+    this["y"] = this.y + other.y;
+}
+)testCode"));
 }
 
 void randomInt(scrpt::VM* vm)

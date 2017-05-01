@@ -40,7 +40,6 @@ func main() {
             }, 
             "what": 1
         };
-    dict = {genKey(): 1 + 2 * 3};
 }
 )testCode"));
 
@@ -86,11 +85,7 @@ func main() {
 
     ACCUMTEST(TestParse("Indexing", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
-    char = "str"[]; // Technically illegal
     char = "str"[0];
-    char = "str"[1:];
-    char = "str"[:2];
-    char = "str"[:];
     list[1]++;
     ++list[1];
     list[1] = 5.5;
