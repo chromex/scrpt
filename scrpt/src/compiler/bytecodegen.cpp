@@ -104,7 +104,7 @@ namespace scrpt
         }
 
         // Add an implicit return if there was no explicit one
-        if (block.GetLastChild().GetSym() != Symbol::Return)
+        if (block.GetChildren().size() == 0 || block.GetLastChild().GetSym() != Symbol::Return)
         {
             char reg = this->ClaimRegister(block);
             this->AddOp(OpCode::LoadNull, reg);

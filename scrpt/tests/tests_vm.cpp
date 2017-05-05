@@ -6,8 +6,6 @@
 
 static bool TestVM(const char* testName, int resultValue, bool, const char* source);
 
-// TODO: Conways game of life
-
 void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
 {
     AssertNotNull(passed);
@@ -231,6 +229,110 @@ func MakeVec(x, y) {
 func Vec_Add(this, other) {
     this.x += other.x;
     this.y += other.y;
+}
+)testCode"));
+
+ACCUMTEST(TestVM("Conways Game of Life", 29, false, R"testCode(
+func main() {
+    game = MakeGame(15);
+    generations = 5;
+    while (generations > 0) {
+        //game:Draw();
+        if (game:Update())
+            --generations;
+        else
+            generations = 0;
+    }
+
+    //game:Draw();
+    return 29;
+}
+
+func MakeGame(size) {
+    obj = {
+        "data": [],
+        "data2": [],
+        "size": size,
+        "Draw": Game_Draw,
+        "Update": Game_Update,
+        "GetIndex": Game_GetIndex,
+        "SumNeighbors": Game_SumNeighbors,
+        "IsAlive": Game_IsAlive,
+    };
+
+    numElements = size * size;
+    for (index = 0; index < numElements; ++index) {
+        if (randomInt() > 25000)
+            obj.data #= true;
+        else
+            obj.data #= false;
+    }
+
+    return obj;
+}
+
+func Game_Draw(this) {
+    print("State");
+    for (row = 0; row < this.size; ++row) {
+        str = "";
+        for (col = 0; col < this.size; ++col) {
+            if (this.data[this:GetIndex(col, row)])
+                str #= "# ";
+            else
+                str #= ". ";
+        }
+        print(str);
+    }
+    print("");
+}
+
+func Game_Update(this) {
+    any = false;
+    for (row = 0; row < this.size; ++row) {
+        for (col = 0; col < this.size; ++col) {
+            cellIndex = Game_GetIndex(this, col, row);
+            nNeighbors = Game_SumNeighbors(this, col, row);
+            output = false;
+            if (this.data[cellIndex] && (nNeighbors == 2 || nNeighbors == 3)) {
+                output = true;
+            }
+            else 
+            {
+                if (nNeighbors == 3) {
+                    output = true;
+                }
+            }
+            this.data2[cellIndex] = output;
+            if (output) any = true;
+        }
+    }
+    tmp = this.data;
+    this.data = this.data2;
+    this.data2 = tmp;
+    return any;
+}
+
+func Game_GetIndex(this, x, y) {
+    return this.size * y + x;
+}
+
+func Game_SumNeighbors(this, x, y) {
+    sum = 0;
+    if (Game_IsAlive(this, x-1, y-1)) ++sum;
+    if (Game_IsAlive(this, x-1, y)) ++sum;
+    if (Game_IsAlive(this, x-1, y+1)) ++sum;
+    if (Game_IsAlive(this, x, y-1)) ++sum;
+    if (Game_IsAlive(this, x, y+1)) ++sum;
+    if (Game_IsAlive(this, x+1, y-1)) ++sum;
+    if (Game_IsAlive(this, x+1, y)) ++sum;
+    if (Game_IsAlive(this, x+1, y+1)) ++sum;
+    return sum;
+}
+
+func Game_IsAlive(this, x, y) {
+    if (x >= 0 && x < this.size && y >= 0 && y < this.size)
+        return this.data[Game_GetIndex(this, x, y)];
+    return false;
 }
 )testCode"));
 }
