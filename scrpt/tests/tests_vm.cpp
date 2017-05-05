@@ -147,7 +147,7 @@ func partition(list, left, right) {
     j = right;
     pivot = list[(left + right) / 2];
 
-            while (i <= j) {
+    while (i <= j) {
         while (list[i] < pivot)
             ++i;
         while (list[j] > pivot)
@@ -193,13 +193,30 @@ func Gen() {
 }
 )testCode"));
 
-    // TODO: Update this to use += in Vec_Add
+    ACCUMTEST(TestVM("Assignment tests", 35, false, R"testCode(
+func main() {
+    val = 4;
+    val += 7;
+    val *= 2;
+    val -= 2;
+    val /= 4;
+    lst = [1];
+    lst #= [];
+    lst[1][0] = true;
+    lst[0] += 4;
+    lst[0] *= 3;
+    lst[1] #= 5;
+    lst[1][1] *= 7;
+    return lst[1][1];
+}
+)testCode"));
+
     ACCUMTEST(TestVM("Class calls", 29, false, R"testCode(
 func main() {
     v1 = MakeVec(3, 7);
     v2 = MakeVec(7, 12);
-    wrap = {"v1": v1};
-    wrap.v1:Add(v2);
+    obj = {"v1": v1};
+    obj.v1:Add(v2);
     return v1.x + v1.y;
 }
 
@@ -212,8 +229,8 @@ func MakeVec(x, y) {
 }
 
 func Vec_Add(this, other) {
-    this["x"] = this.x + other.x;
-    this["y"] = this.y + other.y;
+    this.x += other.x;
+    this.y += other.y;
 }
 )testCode"));
 }

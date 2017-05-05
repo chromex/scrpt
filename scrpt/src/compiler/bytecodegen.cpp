@@ -165,8 +165,6 @@ namespace scrpt
     }
 
     // TODO: Unary -
-    // TODO: Need to special case all assignments when target operand is not an ident (including ++, --)
-    // TODO: Error on PlusEq, MinusEq, etc. when the LHS has not been previously declared
     std::tuple<bool, char> BytecodeGen::CompileExpression(const AstNode& node)
     {
         bool success = true;
@@ -219,6 +217,43 @@ namespace scrpt
             break;
 
         case Symbol::Assign:
+            {
+                Assert(node.GetChildren().size() == 2, "Unexpected number of children");
+                const AstNode& firstChild = node.GetFirstChild();
+                Symbol firstChildSym = firstChild.GetSym();
+                if (firstChildSym == Symbol::Ident)
+                {
+                    char rhsReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                    outReg = this->AddLocal(firstChild);
+                    this->AddOp(OpCode::Store, outReg, rhsReg);
+                    this->ReleaseRegister(rhsReg);
+                }
+                else if (firstChildSym == Symbol::LSquare || firstChildSym == Symbol::Dot)
+                {
+                    outReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                    char objReg = GetRegResult(this->CompileExpression(firstChild.GetFirstChild()));
+                    char indexReg;
+                    if (firstChildSym == Symbol::LSquare)
+                    {
+                        indexReg = GetRegResult(this->CompileExpression(firstChild.GetSecondChild()));
+                    }
+                    else
+                    {
+                        unsigned int indexStrId = this->GetStringId(firstChild.GetSecondChild().GetToken()->GetString());
+                        indexReg = this->ClaimRegister(firstChild);
+                        this->AddOp(OpCode::LoadString, indexReg, indexStrId);
+                    }
+                    this->AddOp(OpCode::StoreIdx, objReg, indexReg, outReg);
+                    this->ReleaseRegister(objReg);
+                    this->ReleaseRegister(indexReg);
+                }
+                else
+                {
+                    Assert(node.GetFirstChild().GetSym() == Symbol::Ident, "Unknown assignment LHS");
+                }
+            }
+            break;
+
         case Symbol::PlusEq:
         case Symbol::MinusEq:
         case Symbol::MultEq:
@@ -226,24 +261,47 @@ namespace scrpt
         case Symbol::ModuloEq:
         case Symbol::ConcatEq:
             {
-                // TODO: Support dotted assignment
                 Assert(node.GetChildren().size() == 2, "Unexpected number of children");
                 const AstNode& firstChild = node.GetFirstChild();
-                if (firstChild.GetSym() == Symbol::Ident)
+                Symbol firstChildSym = firstChild.GetSym();
+                if (firstChildSym == Symbol::Ident)
                 {
-                    char reg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
-                    outReg = this->AddLocal(firstChild);
-                    this->AddOp(this->MapUnaryAssignOp(node.GetSym()), outReg, reg);
-                    this->ReleaseRegister(reg);
+                    // TODO: Ideally the math ops can write to one of their own input registers rather than
+                    // perform the op and then store it
+                    char rhsReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+                    outReg = this->LookupIdentOffset(node.GetFirstChild());
+                    char tmpReg = this->ClaimRegister(node);
+                    this->AddOp(this->MapUnaryAssignOp(node.GetSym()), outReg, rhsReg, tmpReg);
+                    this->AddOp(OpCode::Store, outReg, tmpReg);
+                    this->ReleaseRegister(rhsReg);
+                    this->ReleaseRegister(tmpReg);
                 }
-                else if (firstChild.GetSym() == Symbol::LSquare)
+                else if (firstChildSym == Symbol::LSquare || firstChildSym == Symbol::Dot)
                 {
                     char rhsReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
-                    char indexReg = GetRegResult(this->CompileExpression(firstChild.GetSecondChild()));
-                    outReg = this->AddLocal(firstChild.GetFirstChild());
-                    this->AddOp(this->MapUnaryAssignIdxOp(node.GetSym()), outReg, indexReg, rhsReg);
+                    char objReg = GetRegResult(this->CompileExpression(firstChild.GetFirstChild()));
+                    char indexReg;
+                    if (firstChildSym == Symbol::LSquare)
+                    {
+                        // Bracket indexing
+                        indexReg = GetRegResult(this->CompileExpression(firstChild.GetSecondChild()));
+                    }
+                    else
+                    {
+                        // Dotted indexing
+                        unsigned int indexStrId = this->GetStringId(firstChild.GetSecondChild().GetToken()->GetString());
+                        indexReg = this->ClaimRegister(firstChild);
+                        this->AddOp(OpCode::LoadString, indexReg, indexStrId);
+                    }
+                    char lhsReg = this->ClaimRegister(node);
+                    this->AddOp(OpCode::Index, objReg, indexReg, lhsReg);
+                    outReg = this->ClaimRegister(node);
+                    this->AddOp(this->MapUnaryAssignOp(node.GetSym()), lhsReg, rhsReg, outReg);
+                    this->AddOp(OpCode::StoreIdx, objReg, indexReg, outReg);
                     this->ReleaseRegister(rhsReg);
+                    this->ReleaseRegister(objReg);
                     this->ReleaseRegister(indexReg);
+                    this->ReleaseRegister(lhsReg);
                 }
                 else
                 {
@@ -721,32 +779,14 @@ namespace scrpt
     {
         switch (sym)
         {
-        case Symbol::Assign: return OpCode::Store;
-        case Symbol::PlusEq: return OpCode::PlusEq;
-        case Symbol::MinusEq: return OpCode::MinusEq;
-        case Symbol::MultEq: return OpCode::MultEq;
-        case Symbol::DivEq: return OpCode::DivEq;
-        case Symbol::ModuloEq: return OpCode::ModuloEq;
-        case Symbol::ConcatEq: return OpCode::ConcatEq;
+        case Symbol::PlusEq: return OpCode::Add;
+        case Symbol::MinusEq: return OpCode::Sub;
+        case Symbol::MultEq: return OpCode::Mul;
+        case Symbol::DivEq: return OpCode::Div;
+        case Symbol::ModuloEq: return OpCode::Mod;
+        case Symbol::ConcatEq: return OpCode::Concat;
         default:
             AssertFail("Unmapped unary assign op: " << SymbolToString(sym));
-            return OpCode::Unknown;
-        }
-    }
-
-    OpCode BytecodeGen::MapUnaryAssignIdxOp(Symbol sym) const
-    {
-        switch (sym)
-        {
-        case Symbol::Assign: return OpCode::StoreIdx;
-        case Symbol::PlusEq: return OpCode::PlusEqIdx;
-        case Symbol::MinusEq: return OpCode::MinusEqIdx;
-        case Symbol::MultEq: return OpCode::MultEqIdx;
-        case Symbol::DivEq: return OpCode::DivEqIdx;
-        case Symbol::ModuloEq: return OpCode::ModuloEqIdx;
-        case Symbol::ConcatEq: return OpCode::ConcatEqIdx;
-        default:
-            AssertFail("Unmapped unary assign idex op: " << SymbolToString(sym));
             return OpCode::Unknown;
         }
     }

@@ -538,40 +538,55 @@ namespace scrpt
                 StackObj* v2 = _framePointer + REG1;
                 StackType t1 = v1->v.type; 
                 StackType t2 = v2->v.type; 
-                if (t1 != StackType::DynamicString && t1 != StackType::StaticString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                std::stringstream ss(
-                    t1 == StackType::StaticString ? v1->v.staticString : v1->v.ref->string->c_str(), 
-                    std::ios_base::ate | std::ios_base::out);
-                switch (t2)
+                if (t1 == StackType::DynamicString || t1 == StackType::StaticString)
                 {
-                case StackType::Boolean:
-                    ss << (v2->v.integer == 0 ? "false" : "true");
-                    break;
-                case StackType::DynamicString:
-                    ss << *v2->v.ref->string;
-                    break;
-                case StackType::Float:
-                    ss << v2->v.fp;
-                    break;
-                case StackType::Int:
-                    ss << v2->v.integer;
-                    break;
-                case StackType::List:
-                    this->ThrowErr(RuntimeErr::NotImplemented);
-                    break;
-                case StackType::Map:
-                    this->ThrowErr(RuntimeErr::NotImplemented);
-                    break;
-                case StackType::Null:
-                    ss << "null";
-                    break;
-                case StackType::StaticString:
-                    ss << v2->v.staticString;
-                    break;
-                default:
-                    ThrowErr(RuntimeErr::NotImplemented);
+                    std::stringstream ss(
+                        t1 == StackType::StaticString ? v1->v.staticString : v1->v.ref->string->c_str(),
+                        std::ios_base::ate | std::ios_base::out);
+                    switch (t2)
+                    {
+                    case StackType::Boolean:
+                        ss << (v2->v.integer == 0 ? "false" : "true");
+                        break;
+                    case StackType::DynamicString:
+                        ss << *v2->v.ref->string;
+                        break;
+                    case StackType::Float:
+                        ss << v2->v.fp;
+                        break;
+                    case StackType::Int:
+                        ss << v2->v.integer;
+                        break;
+                    case StackType::List:
+                        this->ThrowErr(RuntimeErr::NotImplemented);
+                        break;
+                    case StackType::Map:
+                        this->ThrowErr(RuntimeErr::NotImplemented);
+                        break;
+                    case StackType::Null:
+                        ss << "null";
+                        break;
+                    case StackType::StaticString:
+                        ss << v2->v.staticString;
+                        break;
+                    default:
+                        ThrowErr(RuntimeErr::NotImplemented);
+                    }
+                    this->LoadString(REG2, ss.str().c_str());
                 }
-                this->LoadString(REG2, ss.str().c_str());
+                else if (t1 == StackType::List)
+                {
+                    // TODO: This doesn't properly concat lists, rather it would append the list as a unit
+                    StackObj* target = _framePointer + REG2;
+                    StackObj obj(StackType::Null, nullptr);
+                    Copy(v2, &obj);
+                    v1->v.ref->list->push_back(obj);
+                    Copy(v1, target);
+                }
+                else
+                {
+                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                }
                 _ip += 3;
             }
             break;
@@ -603,69 +618,6 @@ namespace scrpt
             case OpCode::PostDec:
                 INCREMENTOP(obj->v.integer--, obj->v.fp--);
                 break;
-
-            /// 
-            /// Identifier Add Assign
-            ///
-            case OpCode::PlusEq:
-                ASSIGNMATHOP(+=);
-                break;
-
-            case OpCode::PlusEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
-
-            /// 
-            /// Identifier Subtract Assign
-            ///
-            case OpCode::MinusEq:
-                ASSIGNMATHOP(-=);
-                break;
-
-            case OpCode::MinusEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
-
-            /// 
-            /// Identifier Multiply Assign
-            ///
-            case OpCode::MultEq:
-                ASSIGNMATHOP(*=);
-                break;
-
-            case OpCode::MultEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
-
-            /// 
-            /// Identifier Divide Assign
-            ///
-            case OpCode::DivEq:
-                ASSIGNMATHOP(/=);
-                break;
-
-            case OpCode::DivEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
-
-            /// 
-            /// Identifier Modulo Assign
-            ///
-            case OpCode::ModuloEq: this->ThrowErr(RuntimeErr::NotImplemented); break;
-
-            case OpCode::ModuloEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
-
-            /// 
-            /// Identifier Concatenate Assign
-            ///
-            case OpCode::ConcatEq:
-                {
-                    // TODO: This doesn't properly concat lists, rather it would append the list as a unit
-                    StackObj* target = _framePointer + REG0;
-                    StackObj* value = _framePointer + REG1;
-                    StackType t1 = target->v.type;
-                    StackType t2 = value->v.type;
-                    if (t1 != StackType::List) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
-                    StackObj obj(StackType::Null, nullptr);
-                    Copy(value, &obj);
-                    target->v.ref->list->push_back(obj);
-                }
-                _ip += 2;
-                break;
-
-            case OpCode::ConcatEqIdx: this->ThrowErr(RuntimeErr::NotImplemented); break;
 
             /// 
             /// Less Than

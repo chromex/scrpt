@@ -27,18 +27,6 @@ namespace scrpt
 		Dec, // reg0
 		PostInc, // reg0
 		PostDec, // reg0
-		PlusEq, // reg0, reg1
-		PlusEqIdx, // reg0, reg1, reg2
-		MinusEq, // reg0, reg1
-		MinusEqIdx, // reg0, reg1, reg2
-		MultEq, // reg0, reg1
-		MultEqIdx, // reg0, reg1, reg2
-		DivEq, // reg0, reg1
-		DivEqIdx, // reg0, reg1, reg2
-		ModuloEq, // reg0, reg1
-		ModuloEqIdx, // reg0, reg1, reg2
-		ConcatEq, // reg0, reg1
-		ConcatEqIdx, // reg0, reg1, reg2
         LT, // reg0, reg1, reg2
         GT, // reg0, reg1, reg2
         LTE, // reg0, reg1, reg2

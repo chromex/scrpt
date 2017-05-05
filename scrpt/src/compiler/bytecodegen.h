@@ -38,7 +38,6 @@ namespace scrpt
         inline void Verify(const AstNode& node, Symbol sym) const;
         OpCode MapBinaryOp(Symbol sym) const;
         OpCode MapUnaryAssignOp(Symbol sym) const;
-        OpCode MapUnaryAssignIdxOp(Symbol sym) const;
 
         void PushScope();
         void PopScope();
