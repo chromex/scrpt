@@ -479,4 +479,14 @@ namespace scrpt
 
         return ss.str();
     }
+
+    bool Token::Match(Symbol s1, Symbol s2) const
+    {
+        return _sym == s1 || _sym == s2;
+    }
+
+    bool Token::Match(Symbol s1, Symbol s2, Symbol s3) const
+    {
+        return _sym == s1 || _sym == s2 || _sym == s3;
+    }
 }

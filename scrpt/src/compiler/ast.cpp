@@ -45,7 +45,7 @@ namespace scrpt
         return _parent;
     }
 
-    AstNode* AstNode::CondenseBinaryOp(std::shared_ptr<Token> token)
+    AstNode* AstNode::CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch)
     {
         Assert(_children.size() >= 2, "Must have at least two children to perform binary op condense");
 
@@ -54,9 +54,21 @@ namespace scrpt
         auto t1 = std::move(_children.back());
         _children.pop_back();
 
-        AstNode* newNode = this->AddChild(token);
-        newNode->AddChild(std::move(t1))->_parent = newNode;
-        newNode->AddChild(std::move(t2))->_parent = newNode;
+        AstNode* newNode = nullptr;
+
+        if (std::any_of(ltrMatch.begin(), ltrMatch.end(), [t2](Symbol s) {s == t2.GetSym(); }))
+        {
+
+        }
+        else
+        {
+            // Basic RTL associativity or LTR associativity but respecting precedence
+            newNode = this->AddChild(token);
+            newNode->AddChild(std::move(t1))->_parent = newNode;
+            newNode->AddChild(std::move(t2))->_parent = newNode;
+        }
+
+        AssertNotNull(newNode);
         return newNode;
     }
 

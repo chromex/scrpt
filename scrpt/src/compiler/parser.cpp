@@ -168,6 +168,8 @@ namespace scrpt
 
     bool Parser::ParseExpression(bool expect)
     {
+        static std::vector<Symbol> ltrMatch(0);
+
         if (this->ParseExOr(false))
         {
             std::shared_ptr<Token> token;
@@ -180,7 +182,7 @@ namespace scrpt
                 this->Accept(Symbol::ConcatEq, &token))
             {
                 this->ParseExpression(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;
@@ -192,13 +194,15 @@ namespace scrpt
 
     bool Parser::ParseExOr(bool expect)
     {
+        static std::vector<Symbol> ltrMatch{ Symbol::Or };
+
         if (this->ParseExAnd(false))
         {
             std::shared_ptr<Token> token;
             if (this->Accept(Symbol::Or, &token))
             {
                 this->ParseExOr(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;
@@ -210,13 +214,15 @@ namespace scrpt
 
     bool Parser::ParseExAnd(bool expect)
     {
+        static std::vector<Symbol> ltrMatch{ Symbol::And };
+
         if (this->ParseExEquals(false))
         {
             std::shared_ptr<Token> token;
             if (this->Accept(Symbol::And, &token))
             {
                 this->ParseExAnd(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;
@@ -228,6 +234,8 @@ namespace scrpt
 
     bool Parser::ParseExEquals(bool expect)
     {
+        static std::vector<Symbol> ltrMatch{ Symbol::Plus, Symbol::Minus };
+
         if (this->ParseExConcat(false))
         {
             std::shared_ptr<Token> token;
@@ -235,7 +243,7 @@ namespace scrpt
                 this->Accept(Symbol::NotEq, &token))
             {
                 this->ParseExEquals(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;
@@ -247,13 +255,15 @@ namespace scrpt
 
     bool Parser::ParseExConcat(bool expect)
     {
+        static std::vector<Symbol> ltrMatch{ Symbol::Concat };
+
         if (this->ParseExCompare(false))
         {
             std::shared_ptr<Token> token;
             if (this->Accept(Symbol::Concat, &token))
             {
                 this->ParseExConcat(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;
@@ -265,6 +275,8 @@ namespace scrpt
 
     bool Parser::ParseExCompare(bool expect)
     {
+        static std::vector<Symbol> ltrMatch{ Symbol::LessThan, Symbol::GreaterThan, Symbol::LessThanEq, Symbol::GreaterThanEq };
+
         if (this->ParseExAdd(false))
         {
             std::shared_ptr<Token> token;
@@ -274,7 +286,7 @@ namespace scrpt
                 this->Accept(Symbol::GreaterThanEq, &token))
             {
                 this->ParseExCompare(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;
@@ -286,6 +298,8 @@ namespace scrpt
 
     bool Parser::ParseExAdd(bool expect)
     {
+        static std::vector<Symbol> ltrMatch{ Symbol::Plus, Symbol::Minus };
+
         if (this->ParseExMul(false))
         {
             std::shared_ptr<Token> token;
@@ -293,7 +307,7 @@ namespace scrpt
                 this->Accept(Symbol::Minus, &token))
             {
                 this->ParseExAdd(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;
@@ -305,6 +319,8 @@ namespace scrpt
 
     bool Parser::ParseExMul(bool expect)
     {
+        static std::vector<Symbol> ltrMatch{ Symbol::Mult, Symbol::Div, Symbol::Modulo };
+
         if (this->ParseExPrefix(false))
         {
             std::shared_ptr<Token> token;
@@ -313,7 +329,7 @@ namespace scrpt
                 this->Accept(Symbol::Modulo, &token))
             {
                 this->ParseExMul(true);
-                _currentNode->CondenseBinaryOp(token);
+                _currentNode->CondenseBinaryOp(token, ltrMatch);
             }
 
             return true;

@@ -80,6 +80,12 @@ func Fact(v) {
 }
 )testCode"));
 
+    ACCUMTEST(TestVM("Math Order", 6, true, R"testCode(
+func main() {
+    return 3 - 2 + 5;
+}
+)testCode"));
+
     ACCUMTEST(TestVM("FFI", 1234, false, R"testCode(
 func main() {
     for (i = 0; i < 10000; ++i)
@@ -232,7 +238,7 @@ func Vec_Add(this, other) {
 }
 )testCode"));
 
-ACCUMTEST(TestVM("Conways Game of Life", 29, false, R"testCode(
+    ACCUMTEST(TestVM("Conways Game of Life", 29, false, R"testCode(
 func main() {
     game = MakeGame(15);
     generations = 5;

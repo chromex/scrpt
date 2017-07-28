@@ -13,7 +13,7 @@ namespace scrpt
         AstNode* AddChild(AstNode&& other);
         AstNode* AddEmptyChild();
         AstNode* GetParent() const;
-        AstNode* CondenseBinaryOp(std::shared_ptr<Token> token);
+        AstNode* CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch);
 		AstNode* SwapUnaryOp(std::shared_ptr<Token> token, bool postfix);
         std::shared_ptr<Token> GetToken() const;
         const ChildList& GetChildren() const;
