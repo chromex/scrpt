@@ -118,7 +118,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Negative Test", 2, true, R"testCode(
+    ACCUMTEST(TestVM("Negative Test", 2, false, R"testCode(
 func main() {
     a = -foo();
     return 5 + a;
