@@ -118,6 +118,17 @@ func main() {
 }
 )testCode"));
 
+    ACCUMTEST(TestVM("Negative Test", 2, true, R"testCode(
+func main() {
+    a = -foo();
+    return 5 + a;
+}
+
+func foo() {
+    return 3;
+}
+)testCode"));
+
     ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
 func main() {
 	numElements = 1000;

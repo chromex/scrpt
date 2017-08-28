@@ -164,7 +164,6 @@ namespace scrpt
         }
     }
 
-    // TODO: Unary -
     std::tuple<bool, char> BytecodeGen::CompileExpression(const AstNode& node)
     {
         bool success = true;
@@ -310,11 +309,21 @@ namespace scrpt
             }
             break;
 
+        case Symbol::Minus:
+            if (node.GetChildren().size() == 1)
+            {
+                reg0 = GetRegResult(this->CompileExpression(node.GetFirstChild()));
+                outReg = this->ClaimRegister(node);
+                this->AddOp(OpCode::Neg, reg0, outReg);
+                this->ReleaseRegister(reg0);
+                break;
+            }
+            // !!! Intentionally leaks into the binary op handling below
+
         case Symbol::Eq:
         case Symbol::Or:
         case Symbol::And:
         case Symbol::Plus:
-        case Symbol::Minus:
         case Symbol::Mult:
         case Symbol::Div:
         case Symbol::Modulo:
