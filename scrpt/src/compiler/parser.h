@@ -30,10 +30,15 @@ namespace scrpt
         void AddNode();
         void PopNode();
 
-        bool Accept(Symbol sym, bool push = false);
-        bool Accept(Symbol sym, std::shared_ptr<Token>* token, bool push = false);
-        bool AcceptAndSwap(Symbol sym, bool postfix = false);
+        // Checks for the symbol and advances the lexer if it matches, return true if match
+        bool Allow(Symbol sym);
+        // Same as allow but adds the token to the current parent on match
+        bool Accept(Symbol sym);
+        // Same as accept but replaces the previous child (t1) with the new token and adds t1 as a child of the new token
+        bool AcceptAndSwapOp(Symbol sym, bool postfix = false);
+        // Returns true if the symbols match but doesn't advance the lexer
         bool Test(Symbol sym) const;
+        // Same as Allow but creates an error if it doesn't match
         bool Expect(Symbol sym);
 
         void ParseProgram();

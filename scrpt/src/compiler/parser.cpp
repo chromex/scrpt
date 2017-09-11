@@ -57,18 +57,10 @@ namespace scrpt
         _currentNode = _currentNode->GetParent();
     }
 
-    bool Parser::Accept(Symbol sym, bool push)
+    bool Parser::Allow(Symbol sym)
     {
-        return this->Accept(sym, nullptr, push);
-    }
-
-    bool Parser::Accept(Symbol sym, std::shared_ptr<Token>* token, bool push)
-    {
-        AssertNotNull(_lexer->Current());
-        if (_lexer->Current()->GetSym() == sym)
+        if (this->Test(sym))
         {
-            if (token != nullptr) *token = _lexer->Current();
-            if (push) this->PushNode();
             _lexer->Advance();
             return true;
         }
@@ -76,10 +68,22 @@ namespace scrpt
         return false;
     }
 
-    bool Parser::AcceptAndSwap(Symbol sym, bool postfix /* = false */)
+    bool Parser::Accept(Symbol sym)
     {
-        std::shared_ptr<Token> token;
-        if (this->Accept(sym, &token))
+        if (this->Test(sym))
+        {
+            this->PushNode();
+            _lexer->Advance();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::AcceptAndSwapOp(Symbol sym, bool postfix /* = false */)
+    {
+        std::shared_ptr<Token> token = _lexer->Current();
+        if (this->Allow(sym))
         {
             _currentNode = _currentNode->SwapUnaryOp(token, postfix);
             return true;
@@ -96,8 +100,7 @@ namespace scrpt
 
     bool Parser::Expect(Symbol sym)
     {
-        AssertNotNull(_lexer->Current());
-        if (this->Accept(sym))
+        if (this->Allow(sym))
         {
             return true;
         }
@@ -107,7 +110,7 @@ namespace scrpt
 
     void Parser::ParseProgram()
     {
-        while (this->Accept(Symbol::Func, true))
+        while (this->Accept(Symbol::Func))
         {
             if (this->Test(Symbol::Ident))
             {
@@ -121,7 +124,7 @@ namespace scrpt
                     this->AddNode();
 
                     _lexer->Advance();
-                    if (this->Accept(Symbol::Comma) && !this->Test(Symbol::Ident))
+                    if (this->Allow(Symbol::Comma) && !this->Test(Symbol::Ident))
                     {
                         throw CreateExpectedSymEx(Symbol::Ident, _lexer);
                     }
@@ -143,7 +146,7 @@ namespace scrpt
 
     bool Parser::ParseBlock(bool expect)
     {
-        if (this->Accept(Symbol::LBracket, true))
+        if (this->Accept(Symbol::LBracket))
         {
             while (this->ParseStatement(false)) {}
             this->Expect(Symbol::RBracket);
@@ -167,7 +170,7 @@ namespace scrpt
         else if (this->ParseContinue()) return true;
         else if (this->ParseSwitch()) return true;
         else if (this->ParseBlock(false)) return true;
-        else if (this->Accept(Symbol::SemiColon)) return true;
+        else if (this->Allow(Symbol::SemiColon)) return true;
         else if (this->ParseExpression(false))
         {
             this->Expect(Symbol::SemiColon);
@@ -184,13 +187,13 @@ namespace scrpt
 
         if (this->ParseExOr(false))
         {
-            if (this->AcceptAndSwap(Symbol::Assign) ||
-                this->AcceptAndSwap(Symbol::MultEq) ||
-                this->AcceptAndSwap(Symbol::DivEq) ||
-                this->AcceptAndSwap(Symbol::PlusEq) ||
-                this->AcceptAndSwap(Symbol::MinusEq) ||
-                this->AcceptAndSwap(Symbol::ModuloEq) ||
-                this->AcceptAndSwap(Symbol::ConcatEq))
+            if (this->AcceptAndSwapOp(Symbol::Assign) ||
+                this->AcceptAndSwapOp(Symbol::MultEq) ||
+                this->AcceptAndSwapOp(Symbol::DivEq) ||
+                this->AcceptAndSwapOp(Symbol::PlusEq) ||
+                this->AcceptAndSwapOp(Symbol::MinusEq) ||
+                this->AcceptAndSwapOp(Symbol::ModuloEq) ||
+                this->AcceptAndSwapOp(Symbol::ConcatEq))
             {
                 this->ParseExpression(true);
                 this->PopNode();
@@ -209,7 +212,7 @@ namespace scrpt
 
         if (this->ParseExAnd(false))
         {
-            if (this->AcceptAndSwap(Symbol::Or))
+            if (this->AcceptAndSwapOp(Symbol::Or))
             {
                 this->ParseExOr(true);
                 this->PopNode();
@@ -228,7 +231,7 @@ namespace scrpt
 
         if (this->ParseExEquals(false))
         {
-            if (this->AcceptAndSwap(Symbol::And))
+            if (this->AcceptAndSwapOp(Symbol::And))
             {
                 this->ParseExAnd(true);
                 this->PopNode();
@@ -247,8 +250,8 @@ namespace scrpt
 
         if (this->ParseExConcat(false))
         {
-            if (this->AcceptAndSwap(Symbol::Eq) ||
-                this->AcceptAndSwap(Symbol::NotEq))
+            if (this->AcceptAndSwapOp(Symbol::Eq) ||
+                this->AcceptAndSwapOp(Symbol::NotEq))
             {
                 this->ParseExEquals(true);
                 this->PopNode();
@@ -267,7 +270,7 @@ namespace scrpt
 
         if (this->ParseExCompare(false))
         {
-            if (this->AcceptAndSwap(Symbol::Concat))
+            if (this->AcceptAndSwapOp(Symbol::Concat))
             {
                 this->ParseExConcat(true);
                 this->PopNode();
@@ -286,10 +289,10 @@ namespace scrpt
 
         if (this->ParseExAdd(false))
         {
-            if (this->AcceptAndSwap(Symbol::LessThan) ||
-                this->AcceptAndSwap(Symbol::GreaterThan) ||
-                this->AcceptAndSwap(Symbol::LessThanEq) ||
-                this->AcceptAndSwap(Symbol::GreaterThanEq))
+            if (this->AcceptAndSwapOp(Symbol::LessThan) ||
+                this->AcceptAndSwapOp(Symbol::GreaterThan) ||
+                this->AcceptAndSwapOp(Symbol::LessThanEq) ||
+                this->AcceptAndSwapOp(Symbol::GreaterThanEq))
             {
                 this->ParseExCompare(true);
                 this->PopNode();
@@ -308,8 +311,8 @@ namespace scrpt
 
         if (this->ParseExMul(false))
         {
-            if (this->AcceptAndSwap(Symbol::Plus) ||
-                this->AcceptAndSwap(Symbol::Minus))
+            if (this->AcceptAndSwapOp(Symbol::Plus) ||
+                this->AcceptAndSwapOp(Symbol::Minus))
             {
                 this->ParseExAdd(true);
                 this->PopNode();
@@ -328,9 +331,9 @@ namespace scrpt
 
         if (this->ParseExPrefix(false))
         {
-            if (this->AcceptAndSwap(Symbol::Mult) ||
-                this->AcceptAndSwap(Symbol::Div) ||
-                this->AcceptAndSwap(Symbol::Modulo))
+            if (this->AcceptAndSwapOp(Symbol::Mult) ||
+                this->AcceptAndSwapOp(Symbol::Div) ||
+                this->AcceptAndSwapOp(Symbol::Modulo))
             {
                 this->ParseExMul(true);
                 this->PopNode();
@@ -345,10 +348,10 @@ namespace scrpt
 
     bool Parser::ParseExPrefix(bool expect)
     {
-        if (this->Accept(Symbol::Not, true) ||
-            this->Accept(Symbol::PlusPlus, true) ||
-            this->Accept(Symbol::MinusMinus, true) ||
-            this->Accept(Symbol::Minus, true))
+        if (this->Accept(Symbol::Not) ||
+            this->Accept(Symbol::PlusPlus) ||
+            this->Accept(Symbol::MinusMinus) ||
+            this->Accept(Symbol::Minus))
         {
             this->ParseExPrefix(true);
             this->PopNode();
@@ -367,13 +370,12 @@ namespace scrpt
     {
         if (this->ParseExTerm())
         {
-            std::shared_ptr<Token> token;
 			while (true)
 			{
-				if (this->Accept(Symbol::PlusPlus, &token) ||
-					this->Accept(Symbol::MinusMinus, &token))
+				if (this->AcceptAndSwapOp(Symbol::PlusPlus, true) ||
+					this->AcceptAndSwapOp(Symbol::MinusMinus, true))
 				{
-					_currentNode->SwapUnaryOp(token, true);
+                    this->PopNode();
 				}
 				else if (this->ParseCall() ||
                          this->ParseIndex() ||
@@ -394,7 +396,7 @@ namespace scrpt
 
     bool Parser::ParseExTerm()
     {
-        if (this->Accept(Symbol::Ident, true))
+        if (this->Accept(Symbol::Ident))
         {
             this->PopNode();
             return true;
@@ -405,14 +407,12 @@ namespace scrpt
 
     bool Parser::ParseCall()
     {
-        std::shared_ptr<Token> token;
-        if (this->Accept(Symbol::LParen, &token))
+        if (this->AcceptAndSwapOp(Symbol::LParen, true))
         {
-			_currentNode = _currentNode->SwapUnaryOp(token, true);
 			bool expectExp = false;
 			while (this->ParseExpression(expectExp))
 			{
-				expectExp = this->Accept(Symbol::Comma);
+				expectExp = this->Allow(Symbol::Comma);
 				if (!expectExp) break;
 			}
 
@@ -426,10 +426,8 @@ namespace scrpt
 
     bool Parser::ParseIndex()
     {
-        std::shared_ptr<Token> token;
-        if (this->Accept(Symbol::LSquare, &token))
+        if (this->AcceptAndSwapOp(Symbol::LSquare, true))
         {
-            _currentNode = _currentNode->SwapUnaryOp(token, true);
             this->ParseExpression(true);
             this->Expect(Symbol::RSquare);
             this->PopNode();
@@ -441,12 +439,10 @@ namespace scrpt
 
     bool Parser::ParseDotExpand()
     {
-        std::shared_ptr<Token> token;
-        if (this->Accept(Symbol::Dot, &token) ||
-            this->Accept(Symbol::Colon, &token))
+        if (this->AcceptAndSwapOp(Symbol::Dot, true) ||
+            this->AcceptAndSwapOp(Symbol::Colon, true))
         {
-            _currentNode = _currentNode->SwapUnaryOp(token, true);
-            if (!this->Accept(Symbol::Ident, true))
+            if (!this->Accept(Symbol::Ident))
             {
                 CreateExpectedSymEx(Symbol::Ident, _lexer);
             }
@@ -461,7 +457,7 @@ namespace scrpt
 
     bool Parser::ParseWhileLoop()
     {
-        if (this->Accept(Symbol::While, true))
+        if (this->Accept(Symbol::While))
         {
             this->Expect(Symbol::LParen);
             this->ParseExpression(true);
@@ -477,7 +473,7 @@ namespace scrpt
 
     bool Parser::ParseDoLoop()
     {
-        if (this->Accept(Symbol::Do, true))
+        if (this->Accept(Symbol::Do))
         {
             this->ParseStatement(true);
 
@@ -496,7 +492,7 @@ namespace scrpt
 
     bool Parser::ParseForLoop()
     {
-        if (this->Accept(Symbol::For, true))
+        if (this->Accept(Symbol::For))
         {
             this->Expect(Symbol::LParen);
             if (!this->ParseExpression(false)) _currentNode->AddEmptyChild();
@@ -516,14 +512,14 @@ namespace scrpt
 
     bool Parser::ParseIf()
     {
-        if (this->Accept(Symbol::If, true))
+        if (this->Accept(Symbol::If))
         {
             this->Expect(Symbol::LParen);
             this->ParseExpression(true);
             this->Expect(Symbol::RParen);
             this->ParseStatement(true);
 
-            while (this->Accept(Symbol::ElseIf))
+            while (this->Allow(Symbol::ElseIf))
             {
                 this->Expect(Symbol::LParen);
                 this->ParseExpression(true);
@@ -531,7 +527,7 @@ namespace scrpt
                 this->ParseStatement(true);
             }
 
-            if (this->Accept(Symbol::Else))
+            if (this->Allow(Symbol::Else))
             {
                 this->ParseStatement(true);
             }
@@ -545,7 +541,7 @@ namespace scrpt
 
     bool Parser::ParseBreak()
     {
-        if (this->Accept(Symbol::Break, true))
+        if (this->Accept(Symbol::Break))
         {
             this->Expect(Symbol::SemiColon);
             this->PopNode();
@@ -557,7 +553,7 @@ namespace scrpt
 
     bool Parser::ParseReturn()
     {
-        if (this->Accept(Symbol::Return, true))
+        if (this->Accept(Symbol::Return))
         {
             this->ParseExpression(false);
             this->Expect(Symbol::SemiColon);
@@ -570,7 +566,7 @@ namespace scrpt
 
     bool Parser::ParseContinue()
     {
-        if (this->Accept(Symbol::Continue, true))
+        if (this->Accept(Symbol::Continue))
         {
             this->Expect(Symbol::SemiColon);
             this->PopNode();
@@ -582,7 +578,7 @@ namespace scrpt
 
     bool Parser::ParseSwitch()
     {
-        if (this->Accept(Symbol::Switch, true))
+        if (this->Accept(Symbol::Switch))
         {
             this->Expect(Symbol::LParen);
             this->ParseExpression(true);
@@ -591,7 +587,7 @@ namespace scrpt
 
             while (this->ParseCase()) {}
 
-            if (this->Accept(Symbol::Default, true))
+            if (this->Accept(Symbol::Default))
             {
                 this->Expect(Symbol::Colon);
                 while (this->ParseStatement(false)) {}
@@ -611,7 +607,7 @@ namespace scrpt
 
     bool Parser::ParseCase()
     {
-        if (this->Accept(Symbol::Case, true))
+        if (this->Accept(Symbol::Case))
         {
             // TODO: This should be more restrictive than constant -- maps and lists shouldn't
             // be allowed
@@ -627,11 +623,11 @@ namespace scrpt
 
     bool Parser::ParseConstant(bool expect)
     {
-        if (this->Accept(Symbol::True, true) ||
-            this->Accept(Symbol::False, true) ||
-            this->Accept(Symbol::Int, true) ||
-            this->Accept(Symbol::Float, true) ||
-            this->Accept(Symbol::Terminal, true))
+        if (this->Accept(Symbol::True) ||
+            this->Accept(Symbol::False) ||
+            this->Accept(Symbol::Int) ||
+            this->Accept(Symbol::Float) ||
+            this->Accept(Symbol::Terminal))
         {
             _currentNode->SetConstant();
             this->PopNode();
@@ -650,7 +646,7 @@ namespace scrpt
 
     bool Parser::ParseParens()
     {
-        if (this->Accept(Symbol::LParen))
+        if (this->Allow(Symbol::LParen))
         {
             this->ParseExpression(true);
             this->Expect(Symbol::RParen);
@@ -662,13 +658,13 @@ namespace scrpt
 
     bool Parser::ParseList()
     {
-        if (this->Accept(Symbol::LSquare, true))
+        if (this->Accept(Symbol::LSquare))
         {
             _currentNode->SetConstant();
             bool allowMore = true;
             while (allowMore && this->ParseExpression(false))
             {
-                allowMore = this->Accept(Symbol::Comma);
+                allowMore = this->Allow(Symbol::Comma);
             }
             this->Expect(Symbol::RSquare);
 
@@ -681,7 +677,7 @@ namespace scrpt
 
     bool Parser::ParseDict()
     {
-        if (this->Accept(Symbol::LBracket, true))
+        if (this->Accept(Symbol::LBracket))
         {
             _currentNode->SetConstant();
             bool allowMore = true;
@@ -689,7 +685,7 @@ namespace scrpt
             {
                 this->Expect(Symbol::Colon);
                 this->ParseExpression(true);
-                allowMore = this->Accept(Symbol::Comma);
+                allowMore = this->Allow(Symbol::Comma);
             }
             this->Expect(Symbol::RBracket);
 
