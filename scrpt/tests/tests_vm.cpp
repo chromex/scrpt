@@ -80,9 +80,15 @@ func Fact(v) {
 }
 )testCode"));
 
-    ACCUMTEST(TestVM("Math Order", 10, true, R"testCode(
+    ACCUMTEST(TestVM("Math Order", 10, false, R"testCode(
 func main() {
-    return 2 * 3 - 1 * 2 + (2 + 3) + 1;
+    return 2 * 3 - 1 * 2 + 5 + 1;
+}
+)testCode"));
+
+    ACCUMTEST(TestVM("Paren Preservation", -5, false, R"testCode(
+func main() {
+    return 2 - (5 + 2);
 }
 )testCode"));
 

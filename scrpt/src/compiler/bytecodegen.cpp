@@ -355,8 +355,8 @@ namespace scrpt
             }
             else
             {
-                AssertFail("Unsupported");
-                // TODO: tuples?
+                Assert(node.GetChildren().size() == 1, "Unexpected number of children");
+                outReg = GetRegResult(this->CompileExpression(node.GetFirstChild()));
             }
             break;
 
@@ -842,6 +842,7 @@ namespace scrpt
 
     char BytecodeGen::GetRegResult(const std::tuple<bool, char>& result)
     {
+        // TODO: This should support errors?
         return std::get<1>(result);
     }
 

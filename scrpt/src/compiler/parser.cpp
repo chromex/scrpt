@@ -670,10 +670,11 @@ namespace scrpt
 
     bool Parser::ParseParens()
     {
-        if (this->Allow(Symbol::LParen))
+        if (this->Accept(Symbol::LParen))
         {
             this->ParseExpression(true);
             this->Expect(Symbol::RParen);
+            this->PopNode();
             return true;
         }
 
