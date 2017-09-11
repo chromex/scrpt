@@ -80,11 +80,20 @@ namespace scrpt
         return false;
     }
 
-    bool Parser::AcceptAndSwapOp(Symbol sym, bool postfix /* = false */)
+    bool Parser::AcceptAndSwapOp(Symbol sym, std::vector<Symbol>& ltrMatch, bool postfix /* = false */)
     {
         std::shared_ptr<Token> token = _lexer->Current();
         if (this->Allow(sym))
         {
+            // Check if the current node should be execute left-to-right against the newly accepted node. If
+            // it is a match, pop the node so the swap below will set the current node as a child of the new
+            // node, resulting in it being executed first
+            Symbol pSym = _currentNode->GetSym();
+            if (std::any_of(ltrMatch.begin(), ltrMatch.end(), [pSym](Symbol s) { return s == pSym; }))
+            {
+                this->PopNode();
+            }
+
             _currentNode = _currentNode->SwapUnaryOp(token, postfix);
             return true;
         }
@@ -187,13 +196,13 @@ namespace scrpt
 
         if (this->ParseExOr(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::Assign) ||
-                this->AcceptAndSwapOp(Symbol::MultEq) ||
-                this->AcceptAndSwapOp(Symbol::DivEq) ||
-                this->AcceptAndSwapOp(Symbol::PlusEq) ||
-                this->AcceptAndSwapOp(Symbol::MinusEq) ||
-                this->AcceptAndSwapOp(Symbol::ModuloEq) ||
-                this->AcceptAndSwapOp(Symbol::ConcatEq))
+            if (this->AcceptAndSwapOp(Symbol::Assign, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::MultEq, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::DivEq, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::PlusEq, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::MinusEq, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::ModuloEq, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::ConcatEq, ltrMatch))
             {
                 this->ParseExpression(true);
                 this->PopNode();
@@ -212,10 +221,11 @@ namespace scrpt
 
         if (this->ParseExAnd(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::Or))
+            if (this->AcceptAndSwapOp(Symbol::Or, ltrMatch))
             {
+                AstNode* cn = _currentNode;
                 this->ParseExOr(true);
-                this->PopNode();
+                if (cn == _currentNode) this->PopNode();
             }
 
             return true;
@@ -231,10 +241,11 @@ namespace scrpt
 
         if (this->ParseExEquals(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::And))
+            if (this->AcceptAndSwapOp(Symbol::And, ltrMatch))
             {
+                AstNode* cn = _currentNode;
                 this->ParseExAnd(true);
-                this->PopNode();
+                if (cn == _currentNode) this->PopNode();
             }
 
             return true;
@@ -250,11 +261,12 @@ namespace scrpt
 
         if (this->ParseExConcat(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::Eq) ||
-                this->AcceptAndSwapOp(Symbol::NotEq))
+            if (this->AcceptAndSwapOp(Symbol::Eq, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::NotEq, ltrMatch))
             {
+                AstNode* cn = _currentNode;
                 this->ParseExEquals(true);
-                this->PopNode();
+                if (cn == _currentNode) this->PopNode();
             }
 
             return true;
@@ -270,10 +282,11 @@ namespace scrpt
 
         if (this->ParseExCompare(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::Concat))
+            if (this->AcceptAndSwapOp(Symbol::Concat, ltrMatch))
             {
+                AstNode* cn = _currentNode;
                 this->ParseExConcat(true);
-                this->PopNode();
+                if (cn == _currentNode) this->PopNode();
             }
 
             return true;
@@ -289,13 +302,14 @@ namespace scrpt
 
         if (this->ParseExAdd(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::LessThan) ||
-                this->AcceptAndSwapOp(Symbol::GreaterThan) ||
-                this->AcceptAndSwapOp(Symbol::LessThanEq) ||
-                this->AcceptAndSwapOp(Symbol::GreaterThanEq))
+            if (this->AcceptAndSwapOp(Symbol::LessThan, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::GreaterThan, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::LessThanEq, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::GreaterThanEq, ltrMatch))
             {
+                AstNode* cn = _currentNode;
                 this->ParseExCompare(true);
-                this->PopNode();
+                if (cn == _currentNode) this->PopNode();
             }
 
             return true;
@@ -311,11 +325,12 @@ namespace scrpt
 
         if (this->ParseExMul(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::Plus) ||
-                this->AcceptAndSwapOp(Symbol::Minus))
+            if (this->AcceptAndSwapOp(Symbol::Plus, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::Minus, ltrMatch))
             {
+                AstNode* cn = _currentNode;
                 this->ParseExAdd(true);
-                this->PopNode();
+                if (cn == _currentNode) this->PopNode();
             }
 
             return true;
@@ -331,12 +346,13 @@ namespace scrpt
 
         if (this->ParseExPrefix(false))
         {
-            if (this->AcceptAndSwapOp(Symbol::Mult) ||
-                this->AcceptAndSwapOp(Symbol::Div) ||
-                this->AcceptAndSwapOp(Symbol::Modulo))
+            if (this->AcceptAndSwapOp(Symbol::Mult, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::Div, ltrMatch) ||
+                this->AcceptAndSwapOp(Symbol::Modulo, ltrMatch))
             {
+                AstNode* cn = _currentNode;
                 this->ParseExMul(true);
-                this->PopNode();
+                if (cn == _currentNode) this->PopNode();
             }
 
             return true;
@@ -368,12 +384,14 @@ namespace scrpt
 
     bool Parser::ParseExPostfix(bool expect)
     {
+        static std::vector<Symbol> ltrMatch(0);
+
         if (this->ParseExTerm())
         {
 			while (true)
 			{
-				if (this->AcceptAndSwapOp(Symbol::PlusPlus, true) ||
-					this->AcceptAndSwapOp(Symbol::MinusMinus, true))
+				if (this->AcceptAndSwapOp(Symbol::PlusPlus, ltrMatch, true) ||
+					this->AcceptAndSwapOp(Symbol::MinusMinus, ltrMatch, true))
 				{
                     this->PopNode();
 				}
@@ -407,7 +425,9 @@ namespace scrpt
 
     bool Parser::ParseCall()
     {
-        if (this->AcceptAndSwapOp(Symbol::LParen, true))
+        static std::vector<Symbol> ltrMatch(0);
+
+        if (this->AcceptAndSwapOp(Symbol::LParen, ltrMatch, true))
         {
 			bool expectExp = false;
 			while (this->ParseExpression(expectExp))
@@ -426,7 +446,9 @@ namespace scrpt
 
     bool Parser::ParseIndex()
     {
-        if (this->AcceptAndSwapOp(Symbol::LSquare, true))
+        static std::vector<Symbol> ltrMatch(0);
+
+        if (this->AcceptAndSwapOp(Symbol::LSquare, ltrMatch, true))
         {
             this->ParseExpression(true);
             this->Expect(Symbol::RSquare);
@@ -439,8 +461,10 @@ namespace scrpt
 
     bool Parser::ParseDotExpand()
     {
-        if (this->AcceptAndSwapOp(Symbol::Dot, true) ||
-            this->AcceptAndSwapOp(Symbol::Colon, true))
+        static std::vector<Symbol> ltrMatch(0);
+
+        if (this->AcceptAndSwapOp(Symbol::Dot, ltrMatch, true) ||
+            this->AcceptAndSwapOp(Symbol::Colon, ltrMatch, true))
         {
             if (!this->Accept(Symbol::Ident))
             {

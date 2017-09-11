@@ -35,7 +35,7 @@ namespace scrpt
         // Same as allow but adds the token to the current parent on match
         bool Accept(Symbol sym);
         // Same as accept but replaces the previous child (t1) with the new token and adds t1 as a child of the new token
-        bool AcceptAndSwapOp(Symbol sym, bool postfix = false);
+        bool AcceptAndSwapOp(Symbol sym, std::vector<Symbol>& ltrMatch, bool postfix = false);
         // Returns true if the symbols match but doesn't advance the lexer
         bool Test(Symbol sym) const;
         // Same as Allow but creates an error if it doesn't match
