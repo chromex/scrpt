@@ -26,11 +26,11 @@ __forceinline void Deref(StackVal* val)
                 delete ref->string; 
                 break;
 			case StackType::List: 
-                for (auto entry : *ref->list) Deref(&entry.v);
+                for (auto& entry : *ref->list) Deref(&entry.v);
                 delete ref->list; 
                 break;
             case StackType::Map:
-                for (auto entry : *ref->map) Deref(&entry.second.v);
+                for (auto& entry : *ref->map) Deref(&entry.second.v);
                 delete ref->map;
                 break;
             default:

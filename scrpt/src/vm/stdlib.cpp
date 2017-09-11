@@ -14,7 +14,7 @@ void ToString(scrpt::VM* vm, scrpt::StackVal* val, std::stringstream& ss)
     case scrpt::StackType::Float: ss << val->fp; break;
     case scrpt::StackType::Func:
         {
-            auto fd = vm->GetFunction(val->id);
+            auto& fd = vm->GetFunction(val->id);
             ss << "<" << fd.name << "/" << (int)fd.nParam << ">";
         }
         break;
@@ -40,7 +40,7 @@ void ToString(scrpt::VM* vm, scrpt::StackVal* val, std::stringstream& ss)
             scrpt::Map* map = val->ref->map;
             ss << "{";
             bool showComma = false;
-            for (auto entry : *map)
+            for (auto& entry : *map)
             {
                 if (showComma)
                     ss << ", ";

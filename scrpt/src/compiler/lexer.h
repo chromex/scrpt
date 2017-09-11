@@ -94,9 +94,6 @@ namespace scrpt
         float GetFloat() const;
         std::string GetFormattedTokenCode() const;
 
-        bool Match(Symbol s1, Symbol s2) const;
-        bool Match(Symbol s1, Symbol s2, Symbol s3) const;
-
     private:
         Symbol _sym;
         std::shared_ptr<const char> _sourceData;

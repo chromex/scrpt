@@ -7,9 +7,17 @@ namespace scrpt
 {
     AstNode::AstNode()
         : _parent(nullptr)
+        , _postfix(false)
+        , _constant(false)
+    {
+    }
+
+    AstNode::AstNode(AstNode* parent)
+        : _parent(parent)
 		, _postfix(false)
         , _constant(false)
     {
+        AssertNotNull(parent);
     }
 
     AstNode::AstNode(AstNode* parent, std::shared_ptr<Token> token)
@@ -22,66 +30,89 @@ namespace scrpt
         AssertNotNull(parent);
     }
 
-    AstNode* AstNode::AddChild(std::shared_ptr<Token> token)
+    AstNode::~AstNode()
     {
-        _children.push_back(AstNode(this, token));
-        return &_children.back();
+        for (AstNode* child : _children)
+        {
+            delete child;
+        }
+
+        _children.clear();
     }
 
-    AstNode* AstNode::AddChild(AstNode&& other)
+    AstNode* AstNode::AddChild(std::shared_ptr<Token> token)
     {
+        _children.push_back(new AstNode(this, token));
+        return _children.back();
+    }
+
+    AstNode* AstNode::AddChild(AstNode* other)
+    {
+        AssertNotNull(other);
+
         _children.push_back(other);
-        return &_children.back();
+        other->_parent = this;
+        return _children.back();
     }
 
     AstNode* AstNode::AddEmptyChild()
     {
-        _children.push_back(AstNode());
-        return &_children.back();
+        _children.push_back(new AstNode(this));
+        return _children.back();
     }
 
     AstNode* AstNode::GetParent() const
     {
         return _parent;
     }
-
-    AstNode* AstNode::CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch)
+  
+    void AstNode::CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch)
     {
         Assert(_children.size() >= 2, "Must have at least two children to perform binary op condense");
 
-        auto t2 = std::move(_children.back());
+        AstNode* t2 = _children.back();
         _children.pop_back();
-        auto t1 = std::move(_children.back());
+        AstNode* t1 = _children.back();
         _children.pop_back();
 
-        AstNode* newNode = nullptr;
+        //if (std::any_of(ltrMatch.begin(), ltrMatch.end(), [t2](Symbol s) { return s == t2->GetSym(); }))
+        //{
+        //    // Remove t2's children
+        //    auto c2 = t2->_children.back();
+        //    t2->_children.pop_back();
+        //    auto c1 = t2->_children.back();
+        //    t2->_children.pop_back();
 
-        if (std::any_of(ltrMatch.begin(), ltrMatch.end(), [t2](Symbol s) {s == t2.GetSym(); }))
-        {
+        //    // Setup new node with t1 and c1
+        //    AstNode* nc1 = t2->AddChild(token);
+        //    nc1->AddChild(t1);
+        //    nc1->AddChild(c1);
 
-        }
-        else
+        //    // Re-add c2 to t2
+        //    t2->AddChild(c2);
+
+        //    // Re-add t2 as child to this node
+        //    AstNode* newNode = this->AddChild(t2);
+        //}
+        //else
         {
             // Basic RTL associativity or LTR associativity but respecting precedence
-            newNode = this->AddChild(token);
-            newNode->AddChild(std::move(t1))->_parent = newNode;
-            newNode->AddChild(std::move(t2))->_parent = newNode;
+            AstNode* newNode = this->AddChild(token);
+            newNode->AddChild(t1);
+            newNode->AddChild(t2);
         }
-
-        AssertNotNull(newNode);
-        return newNode;
     }
 
 	AstNode* AstNode::SwapUnaryOp(std::shared_ptr<Token> token, bool postfix)
 	{
 		Assert(_children.size() >= 1, "Must have at least one child to perform unary swap");
 
-		auto t1 = std::move(_children.back());
+		AstNode* t1 = _children.back();
 		_children.pop_back();
 
 		AstNode* newNode = this->AddChild(token);
 		newNode->_postfix = postfix;
-		newNode->AddChild(std::move(t1))->_parent = newNode;
+		newNode->AddChild(t1);
 		return newNode;
 	}
 
@@ -124,25 +155,25 @@ namespace scrpt
     const AstNode& AstNode::GetFirstChild() const
     {
         Assert(_children.size() > 0, "Cannot get first child");
-        return _children.front();
+        return *_children.front();
     }
 
     const AstNode& AstNode::GetSecondChild() const
     {
         Assert(_children.size() > 1, "Cannot get second child");
-        return *(++_children.begin());
+        return **(++_children.begin());
     }
 
-    const AstNode & AstNode::GetThirdChild() const
+    const AstNode& AstNode::GetThirdChild() const
     {
         Assert(_children.size() > 2, "Cannot get third child");
-        return *(++++_children.begin());
+        return **(++++_children.begin());
     }
 
     const AstNode& AstNode::GetLastChild() const
     {
         Assert(_children.size() > 0, "Cannot get last child");
-        return _children.back();
+        return *_children.back();
     }
 
     static void DumpAst(const AstNode* node, unsigned int depth, std::stringstream& ss)
@@ -169,9 +200,9 @@ namespace scrpt
             if (node->IsConstant()) ss << ": CONSTANT";
             ss << std::endl;
 
-            for (const AstNode& child : node->GetChildren())
+            for (const AstNode* child : node->GetChildren())
             {
-                DumpAst(&child, depth + 1, ss);
+                DumpAst(child, depth + 1, ss);
             }
         }
         else
@@ -185,9 +216,9 @@ namespace scrpt
         AssertNotNull(node);
 
         std::stringstream ss;
-        for (const AstNode& child : node->GetChildren())
+        for (const AstNode* child : node->GetChildren())
         {
-            DumpAst(&child, 0, ss);
+            DumpAst(child, 0, ss);
         }
         std::cout << ss.str();
     }

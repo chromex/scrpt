@@ -23,14 +23,14 @@ namespace scrpt
 
     void BytecodeGen::Consume(const AstNode& ast)
     {
-        for (auto node : ast.GetChildren())
+        for (const AstNode* node : ast.GetChildren())
         {
-            this->RecordFunction(node);
+            this->RecordFunction(*node);
         }
 
-        for (auto node : ast.GetChildren())
+        for (const AstNode* node : ast.GetChildren())
         {
-            this->CompileFunction(node);
+            this->CompileFunction(*node);
         }
     }
 
@@ -48,11 +48,11 @@ namespace scrpt
     {
         // Check the node
         this->Verify(node, Symbol::Func);
-        auto children = node.GetChildren();
+        auto& children = node.GetChildren();
         Assert(children.size() >= 2, "Func node is missing minimum children of ident and block");
 
         // Get the name
-        auto ident = children.front();
+        const AstNode& ident = *children.front();
         this->Verify(ident, Symbol::Ident);
         std::string name = ident.GetToken()->GetString();
 
@@ -73,7 +73,7 @@ namespace scrpt
 
     void BytecodeGen::CompileFunction(const AstNode& node)
     {
-        auto ident = node.GetFirstChild();
+        const AstNode& ident = node.GetFirstChild();
 
         // Update function table with bytecode offset
         _fd = &_functions[_functionLookup[ident.GetToken()->GetString()]];
@@ -84,23 +84,23 @@ namespace scrpt
         _paramOffset = -2;
 
         // Get the params
-        auto children = node.GetChildren();
+        auto& children = node.GetChildren();
         size_t nParam = children.size() - 2;
         size_t nParamAdded = 0;
         for (auto paramIter = ++children.rbegin(); nParamAdded < nParam; ++paramIter)
         {
-            this->Verify(*paramIter, Symbol::Ident);
-            int offset = this->AddParam(*paramIter);
-            _fd->localLookup[offset] = paramIter->GetToken()->GetString();
+            this->Verify(**paramIter, Symbol::Ident);
+            int offset = this->AddParam(**paramIter);
+            _fd->localLookup[offset] = (*paramIter)->GetToken()->GetString();
             ++nParamAdded;
         }
         
-        auto block = node.GetLastChild();
+        const AstNode& block = node.GetLastChild();
         this->Verify(block, Symbol::LBracket);
 
-        for (auto statement : block.GetChildren())
+        for (AstNode* statement : block.GetChildren())
         {
-            this->CompileStatement(statement);
+            this->CompileStatement(*statement);
         }
 
         // Add an implicit return if there was no explicit one
@@ -144,9 +144,9 @@ namespace scrpt
         case Symbol::LBracket:
             // TODO: This needs to either error or support statement level map decl
             this->PushScope();
-            for (auto child : node.GetChildren())
+            for (AstNode* child : node.GetChildren())
             {
-                this->CompileStatement(child);
+                this->CompileStatement(*child);
             }
             this->PopScope();
             break;
@@ -410,10 +410,10 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::For, "Unexpected node");
         Assert(node.GetChildren().size() == 4, "Unexpected child count on For node");
 
-        auto beginExpr = node.GetFirstChild();
-        auto checkExpr = node.GetSecondChild();
-        auto endExpr = node.GetThirdChild();
-        auto blockStatement = node.GetLastChild();
+        const AstNode& beginExpr = node.GetFirstChild();
+        const AstNode& checkExpr = node.GetSecondChild();
+        const AstNode& endExpr = node.GetThirdChild();
+        const AstNode& blockStatement = node.GetLastChild();
 
         this->PushScope();
 
@@ -459,8 +459,8 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::While, "Unexpected node");
         Assert(node.GetChildren().size() == 2, "Unexpected child count on While node");
 
-        auto checkExpr = node.GetFirstChild();
-        auto blockStatement = node.GetLastChild();
+        const AstNode& checkExpr = node.GetFirstChild();
+        const AstNode& blockStatement = node.GetLastChild();
 
         this->PushScope();
 
@@ -509,8 +509,8 @@ namespace scrpt
         // If / ElIf blocks
         for (size_t count = 0; count < nCheckBlocks; ++count)
         {
-            auto checkExpr = *childIter++;
-            auto blockStatement = *childIter++;
+            const AstNode& checkExpr = **childIter++;
+            const AstNode& blockStatement = **childIter++;
             char checkReg = GetRegResult(this->CompileExpression(checkExpr));
             size_t brIdx = this->AddOp(OpCode::BrF, checkReg, unsigned int(0xFFFFFFFF));
             this->ReleaseRegister(checkReg);
@@ -527,7 +527,7 @@ namespace scrpt
         // Else block
         if (childIter != node.GetChildren().end())
         {
-            auto blockStatement = *childIter++;
+            const AstNode& blockStatement = **childIter++;
             this->PushScope();
             this->CompileStatement(blockStatement);
             this->PopScope();
@@ -566,7 +566,7 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::LParen, "Unexpected node");
         Assert(node.GetChildren().size() >= 1, "Unexpected child count on Call node");
 
-        auto firstChild = node.GetFirstChild();
+        const AstNode& firstChild = node.GetFirstChild();
         bool classCall = firstChild.GetSym() == Symbol::Colon;
 
         size_t nParam = classCall ? node.GetChildren().size() : node.GetChildren().size() - 1;
@@ -601,10 +601,10 @@ namespace scrpt
         }
 
         // Compile parameters for the call
-        auto children = node.GetChildren();
+        auto& children = node.GetChildren();
         for (auto child = ++children.begin(); child != children.end(); ++child)
         {
-            char reg = GetRegResult(this->CompileExpression(*child));
+            char reg = GetRegResult(this->CompileExpression(**child));
             this->AddOp(OpCode::Push, reg);
             this->ReleaseRegister(reg);
         }
@@ -624,10 +624,10 @@ namespace scrpt
         Assert(node.GetSym() == Symbol::LSquare, "Unexpected node");
 
         // TODO: Check number of children
-        auto children = node.GetChildren();
+        auto& children = node.GetChildren();
         for (auto child = children.begin(); child != children.end(); ++child)
         {
-            char reg = GetRegResult(this->CompileExpression(*child));
+            char reg = GetRegResult(this->CompileExpression(**child));
             this->AddOp(OpCode::Push, reg);
             this->ReleaseRegister(reg);
         }
@@ -644,10 +644,10 @@ namespace scrpt
         Assert(node.GetChildren().size() % 2 == 0, "Map should have an even child count");
 
         // TODO: Check child count
-        auto children = node.GetChildren();
+        auto& children = node.GetChildren();
         for (auto child = children.begin(); child != children.end(); ++child)
         {
-            char reg = GetRegResult(this->CompileExpression(*child));
+            char reg = GetRegResult(this->CompileExpression(**child));
             this->AddOp(OpCode::Push, reg);
             this->ReleaseRegister(reg);
         }
@@ -799,8 +799,8 @@ namespace scrpt
     void BytecodeGen::PopScope()
     {
         Assert(_scopeStack.size() > 0, "Can't pop an empty stack");
-        auto scope  = _scopeStack.back();
-        for (auto entry : scope)
+        auto& scope = _scopeStack.back();
+        for (auto& entry : scope)
         {
             this->ReleaseRegister(entry.second, true);
         }

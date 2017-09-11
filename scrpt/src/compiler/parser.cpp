@@ -234,7 +234,7 @@ namespace scrpt
 
     bool Parser::ParseExEquals(bool expect)
     {
-        static std::vector<Symbol> ltrMatch{ Symbol::Plus, Symbol::Minus };
+        static std::vector<Symbol> ltrMatch{ Symbol::Eq, Symbol::NotEq };
 
         if (this->ParseExConcat(false))
         {

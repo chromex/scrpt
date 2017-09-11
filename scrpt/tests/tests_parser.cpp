@@ -155,6 +155,14 @@ func main() {
     foo()[1][2].blah("yo");
 }
 )testCode"));
+
+    // TODO: Temp test
+    ACCUMTEST(TestParse("SLLDKJFasd Expansion", scrpt::ParseErr::NoError, true, R"testCode(
+func main() {
+    //return 2 * 3 - 1 * 2 + 2 + 3;
+    return 6 - 2 + 4 + 3;
+}
+)testCode"));
 }
 
 bool TestParse(const char* testName, scrpt::ParseErr expectedErr, bool dumpAst, const char* source)

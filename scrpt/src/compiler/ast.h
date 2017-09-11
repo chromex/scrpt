@@ -4,16 +4,17 @@ namespace scrpt
 {
     class AstNode
     {
-        typedef std::list<AstNode> ChildList;
+        typedef std::list<AstNode*> ChildList;
 
     public:
         AstNode();
+        ~AstNode();
 
         AstNode* AddChild(std::shared_ptr<Token> token);
-        AstNode* AddChild(AstNode&& other);
+        AstNode* AddChild(AstNode* other);
         AstNode* AddEmptyChild();
         AstNode* GetParent() const;
-        AstNode* CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch);
+        void CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch);
 		AstNode* SwapUnaryOp(std::shared_ptr<Token> token, bool postfix);
         std::shared_ptr<Token> GetToken() const;
         const ChildList& GetChildren() const;
@@ -30,6 +31,8 @@ namespace scrpt
         const AstNode& GetLastChild() const;
 
     private:
+        AstNode(const AstNode& other) = delete;
+        AstNode(AstNode* parent);
         AstNode(AstNode* parent, std::shared_ptr<Token> token);
 
         std::shared_ptr<Token> _token;
