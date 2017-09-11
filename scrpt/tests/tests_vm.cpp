@@ -23,7 +23,7 @@ func main() {
         ++sum;
     } while(sum < max);
 
-            return sum;
+    return sum;
 }
 )testCode"));
 
@@ -391,6 +391,8 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
     AssertNotNull(testName);
     AssertNotNull(source);
 
+    int nTimedRuns = 0;
+
     std::cout << "V|" << testName << "> ";
 
     bool err = false;
@@ -404,11 +406,20 @@ static bool TestVM(const char* testName, int resultValue, bool decompile, const 
 		vm.AddSource(scrpt::Tests::DuplicateSource(source));
 		vm.Finalize();
         if (decompile) vm.Decompile();
-        LARGE_INTEGER startTime = GetTime();
+        // Run the first, untimed test to validate test and ensure the code path is warm
         scrpt::StackVal* ret = vm.Execute("main");
-        LARGE_INTEGER endTime = GetTime();
         err = ret == nullptr || ret->integer != resultValue;
-        runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart);
+
+        if (!err && nTimedRuns > 0)
+        {
+            LARGE_INTEGER startTime = GetTime();
+            for (int i = 0; i < nTimedRuns; ++i)
+            {
+                vm.Execute("main");
+            }
+            LARGE_INTEGER endTime = GetTime();
+            runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart) / (double)nTimedRuns;
+        }
     }
     catch (scrpt::CompilerException& ex)
     {
