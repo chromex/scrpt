@@ -32,6 +32,7 @@ namespace scrpt
 
         bool Accept(Symbol sym, bool push = false);
         bool Accept(Symbol sym, std::shared_ptr<Token>* token, bool push = false);
+        bool AcceptAndSwap(Symbol sym, bool postfix = false);
         bool Test(Symbol sym) const;
         bool Expect(Symbol sym);
 

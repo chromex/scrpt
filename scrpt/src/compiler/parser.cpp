@@ -76,6 +76,18 @@ namespace scrpt
         return false;
     }
 
+    bool Parser::AcceptAndSwap(Symbol sym, bool postfix /* = false */)
+    {
+        std::shared_ptr<Token> token;
+        if (this->Accept(sym, &token))
+        {
+            _currentNode = _currentNode->SwapUnaryOp(token, postfix);
+            return true;
+        }
+
+        return false;
+    }
+
     bool Parser::Test(Symbol sym) const
     {
         AssertNotNull(_lexer->Current());
@@ -172,17 +184,16 @@ namespace scrpt
 
         if (this->ParseExOr(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::Assign, &token) ||
-                this->Accept(Symbol::MultEq, &token) ||
-                this->Accept(Symbol::DivEq, &token) ||
-                this->Accept(Symbol::PlusEq, &token) ||
-                this->Accept(Symbol::MinusEq, &token) ||
-                this->Accept(Symbol::ModuloEq, &token) ||
-                this->Accept(Symbol::ConcatEq, &token))
+            if (this->AcceptAndSwap(Symbol::Assign) ||
+                this->AcceptAndSwap(Symbol::MultEq) ||
+                this->AcceptAndSwap(Symbol::DivEq) ||
+                this->AcceptAndSwap(Symbol::PlusEq) ||
+                this->AcceptAndSwap(Symbol::MinusEq) ||
+                this->AcceptAndSwap(Symbol::ModuloEq) ||
+                this->AcceptAndSwap(Symbol::ConcatEq))
             {
                 this->ParseExpression(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;
@@ -198,11 +209,10 @@ namespace scrpt
 
         if (this->ParseExAnd(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::Or, &token))
+            if (this->AcceptAndSwap(Symbol::Or))
             {
                 this->ParseExOr(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;
@@ -218,11 +228,10 @@ namespace scrpt
 
         if (this->ParseExEquals(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::And, &token))
+            if (this->AcceptAndSwap(Symbol::And))
             {
                 this->ParseExAnd(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;
@@ -238,12 +247,11 @@ namespace scrpt
 
         if (this->ParseExConcat(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::Eq, &token) ||
-                this->Accept(Symbol::NotEq, &token))
+            if (this->AcceptAndSwap(Symbol::Eq) ||
+                this->AcceptAndSwap(Symbol::NotEq))
             {
                 this->ParseExEquals(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;
@@ -259,11 +267,10 @@ namespace scrpt
 
         if (this->ParseExCompare(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::Concat, &token))
+            if (this->AcceptAndSwap(Symbol::Concat))
             {
                 this->ParseExConcat(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;
@@ -279,14 +286,13 @@ namespace scrpt
 
         if (this->ParseExAdd(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::LessThan, &token) ||
-                this->Accept(Symbol::GreaterThan, &token) ||
-                this->Accept(Symbol::LessThanEq, &token) ||
-                this->Accept(Symbol::GreaterThanEq, &token))
+            if (this->AcceptAndSwap(Symbol::LessThan) ||
+                this->AcceptAndSwap(Symbol::GreaterThan) ||
+                this->AcceptAndSwap(Symbol::LessThanEq) ||
+                this->AcceptAndSwap(Symbol::GreaterThanEq))
             {
                 this->ParseExCompare(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;
@@ -302,12 +308,11 @@ namespace scrpt
 
         if (this->ParseExMul(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::Plus, &token) ||
-                this->Accept(Symbol::Minus, &token))
+            if (this->AcceptAndSwap(Symbol::Plus) ||
+                this->AcceptAndSwap(Symbol::Minus))
             {
                 this->ParseExAdd(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;
@@ -323,13 +328,12 @@ namespace scrpt
 
         if (this->ParseExPrefix(false))
         {
-            std::shared_ptr<Token> token;
-            if (this->Accept(Symbol::Mult, &token) ||
-                this->Accept(Symbol::Div, &token) ||
-                this->Accept(Symbol::Modulo, &token))
+            if (this->AcceptAndSwap(Symbol::Mult) ||
+                this->AcceptAndSwap(Symbol::Div) ||
+                this->AcceptAndSwap(Symbol::Modulo))
             {
                 this->ParseExMul(true);
-                _currentNode->CondenseBinaryOp(token, ltrMatch);
+                this->PopNode();
             }
 
             return true;

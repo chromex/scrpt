@@ -66,42 +66,42 @@ namespace scrpt
         return _parent;
     }
   
-    void AstNode::CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch)
-    {
-        Assert(_children.size() >= 2, "Must have at least two children to perform binary op condense");
+    //void AstNode::CondenseBinaryOp(std::shared_ptr<Token> token, const std::vector<Symbol>& ltrMatch)
+    //{
+    //    Assert(_children.size() >= 2, "Must have at least two children to perform binary op condense");
 
-        AstNode* t2 = _children.back();
-        _children.pop_back();
-        AstNode* t1 = _children.back();
-        _children.pop_back();
+    //    AstNode* t2 = _children.back();
+    //    _children.pop_back();
+    //    AstNode* t1 = _children.back();
+    //    _children.pop_back();
 
-        //if (std::any_of(ltrMatch.begin(), ltrMatch.end(), [t2](Symbol s) { return s == t2->GetSym(); }))
-        //{
-        //    // Remove t2's children
-        //    auto c2 = t2->_children.back();
-        //    t2->_children.pop_back();
-        //    auto c1 = t2->_children.back();
-        //    t2->_children.pop_back();
+    //    //if (std::any_of(ltrMatch.begin(), ltrMatch.end(), [t2](Symbol s) { return s == t2->GetSym(); }))
+    //    //{
+    //    //    // Remove t2's children
+    //    //    auto c2 = t2->_children.back();
+    //    //    t2->_children.pop_back();
+    //    //    auto c1 = t2->_children.back();
+    //    //    t2->_children.pop_back();
 
-        //    // Setup new node with t1 and c1
-        //    AstNode* nc1 = t2->AddChild(token);
-        //    nc1->AddChild(t1);
-        //    nc1->AddChild(c1);
+    //    //    // Setup new node with t1 and c1
+    //    //    AstNode* nc1 = t2->AddChild(token);
+    //    //    nc1->AddChild(t1);
+    //    //    nc1->AddChild(c1);
 
-        //    // Re-add c2 to t2
-        //    t2->AddChild(c2);
+    //    //    // Re-add c2 to t2
+    //    //    t2->AddChild(c2);
 
-        //    // Re-add t2 as child to this node
-        //    AstNode* newNode = this->AddChild(t2);
-        //}
-        //else
-        {
-            // Basic RTL associativity or LTR associativity but respecting precedence
-            AstNode* newNode = this->AddChild(token);
-            newNode->AddChild(t1);
-            newNode->AddChild(t2);
-        }
-    }
+    //    //    // Re-add t2 as child to this node
+    //    //    AstNode* newNode = this->AddChild(t2);
+    //    //}
+    //    //else
+    //    {
+    //        // Basic RTL associativity or LTR associativity but respecting precedence
+    //        AstNode* newNode = this->AddChild(token);
+    //        newNode->AddChild(t1);
+    //        newNode->AddChild(t2);
+    //    }
+    //}
 
 	AstNode* AstNode::SwapUnaryOp(std::shared_ptr<Token> token, bool postfix)
 	{
