@@ -619,6 +619,23 @@ namespace scrpt
                 INCREMENTOP(obj->v.integer--, obj->v.fp--);
                 break;
 
+            ///
+            /// Prefix negation
+            ///
+            case OpCode::Neg:
+                {
+                    StackObj* obj = _framePointer + REG0;
+                    StackType t = obj->v.type;
+                    if (t == StackType::Int)
+                        this->LoadInt(REG1, StackType::Int, -obj->v.integer);
+                    else if (t == StackType::Float)
+                        this->LoadFloat(REG1, -obj->v.fp);
+                    else
+                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    _ip += 2;
+                }
+                break;
+
             /// 
             /// Less Than
             ///

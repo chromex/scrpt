@@ -29,6 +29,7 @@ const char* scrpt::OpCodeToString(OpCode code)
 		ENUM_CASE_TO_STRING(OpCode::Dec); 
 		ENUM_CASE_TO_STRING(OpCode::PostInc);  
 		ENUM_CASE_TO_STRING(OpCode::PostDec);
+        ENUM_CASE_TO_STRING(OpCode::Neg);
 		ENUM_CASE_TO_STRING(OpCode::LT); 
 		ENUM_CASE_TO_STRING(OpCode::GT); 
 		ENUM_CASE_TO_STRING(OpCode::LTE); 
@@ -158,6 +159,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::Dec: DISPLAY_ONE_REG; break;
             case OpCode::PostInc: DISPLAY_ONE_REG; break;
             case OpCode::PostDec: DISPLAY_ONE_REG; break;
+            case OpCode::Neg: DISPLAY_TWO_REG; break;
             case OpCode::LT: DISPLAY_THREE_REG; break;
             case OpCode::GT: DISPLAY_THREE_REG; break;
             case OpCode::LTE: DISPLAY_THREE_REG; break;

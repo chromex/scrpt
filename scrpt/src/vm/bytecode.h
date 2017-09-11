@@ -27,6 +27,7 @@ namespace scrpt
 		Dec, // reg0
 		PostInc, // reg0
 		PostDec, // reg0
+        Neg, // reg0, reg1
         LT, // reg0, reg1, reg2
         GT, // reg0, reg1, reg2
         LTE, // reg0, reg1, reg2
