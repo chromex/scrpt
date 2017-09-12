@@ -13,7 +13,7 @@ void scrpt::Tests::RunTestsBytecodeGen(unsigned int* passed, unsigned int* faile
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
     ACCUMTEST(TestBytecodeGen("Basic Do Loop", false, R"testCode(
 func main() {
-    sum = 0;
+    var sum = 0;
     do
     {
         ++sum;

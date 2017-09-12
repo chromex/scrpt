@@ -151,6 +151,10 @@ namespace scrpt
             this->PopScope();
             break;
 
+        case Symbol::Var:
+            // TODO:!:!:!:!
+            break;
+
         default:
             auto result = this->CompileExpression(node);
             if (std::get<0>(result))

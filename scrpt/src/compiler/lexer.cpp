@@ -61,6 +61,7 @@ namespace scrpt
             if (strcmp(ident.get(), "do") == 0)				sym = Symbol::Do;
             else if (strcmp(ident.get(), "if") == 0)		sym = Symbol::If;
             else if (strcmp(ident.get(), "for") == 0)		sym = Symbol::For;
+            else if (strcmp(ident.get(), "var") == 0)       sym = Symbol::Var;
             else if (strcmp(ident.get(), "case") == 0)		sym = Symbol::Case;
             else if (strcmp(ident.get(), "else") == 0)		sym = Symbol::Else;
             else if (strcmp(ident.get(), "elif") == 0)		sym = Symbol::ElseIf;
@@ -379,6 +380,7 @@ namespace scrpt
             ENUM_CASE_TO_STRING(Symbol::Or);
             ENUM_CASE_TO_STRING(Symbol::SemiColon);
             ENUM_CASE_TO_STRING(Symbol::Func);
+            ENUM_CASE_TO_STRING(Symbol::Var);
             ENUM_CASE_TO_STRING(Symbol::End);
 
         default:

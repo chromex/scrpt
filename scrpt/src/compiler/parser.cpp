@@ -179,6 +179,7 @@ namespace scrpt
         else if (this->ParseContinue()) return true;
         else if (this->ParseSwitch()) return true;
         else if (this->ParseBlock(false)) return true;
+        else if (this->ParseDecl()) return true;
         else if (this->Allow(Symbol::SemiColon)) return true;
         else if (this->ParseExpression(false))
         {
@@ -713,6 +714,32 @@ namespace scrpt
                 allowMore = this->Allow(Symbol::Comma);
             }
             this->Expect(Symbol::RBracket);
+
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseDecl()
+    {
+        if (this->Accept(Symbol::Var))
+        {
+            if (!this->Test(Symbol::Ident))
+            {
+                throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+            }
+
+            this->Accept(Symbol::Ident);
+            this->PopNode();
+
+            if (this->Allow(Symbol::Assign))
+            {
+                this->ParseExpression(true);
+            }
+
+            this->Expect(Symbol::SemiColon);
 
             this->PopNode();
             return true;

@@ -14,23 +14,23 @@ void scrpt::Tests::RunTestsParser(unsigned int* passed, unsigned int* failed)
 
     ACCUMTEST(TestParse("Parse Constants", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
-    num = 0;
+    var num = 0;
     num = 1234;
     num = -4321;
     num = 0.1;
     num = 1.2;
     num = -2.5;
     num = -0;
-    str = "";
+    var str = "";
     str = "asldfkj";
-    bool = true;
+    var bool = true;
     bool = false;
-    list = [];
+    var list = [];
     list = [1, 2, "whut"];
     list = [[1], 3];
     list = ["whoa", []];
     list = [val1, call()];
-    dict = {};
+    var dict = {};
     dict = {"test": 1};
     dict = {"test": 2, "test2": 3};
     dict = 
@@ -85,11 +85,11 @@ func main() {
 
     ACCUMTEST(TestParse("Indexing", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
-    char = "str"[0];
+    var char = "str"[0];
     list[1]++;
     ++list[1];
     list[1] = 5.5;
-    val = dict[0];
+    var val = dict[0];
     val = dict["foo"];
     val = dict["bar"] = 2;
     val = dict[foo["no"]("hey")];
@@ -121,9 +121,9 @@ func main() {
 
     ACCUMTEST(TestParse("Func Decl", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {}
-func foo(var) {}
-func foo(var, var2) {}
-func foo(var, var2, var3) {}
+func foo(v) {}
+func foo(v, var2) {}
+func foo(v, var2, var3) {}
 func foo() { return; }
 func foo() { return 1 + 2; }
 )testCode"));
@@ -143,9 +143,9 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestParse("Concat", scrpt::ParseErr::NoError, false, R"testCode(
+    ACCUMTEST(TestParse("Concat", scrpt::ParseErr::NoError, true, R"testCode(
 func main() {
-    val = "hello" # "world" # "again";
+    var val = "hello" # "world" # "again";
     val #= " one more";
 }
 )testCode"));

@@ -8,9 +8,9 @@ namespace scrpt
         Start,
         LParen,
         RParen,
-        LBracket,//
+        LBracket,
         RBracket,
-        LSquare,//
+        LSquare,
         RSquare,
         Int,
         Float,
@@ -20,23 +20,23 @@ namespace scrpt
         False,
         Colon,
         Comma,
-        Dot,//
+        Dot,
         If,
-        Else,//
-        ElseIf,//
+        Else,
+        ElseIf,
         Do,
         While,
         For,
-        Continue,//
-        Switch,//
-        Case,//
-        Break,//
-        Default,//
+        Continue,
+        Switch,
+        Case,
+        Break,
+        Default,
         Return,
         Eq,
         Assign,
-        Not,//
-        NotEq,//
+        Not,
+        NotEq,
         LessThan,
         LessThanEq,
         GreaterThan,
@@ -59,6 +59,7 @@ namespace scrpt
         Or,
         SemiColon,
         Func,
+        Var,
         End,
     };
     const char* SymbolToString(Symbol sym);
