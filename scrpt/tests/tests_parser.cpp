@@ -143,7 +143,7 @@ func main() {
 }
 )testCode"));
 
-    ACCUMTEST(TestParse("Concat", scrpt::ParseErr::NoError, true, R"testCode(
+    ACCUMTEST(TestParse("Concat", scrpt::ParseErr::NoError, false, R"testCode(
 func main() {
     var val = "hello" # "world" # "again";
     val #= " one more";

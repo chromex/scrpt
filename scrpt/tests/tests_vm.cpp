@@ -14,10 +14,26 @@ void scrpt::Tests::RunTestsVM(unsigned int* passed, unsigned int* failed)
     srand((unsigned int)time(NULL));
 
 #define ACCUMTEST(T) T ? ++*passed : ++*failed
+    // TODO: Test error
+    // TODO: Multiple dec error
+    ACCUMTEST(TestVM("Scope Test", 30, false, R"testCode(
+func main() {
+    var v1 = 4 + 5;
+    var v2;
+    v2 = v1 + 7;
+    if (v2 > 0)
+    {
+        var v1 = 3;
+        v2 = v1 * 7;
+    }
+    return v2 + v1;
+}
+)testCode"));
+
     ACCUMTEST(TestVM("Simple counting", 100000, false, R"testCode(
 func main() {
-    sum = 0;
-    max = 100000;
+    var sum = 0;
+    var max = 100000;
     do
     {
         ++sum;
@@ -29,12 +45,12 @@ func main() {
 
     ACCUMTEST(TestVM("Fibonacci", 317811, false, R"testCode(
 func main() {
-    v0 = 0;
-    v1 = 1;
-    max = 300000;
+    var v0 = 0;
+    var v1 = 1;
+    var max = 300000;
     while (v1 < max)
     {
-        t = v0 + v1;
+        var t = v0 + v1;
         v0 = v1;
         v1 = t;
     }
@@ -62,7 +78,7 @@ func main() {
 }
 
 func Test(a, b, c) {
-    sum = a + b + c;
+    var sum = a + b + c;
     return sum == 6;
 }
 )testCode"));
@@ -94,7 +110,7 @@ func main() {
 
     ACCUMTEST(TestVM("FFI", 1234, false, R"testCode(
 func main() {
-    for (i = 0; i < 10000; ++i)
+    for (var i = 0; i < 10000; ++i)
         testextern(12, 34);
 
     return testextern(12, 34);
@@ -103,7 +119,7 @@ func main() {
 
     ACCUMTEST(TestVM("Strings", 1, false, R"testCode(
 func main() {
-    for (i = 0; i < 10000; ++i)
+    for (var i = 0; i < 10000; ++i)
     {
         test("whut");
     }
@@ -118,21 +134,21 @@ func test(str) {
 
     ACCUMTEST(TestVM("Concat", 12, false, R"testCode(
 func main() {
-    a = "hello world" # "!";
+    var a = "hello world" # "!";
     return strlen(a);
 }
 )testCode"));
 
     ACCUMTEST(TestVM("List Test", 5, false, R"testCode(
 func main() {
-    lst = [1, true, 5, ["yes"], [], "no"];
+    var lst = [1, true, 5, ["yes"], [], "no"];
     return lst[2];
 }
 )testCode"));
 
     ACCUMTEST(TestVM("Negative Test", 2, false, R"testCode(
 func main() {
-    a = -foo();
+    var a = -foo();
     return 5 + a;
 }
 
@@ -143,20 +159,20 @@ func foo() {
 
     ACCUMTEST(TestVM("Quick sort", 1, false, R"testCode(
 func main() {
-	numElements = 1000;
-    lst = [];
-    for (count = 0; count < numElements; ++count)
+	var numElements = 1000;
+    var lst = [];
+    for (var count = 0; count < numElements; ++count)
         lst #= randomInt();
     quickSort(lst, 0, length(lst) - 1);
-	correct = true;
-	for (count = 0; count < length(lst) - 1 && correct; ++count)
+	var correct = true;
+	for (var count = 0; count < length(lst) - 1 && correct; ++count)
 		if (lst[count] > lst[count+1]) correct = false;
     if (correct) return 1;
 	return 0;
 }
 
 func quickSort(list, left, right) {
-    index = partition(list, left, right);
+    var index = partition(list, left, right);
     if (left < index - 1)
         quickSort(list, left, index - 1);
     if (index < right)
@@ -164,9 +180,9 @@ func quickSort(list, left, right) {
 }
 
 func partition(list, left, right) {
-    i = left;
-    j = right;
-    pivot = list[(left + right) / 2];
+    var i = left;
+    var j = right;
+    var pivot = list[(left + right) / 2];
 
     while (i <= j) {
         while (list[i] < pivot)
@@ -174,7 +190,7 @@ func partition(list, left, right) {
         while (list[j] > pivot)
             --j;
         if (i <= j) {
-            tmp = list[i];
+            var tmp = list[i];
             list[i] = list[j];
             list[j] = tmp;
             ++i;
@@ -188,8 +204,8 @@ func partition(list, left, right) {
 
     ACCUMTEST(TestVM("Basic Maps", 1, false, R"testCode(
 func main() {
-	map = {};
-    staticmap = {"one": 2, "whoa": [true, []]};
+	var map = {};
+    var staticmap = {"one": 2, "whoa": [true, []]};
     map["bar"] = "foo";
     map["baz"] = staticmap;
     staticmap["three"] = 1234;
@@ -200,8 +216,8 @@ func main() {
 
     ACCUMTEST(TestVM("First class function", 7, false, R"testCode(
 func main() {
-    fun = Gen();
-    lst = [fun, 2];
+    var fun = Gen();
+    var lst = [fun, 2];
 	return lst[0](3, 4);
 }
 
@@ -216,12 +232,12 @@ func Gen() {
 
     ACCUMTEST(TestVM("Assignment tests", 35, false, R"testCode(
 func main() {
-    val = 4;
+    var val = 4;
     val += 7;
     val *= 2;
     val -= 2;
     val /= 4;
-    lst = [1];
+    var lst = [1];
     lst #= [];
     lst[1][0] = true;
     lst[0] += 4;
@@ -234,9 +250,9 @@ func main() {
 
     ACCUMTEST(TestVM("Class calls", 29, false, R"testCode(
 func main() {
-    v1 = MakeVec(3, 7);
-    v2 = MakeVec(7, 12);
-    obj = {"v1": v1};
+    var v1 = MakeVec(3, 7);
+    var v2 = MakeVec(7, 12);
+    var obj = {"v1": v1};
     obj.v1:Add(v2);
     return v1.x + v1.y;
 }
@@ -257,8 +273,8 @@ func Vec_Add(this, other) {
 
     ACCUMTEST(TestVM("Conways Game of Life", 29, false, R"testCode(
 func main() {
-    game = MakeGame(15);
-    generations = 5;
+    var game = MakeGame(15);
+    var generations = 5;
     while (generations > 0) {
         //game:Draw();
         if (game:Update())
@@ -272,7 +288,7 @@ func main() {
 }
 
 func MakeGame(size) {
-    obj = {
+    var obj = {
         "data": [],
         "data2": [],
         "size": size,
@@ -283,8 +299,8 @@ func MakeGame(size) {
         "IsAlive": Game_IsAlive,
     };
 
-    numElements = size * size;
-    for (index = 0; index < numElements; ++index) {
+    var numElements = size * size;
+    for (var index = 0; index < numElements; ++index) {
         if (randomInt() > 25000)
             obj.data #= true;
         else
@@ -296,9 +312,9 @@ func MakeGame(size) {
 
 func Game_Draw(this) {
     print("State");
-    for (row = 0; row < this.size; ++row) {
-        str = "";
-        for (col = 0; col < this.size; ++col) {
+    for (var row = 0; row < this.size; ++row) {
+        var str = "";
+        for (var col = 0; col < this.size; ++col) {
             if (this.data[this:GetIndex(col, row)])
                 str #= "# ";
             else
@@ -310,12 +326,12 @@ func Game_Draw(this) {
 }
 
 func Game_Update(this) {
-    any = false;
-    for (row = 0; row < this.size; ++row) {
-        for (col = 0; col < this.size; ++col) {
-            cellIndex = Game_GetIndex(this, col, row);
-            nNeighbors = Game_SumNeighbors(this, col, row);
-            output = false;
+    var any = false;
+    for (var row = 0; row < this.size; ++row) {
+        for (var col = 0; col < this.size; ++col) {
+            var cellIndex = Game_GetIndex(this, col, row);
+            var nNeighbors = Game_SumNeighbors(this, col, row);
+            var output = false;
             if (this.data[cellIndex] && (nNeighbors == 2 || nNeighbors == 3)) {
                 output = true;
             }
@@ -329,7 +345,7 @@ func Game_Update(this) {
             if (output) any = true;
         }
     }
-    tmp = this.data;
+    var tmp = this.data;
     this.data = this.data2;
     this.data2 = tmp;
     return any;
@@ -340,7 +356,7 @@ func Game_GetIndex(this, x, y) {
 }
 
 func Game_SumNeighbors(this, x, y) {
-    sum = 0;
+    var sum = 0;
     if (Game_IsAlive(this, x-1, y-1)) ++sum;
     if (Game_IsAlive(this, x-1, y)) ++sum;
     if (Game_IsAlive(this, x-1, y+1)) ++sum;

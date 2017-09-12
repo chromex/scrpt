@@ -21,6 +21,7 @@ namespace scrpt
         void CompileDo(const AstNode& node);
         void CompileIf(const AstNode& node);
         void CompileReturn(const AstNode& node);
+        void CompileDecl(const AstNode& node);
         char CompileCall(const AstNode& node);
         char CompileList(const AstNode& node);
         char CompileMap(const AstNode& node);
@@ -46,6 +47,7 @@ namespace scrpt
         static char GetRegResult(const std::tuple<bool, char>& result);
         char AddParam(const AstNode& node);
         char AddLocal(const AstNode& node);
+        bool IsLocalIdentAvailable(const AstNode& node) const;
         bool LookupIdentOffset(const char* ident, char* id) const;
         char LookupIdentOffset(const AstNode& node) const;
         unsigned int GetStringId(const char* str);
@@ -71,6 +73,7 @@ namespace scrpt
         UndeclaredFunctionReference,
         IncorrectCallArity,
         UndeclaredIdentifierReference,
+        MulipleDeclaration,
         DuplicateParameterName,
         InsufficientRegisters,
     };

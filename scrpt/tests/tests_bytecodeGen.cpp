@@ -24,8 +24,8 @@ func main() {
 
 	ACCUMTEST(TestBytecodeGen("Basic For Loop", false, R"testCode(
 func main() {
-    for (sum = 0; sum < 10; sum += 1)
-        i = 0;
+    for (var sum = 0; sum < 10; sum += 1)
+        var i = 0;
 }
 )testCode"));
 
@@ -37,9 +37,9 @@ func main() {
 
     ACCUMTEST(TestBytecodeGen("Basic Bracket", false, R"testCode(
 func main() {
-    i = 0;
+    var i = 0;
     {
-        sum = i + 1;
+        var sum = i + 1;
     }
     return i;
 }
@@ -47,27 +47,27 @@ func main() {
 
     ACCUMTEST(TestBytecodeGen("For Loop Emtpy Children", false, R"testCode(
 func main() {
-    for (i = 0; ; ++i) {}
+    for (var i = 0; ; ++i) {}
 
-    a = 0;
+    var a = 0;
     for (; a < 10; ++a) {}
 
-    for (i = 0; i < 10; ) {}
+    for (var i = 0; i < 10; ) {}
 }
 )testCode"));
 
     ACCUMTEST(TestBytecodeGen("Basic If", false, R"testCode(
 func main() {
-    if (true) {a = 0;}
-    if (false) {a = 0;} else {b = 0;}
-    if (false) {a = 0;} elif (true) {b = 0;} else {c = 0;}
+    if (true) {var a = 0;}
+    if (false) {var a = 0;} else {var b = 0;}
+    if (false) {var a = 0;} elif (true) {var b = 0;} else {var c = 0;}
 }
 )testCode"));
 
     ACCUMTEST(TestBytecodeGen("Assignment", false, R"testCode(
 func main() {
-    a = 4;
-    b = 2;
+    var a = 4;
+    var b = 2;
     b += ++a * 3;
     return b;
 }
@@ -75,7 +75,7 @@ func main() {
 
     ACCUMTEST(TestBytecodeGen("Parameters", false, R"testCode(
 func main(one, two) {
-    a = one;
+    var a = one;
     two += a;
 }
 )testCode"));

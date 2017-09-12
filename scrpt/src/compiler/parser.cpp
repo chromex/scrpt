@@ -179,7 +179,11 @@ namespace scrpt
         else if (this->ParseContinue()) return true;
         else if (this->ParseSwitch()) return true;
         else if (this->ParseBlock(false)) return true;
-        else if (this->ParseDecl()) return true;
+        else if (this->ParseDecl())
+        {
+            this->Expect(Symbol::SemiColon);
+            return true;
+        }
         else if (this->Allow(Symbol::SemiColon)) return true;
         else if (this->ParseExpression(false))
         {
@@ -520,7 +524,7 @@ namespace scrpt
         if (this->Accept(Symbol::For))
         {
             this->Expect(Symbol::LParen);
-            if (!this->ParseExpression(false)) _currentNode->AddEmptyChild();
+            if (!this->ParseDecl() && !this->ParseExpression(false)) _currentNode->AddEmptyChild();
             this->Expect(Symbol::SemiColon);
             if (!this->ParseExpression(false)) _currentNode->AddEmptyChild();
             this->Expect(Symbol::SemiColon);
@@ -738,8 +742,6 @@ namespace scrpt
             {
                 this->ParseExpression(true);
             }
-
-            this->Expect(Symbol::SemiColon);
 
             this->PopNode();
             return true;
