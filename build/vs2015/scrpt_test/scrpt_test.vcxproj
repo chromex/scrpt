@@ -156,10 +156,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\scrpt\tests\main.cpp" />
     <ClCompile Include="..\..\..\scrpt\tests\tests.cpp" />
-    <ClCompile Include="..\..\..\scrpt\tests\tests_bytecodeGen.cpp" />
-    <ClCompile Include="..\..\..\scrpt\tests\tests_lexer.cpp" />
-    <ClCompile Include="..\..\..\scrpt\tests\tests_parser.cpp" />
-    <ClCompile Include="..\..\..\scrpt\tests\tests_vm.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\scrpt\tests\tests.h" />

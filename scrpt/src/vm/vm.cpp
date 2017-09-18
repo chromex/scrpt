@@ -103,7 +103,7 @@ __forceinline void Move(StackObj* src, StackObj* dest)
 { \
 	if (_stackPointer == _stackRoot) \
 	{ \
-		this->ThrowErr(RuntimeErr::StackUnderflow); \
+		this->ThrowErr(Err::VM_StackUnderflow); \
 	} \
 	_stackPointer -= 1; \
 	Deref(&_stackPointer->v); \
@@ -126,7 +126,7 @@ __forceinline void Move(StackObj* src, StackObj* dest)
 #define REG1 *((char*)(data + _ip + 2))
 #define REG2 *((char*)(data + _ip + 3))
 
-#define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) this->ThrowErr(RuntimeErr::StackOverflow);
+#define CHECKSTACK if (_stackPointer - &_stack[0] >= STACKSIZE) this->ThrowErr(Err::VM_StackOverflow);
 
 namespace scrpt
 {
@@ -214,9 +214,9 @@ namespace scrpt
                 this->Run();
                 // TODO: Pop params
             }
-            catch (CompilerException& cex)
+            catch (Exception& cex)
             {
-                throw CreateRuntimeEx(this->CreateCallstack(_ip), cex.GetRuntimeErr());
+                throw CreateEx(this->CreateCallstack(_ip), cex.GetErr());
             }
 
             Assert(_stackPointer == &_stack[0], "Stack must be empty after executing");
@@ -224,7 +224,7 @@ namespace scrpt
         }
         else
         {
-			throw CreateRuntimeEx(funcName, RuntimeErr::FailedFunctionLookup);
+			throw CreateEx(funcName, Err::VM_FailedFunctionLookup);
         }
     }
 
@@ -244,7 +244,7 @@ namespace scrpt
         else if (t == StackType::Float) \
             this->LoadFloat(REG0, FloatOp); \
         else \
-			this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+			this->ThrowErr(Err::VM_UnsupportedOperandType); \
         ++_ip; \
     } 
 
@@ -254,8 +254,8 @@ namespace scrpt
         StackObj* v2 = _framePointer + REG1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
-        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(Err::VM_UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(Err::VM_UnsupportedOperandType); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
 			int result = v1->v.integer Op v2->v.integer; \
@@ -276,8 +276,8 @@ namespace scrpt
         StackObj* value = _framePointer + REG1;\
         StackType t1 = target->v.type;\
         StackType t2 = value->v.type;\
-        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
-        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(Err::VM_UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(Err::VM_UnsupportedOperandType); \
         if (t1 == StackType::Float)\
         {\
             target->v.fp Op (t2 == StackType::Float ? value->v.fp : (float)value->v.integer);\
@@ -296,8 +296,8 @@ namespace scrpt
         StackObj* v2 = _framePointer + REG1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
-        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Int && t1 != StackType::Float) this->ThrowErr(Err::VM_UnsupportedOperandType); \
+        if (t2 != StackType::Int && t2 != StackType::Float) this->ThrowErr(Err::VM_UnsupportedOperandType); \
         if (t1 == StackType::Int && t2 == StackType::Int) \
         { \
             result = v1->v.integer Op v2->v.integer; \
@@ -318,7 +318,7 @@ namespace scrpt
         StackObj* v2 = _framePointer + REG1; \
         StackType t1 = v1->v.type; \
         StackType t2 = v2->v.type; \
-        if (t1 != StackType::Boolean && t2 != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType); \
+        if (t1 != StackType::Boolean && t2 != StackType::Boolean) this->ThrowErr(Err::VM_UnsupportedOperandType); \
 		int result = v1->v.integer Op v2->v.integer; \
         this->LoadInt(REG2, StackType::Boolean, result); \
         _ip += 3;\
@@ -334,7 +334,7 @@ namespace scrpt
             #define GetOperand(Type) *((Type*)(data + _ip + 2))
             switch ((const OpCode)(data[_ip]))
             {
-            case OpCode::Unknown: this->ThrowErr(RuntimeErr::NotImplemented); break;
+            case OpCode::Unknown: this->ThrowErr(Err::VM_NotImplemented); break;
 
             /// 
             /// Load Null
@@ -403,13 +403,13 @@ namespace scrpt
                 StackType indexType = indexObj->v.type;
                 if (targetType == StackType::List)
                 {
-                    if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    if (indexType != StackType::Int) this->ThrowErr(Err::VM_UnsupportedOperandType);
                     int index = indexObj->v.integer;
 
                     List* list = target->v.ref->list;
                     if (index < 0)
                     {
-                        this->ThrowErr(RuntimeErr::NotImplemented);
+                        this->ThrowErr(Err::VM_NotImplemented);
                     }
 
                     if (index >= list->size())
@@ -433,12 +433,12 @@ namespace scrpt
                     }
                     else
                     {
-                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        this->ThrowErr(Err::VM_UnsupportedOperandType);
                     }
                 }
                 else
                 {
-                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    this->ThrowErr(Err::VM_UnsupportedOperandType);
                 }
 
                 _ip += 3;
@@ -468,13 +468,13 @@ namespace scrpt
                         result = v1->v.fp == v2->v.fp;
                         break;
                     default:
-                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        this->ThrowErr(Err::VM_UnsupportedOperandType);
                         break;
                     }
                 }
                 else
                 {
-                    this->ThrowErr(RuntimeErr::OperandMismatch);
+                    this->ThrowErr(Err::VM_OperandMismatch);
                 }
 
                 this->LoadInt(REG2, StackType::Boolean, result);
@@ -527,7 +527,7 @@ namespace scrpt
             /// 
             /// Modulo
             ///
-            case OpCode::Mod: this->ThrowErr(RuntimeErr::NotImplemented); break;
+            case OpCode::Mod: this->ThrowErr(Err::VM_NotImplemented); break;
 
             ///
             /// Concat
@@ -558,10 +558,10 @@ namespace scrpt
                         ss << v2->v.integer;
                         break;
                     case StackType::List:
-                        this->ThrowErr(RuntimeErr::NotImplemented);
+                        this->ThrowErr(Err::VM_NotImplemented);
                         break;
                     case StackType::Map:
-                        this->ThrowErr(RuntimeErr::NotImplemented);
+                        this->ThrowErr(Err::VM_NotImplemented);
                         break;
                     case StackType::Null:
                         ss << "null";
@@ -570,7 +570,7 @@ namespace scrpt
                         ss << v2->v.staticString;
                         break;
                     default:
-                        ThrowErr(RuntimeErr::NotImplemented);
+                        ThrowErr(Err::VM_NotImplemented);
                     }
                     this->LoadString(REG2, ss.str().c_str());
                 }
@@ -585,7 +585,7 @@ namespace scrpt
                 }
                 else
                 {
-                    this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    this->ThrowErr(Err::VM_UnsupportedOperandType);
                 }
                 _ip += 3;
             }
@@ -631,7 +631,7 @@ namespace scrpt
                     else if (t == StackType::Float)
                         this->LoadFloat(REG1, -obj->v.fp);
                     else
-                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        this->ThrowErr(Err::VM_UnsupportedOperandType);
                     _ip += 2;
                 }
                 break;
@@ -670,9 +670,9 @@ namespace scrpt
             case OpCode::Call:
                 {
                     StackObj* handle = _framePointer + REG0;
-                    if (handle->v.type != StackType::Func) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                    if (handle->v.type != StackType::Func) this->ThrowErr(Err::VM_UnsupportedOperandType);
                     const FunctionData& fd = _bytecode.functions[handle->v.id];
-                    if (fd.nParam != REG1) this->ThrowErr(RuntimeErr::IncorrectArity);
+                    if (fd.nParam != REG1) this->ThrowErr(Err::VM_IncorrectArity);
                     if (!fd.external)
                     {
                         // Stack size limits guarentee this will fit in a 32bit int even on 64bit builds
@@ -759,12 +759,12 @@ namespace scrpt
                     StackType objectType = object->v.type;
                     if (objectType == StackType::List)
                     {
-                        if (indexType != StackType::Int) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        if (indexType != StackType::Int) this->ThrowErr(Err::VM_UnsupportedOperandType);
                         List* list = object->v.ref->list;
                         int idx = index->v.integer;
                         if (idx < 0)
                         {
-                            this->ThrowErr(RuntimeErr::NotImplemented);
+                            this->ThrowErr(Err::VM_NotImplemented);
                         }
 
                         if (idx < list->size())
@@ -778,7 +778,7 @@ namespace scrpt
                     }
                     else if (objectType == StackType::Map)
                     {
-                        if (indexType != StackType::StaticString && indexType != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        if (indexType != StackType::StaticString && indexType != StackType::DynamicString) this->ThrowErr(Err::VM_UnsupportedOperandType);
                         Map* map = object->v.ref->map;
                         if (indexType == StackType::StaticString)
                         {
@@ -799,7 +799,7 @@ namespace scrpt
                     }
                     else
                     {
-                        this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        this->ThrowErr(Err::VM_UnsupportedOperandType);
                     }
 
                     _ip += 3;
@@ -836,7 +836,7 @@ namespace scrpt
                         StackObj* keyObj = _stackPointer + index;
                         StackObj* valueObj = _stackPointer + index + 1;
 
-                        if (keyObj->v.type != StackType::StaticString && keyObj->v.type != StackType::DynamicString) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+                        if (keyObj->v.type != StackType::StaticString && keyObj->v.type != StackType::DynamicString) this->ThrowErr(Err::VM_UnsupportedOperandType);
                         const char* key = keyObj->v.type == StackType::StaticString ? keyObj->v.staticString : keyObj->v.ref->string->c_str();
                         BlindMove(valueObj, &(*map)[key]);
                     }
@@ -865,7 +865,7 @@ namespace scrpt
                 break;
 
             default:
-                this->ThrowErr(RuntimeErr::NotImplemented);
+                this->ThrowErr(Err::VM_NotImplemented);
                 break;
             }
 
@@ -963,16 +963,16 @@ namespace scrpt
         int pOffset = (int)id;
         if (pOffset >= _currentExternArgN)
         {
-            this->ThrowErr(RuntimeErr::BadParamRequest);
+            this->ThrowErr(Err::VM_BadParamRequest);
         }
 
         int offset = -_currentExternArgN + (int)id;
         return _stackPointer + offset;
     }
 
-    void VM::ThrowErr(RuntimeErr err) const
+    void VM::ThrowErr(Err err) const
     {
-        throw CreateRuntimeEx("", err);
+        throw CreateEx("", err);
     }
 
     const FunctionData& VM::LookupFunction(unsigned int ip) const
@@ -1038,7 +1038,7 @@ namespace scrpt
 
     void VM::ConditionalJump(StackObj* obj, int test, unsigned int dest)
     {
-        if (obj->v.type != StackType::Boolean) this->ThrowErr(RuntimeErr::UnsupportedOperandType);
+        if (obj->v.type != StackType::Boolean) this->ThrowErr(Err::VM_UnsupportedOperandType);
         if (obj->v.integer == test)
         {
             _ip = dest - 1;
@@ -1065,28 +1065,6 @@ namespace scrpt
 
 		default: 
 			AssertFail("Mising case for StackType");
-		}
-
-		return nullptr;
-	}
-
-	const char* RuntimeErrToString(RuntimeErr err)
-	{
-		switch (err)
-		{
-			ENUM_CASE_TO_STRING(RuntimeErr::NoError);
-			ENUM_CASE_TO_STRING(RuntimeErr::FailedFunctionLookup);
-			ENUM_CASE_TO_STRING(RuntimeErr::UnsupportedOperandType);
-			ENUM_CASE_TO_STRING(RuntimeErr::OperandMismatch);
-            ENUM_CASE_TO_STRING(RuntimeErr::StackOverflow);
-            ENUM_CASE_TO_STRING(RuntimeErr::StackUnderflow);
-            ENUM_CASE_TO_STRING(RuntimeErr::UnexpectedParamType);
-            ENUM_CASE_TO_STRING(RuntimeErr::BadParamRequest);
-            ENUM_CASE_TO_STRING(RuntimeErr::NotImplemented);
-            ENUM_CASE_TO_STRING(RuntimeErr::IncorrectArity);
-
-		default:
-			AssertFail("Missing case for RuntimeErr");
 		}
 
 		return nullptr;

@@ -4,7 +4,7 @@
 
 namespace scrpt
 {
-    static CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer);
+    static Exception CreateExpectedSymEx(Symbol sym, Lexer* lexer);
 
     Parser::Parser()
         : _lexer(nullptr)
@@ -164,7 +164,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::BlockExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_BlockExpected, _lexer->Current());
         return false;
     }
 
@@ -191,7 +191,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::StatementExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_StatementExpected, _lexer->Current());
         return false;
     }
 
@@ -216,7 +216,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -236,7 +236,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -256,7 +256,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -277,7 +277,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -297,7 +297,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -320,7 +320,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -341,7 +341,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -363,7 +363,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -383,7 +383,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -413,7 +413,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -669,7 +669,7 @@ namespace scrpt
             return true;
         }
 
-        if (expect) throw CreateParseEx(ParseErr::ExpressionExpected, _lexer->Current());
+        if (expect) throw CreateEx(Err::Parser_ExpressionExpected, _lexer->Current());
         return false;
     }
 
@@ -750,26 +750,9 @@ namespace scrpt
         return false;
     }
 
-    CompilerException CreateExpectedSymEx(Symbol sym, Lexer* lexer)
+    Exception CreateExpectedSymEx(Symbol sym, Lexer* lexer)
     {
         AssertNotNull(lexer);
-        return CreateParseEx(std::string("Expected symbol ") + SymbolToString(sym), ParseErr::UnexpectedSymbol, lexer->Current());
-    }
-
-    const char* ParseErrToString(ParseErr err)
-    {
-        switch (err)
-        {
-            ENUM_CASE_TO_STRING(ParseErr::NoError);
-            ENUM_CASE_TO_STRING(ParseErr::UnexpectedSymbol);
-            ENUM_CASE_TO_STRING(ParseErr::BlockExpected);
-            ENUM_CASE_TO_STRING(ParseErr::ExpressionExpected);
-            ENUM_CASE_TO_STRING(ParseErr::StatementExpected);
-
-        default:
-            AssertFail("Missing case for ParseErr");
-        }
-
-        return nullptr;
+        return CreateEx(std::string("Expected symbol ") + SymbolToString(sym), Err::Parser_UnexpectedSymbol, lexer->Current());
     }
 }

@@ -58,13 +58,13 @@ namespace scrpt
 
         if (_functionLookup.find(name) != _functionLookup.end())
         {
-            CreateBytecodeGenEx(BytecodeGenErr::FunctionRedefinition, ident.GetToken());
+            CreateEx(Err::BytecodeGen_FunctionRedefinition, ident.GetToken());
         }
 
         size_t nParam = children.size() - 2;
         if (nParam > MAX_PARAM)
         {
-            CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, ident.GetToken());
+            CreateEx(Err::BytecodeGen_ParameterCountExceeded, ident.GetToken());
         }
 
         _functionLookup[name] = (unsigned int)_functions.size();
@@ -196,7 +196,7 @@ namespace scrpt
                 }
                 else
                 {
-                    throw CreateBytecodeGenEx(BytecodeGenErr::UndeclaredIdentifierReference, node.GetToken());
+                    throw CreateEx(Err::BytecodeGen_UndeclaredIdentifierReference, node.GetToken());
                 }
             }
             break;
@@ -609,7 +609,7 @@ namespace scrpt
         size_t nParam = classCall ? node.GetChildren().size() : node.GetChildren().size() - 1;
         if (nParam > MAX_PARAM)
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::ParameterCountExceeded, node.GetToken());
+            throw CreateEx(Err::BytecodeGen_ParameterCountExceeded, node.GetToken());
         }
 
         // Get the function handle
@@ -785,7 +785,7 @@ namespace scrpt
     {
         if (node.GetSym() != sym)
         {
-            throw CreateBytecodeGenEx(std::string("Expected token ") + SymbolToString(sym), BytecodeGenErr::UnexpectedToken, node.GetToken());
+            throw CreateEx(std::string("Expected token ") + SymbolToString(sym), Err::BytecodeGen_UnexpectedToken, node.GetToken());
         }
     }
 
@@ -857,7 +857,7 @@ namespace scrpt
             }
         }
 
-        throw CreateBytecodeGenEx(BytecodeGenErr::InsufficientRegisters, node.GetToken());
+        throw CreateEx(Err::BytecodeGen_InsufficientRegisters, node.GetToken());
     }
 
     void BytecodeGen::ReleaseRegister(char reg, bool unlock)
@@ -892,7 +892,7 @@ namespace scrpt
         const char* ident = node.GetToken()->GetString();
         if (this->LookupIdentOffset(ident, &offset))
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::DuplicateParameterName, node.GetToken());
+            throw CreateEx(Err::BytecodeGen_DuplicateParameterName, node.GetToken());
         }
 
         offset = _paramOffset--;
@@ -907,7 +907,7 @@ namespace scrpt
         // Check for multiple declaration
         if (!this->IsLocalIdentAvailable(node))
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::MulipleDeclaration, node.GetToken());
+            throw CreateEx(Err::BytecodeGen_MulipleDeclaration, node.GetToken());
         }
 
         // Reserve a register
@@ -937,7 +937,7 @@ namespace scrpt
         char offset;
         if (!this->LookupIdentOffset(node.GetToken()->GetString(), &offset))
         {
-            throw CreateBytecodeGenEx(BytecodeGenErr::UndeclaredIdentifierReference, node.GetToken());
+            throw CreateEx(Err::BytecodeGen_UndeclaredIdentifierReference, node.GetToken());
         }
 
         return offset;
@@ -980,26 +980,5 @@ namespace scrpt
         } while (idx > 0);
 
         return false;
-    }
-
-    const char* BytecodeGenErrToString(BytecodeGenErr err)
-    {
-        switch (err)
-        {
-            ENUM_CASE_TO_STRING(BytecodeGenErr::NoError);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::UnexpectedToken);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::FunctionRedefinition);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::ParameterCountExceeded);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::UndeclaredFunctionReference);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::IncorrectCallArity);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::MulipleDeclaration);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::UndeclaredIdentifierReference);
-            ENUM_CASE_TO_STRING(BytecodeGenErr::DuplicateParameterName);
-
-        default:
-            AssertFail("Missing case for BytecodeGenErr");
-        }
-
-        return nullptr;
     }
 }

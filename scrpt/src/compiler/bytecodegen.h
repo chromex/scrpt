@@ -63,19 +63,4 @@ namespace scrpt
         int _paramOffset;
         FunctionData* _fd;
     };
-
-    enum class BytecodeGenErr
-    {
-        NoError,
-        UnexpectedToken,
-        FunctionRedefinition,
-        ParameterCountExceeded,
-        UndeclaredFunctionReference,
-        IncorrectCallArity,
-        UndeclaredIdentifierReference,
-        MulipleDeclaration,
-        DuplicateParameterName,
-        InsufficientRegisters,
-    };
-    const char* BytecodeGenErrToString(BytecodeGenErr err);
 }

@@ -6,21 +6,6 @@
 
 namespace scrpt
 {
-	enum class RuntimeErr
-	{
-		NoError,
-		FailedFunctionLookup,
-		UnsupportedOperandType,
-		OperandMismatch,
-        StackOverflow,
-        StackUnderflow,
-        UnexpectedParamType,
-        BadParamRequest,
-        NotImplemented,
-        IncorrectArity,
-	};
-	const char* RuntimeErrToString(RuntimeErr err);
-
     enum class ParamId : int
     {
         _0 = 0,
@@ -78,7 +63,7 @@ namespace scrpt
         inline void LoadString(char reg, unsigned int id);
         inline void LoadList(char reg, List* list);
         inline void LoadMap(char reg, Map* map);
-        inline void ThrowErr(RuntimeErr err) const;
+        inline void ThrowErr(Err err) const;
         const FunctionData& LookupFunction(unsigned int ip) const;
         void FormatCallstackFunction(unsigned int ip, std::stringstream& ss) const;
         std::string CreateCallstack(unsigned int startingIp);
@@ -93,7 +78,7 @@ namespace scrpt
         StackObj* obj = this->GetParamBase(id);
         if (obj->v.type != StackType::Int)
         {
-            this->ThrowErr(RuntimeErr::UnexpectedParamType);
+            this->ThrowErr(Err::VM_UnexpectedParamType);
         }
 
         return obj->v.integer;
@@ -105,7 +90,7 @@ namespace scrpt
         StackObj* obj = this->GetParamBase(id);
         if (obj->v.type != StackType::Float)
         {
-            this->ThrowErr(RuntimeErr::UnexpectedParamType);
+            this->ThrowErr(Err::VM_UnexpectedParamType);
         }
 
         return obj->v.fp;
@@ -117,7 +102,7 @@ namespace scrpt
         StackObj* obj = this->GetParamBase(id);
         if (obj->v.type != StackType::Boolean)
         {
-            this->ThrowErr(RuntimeErr::UnexpectedParamType);
+            this->ThrowErr(Err::VM_UnexpectedParamType);
         }
 
         return !(obj->v.integer == 0);
@@ -133,10 +118,10 @@ namespace scrpt
         }
         else if (obj->v.type == StackType::StaticString)
         {
-            return _bytecode.strings[(unsigned int)obj->v.integer].c_str();
+            return obj->v.staticString;
         }
 
-        this->ThrowErr(RuntimeErr::UnexpectedParamType);
+        this->ThrowErr(Err::VM_UnexpectedParamType);
         return nullptr;
     }
 
@@ -146,7 +131,7 @@ namespace scrpt
         StackObj* obj = this->GetParamBase(id);
         if (obj->v.type != StackType::List)
         {
-            this->ThrowErr(RuntimeErr::UnexpectedParamType);
+            this->ThrowErr(Err::VM_UnexpectedParamType);
         }
 
         return obj->v.ref->list;

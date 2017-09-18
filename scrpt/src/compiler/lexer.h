@@ -64,16 +64,6 @@ namespace scrpt
     };
     const char* SymbolToString(Symbol sym);
 
-    enum class LexErr
-    {
-        NoError,
-        UnknownSymbol,
-        UnknownStringEscape,
-        NonTerminatedString,
-        InvalidNumber,
-    };
-    const char* LexErrToString(LexErr err);
-
     class Token
     {
     public:
@@ -123,7 +113,7 @@ namespace scrpt
         bool IsEndOfTerm(const char* c) const;
         bool GetRawTermLength(const char* c, size_t* length) const;
         size_t GetTermLength(const char* c) const;
-        std::unique_ptr<const char[]> GetTerm(const char* c, LexErr* err);
+        std::unique_ptr<const char[]> GetTerm(const char* c, Err* err);
         bool GetNumber(const char* c, size_t* rawLen, int* integer, float* fp) const;
 
         std::shared_ptr<const char> _sourceData;

@@ -2,34 +2,60 @@
 
 namespace scrpt
 {
-    class CompilerException : public std::exception
+    // Note: Add new error codes at the end of the relevant group so old errors persist their number code
+    enum class Err
+    {
+        NoError = 0,
+
+        Lexer_UnknownSymbol = 1,
+        Lexer_UnknownStringEscape,
+        Lexer_NonTerminatedString,
+        Lexer_InvalidNumber,
+        
+        Parser_UnexpectedSymbol = 1000,
+        Parser_BlockExpected,
+        Parser_ExpressionExpected,
+        Parser_StatementExpected,
+
+        BytecodeGen_UnexpectedToken = 2000,
+        BytecodeGen_FunctionRedefinition,
+        BytecodeGen_ParameterCountExceeded,
+        BytecodeGen_UndeclaredFunctionReference,
+        BytecodeGen_IncorrectCallArity,
+        BytecodeGen_UndeclaredIdentifierReference,
+        BytecodeGen_MulipleDeclaration,
+        BytecodeGen_DuplicateParameterName,
+        BytecodeGen_InsufficientRegisters,
+
+        VM_FailedFunctionLookup = 3000,
+        VM_UnsupportedOperandType,
+        VM_OperandMismatch,
+        VM_StackOverflow,
+        VM_StackUnderflow,
+        VM_UnexpectedParamType,
+        VM_BadParamRequest,
+        VM_NotImplemented,
+        VM_IncorrectArity,
+    };
+    const char* ErrToString(Err err);
+
+    class Exception : public std::exception
     {
     public:
-		explicit CompilerException(const std::string& message, std::shared_ptr<Token> token, ParseErr parseErr);
-		explicit CompilerException(const std::string& message, std::shared_ptr<Token> token, LexErr lexErr);
-		explicit CompilerException(const std::string& message, std::shared_ptr<Token> token, BytecodeGenErr bytecodeGenErr);
-		explicit CompilerException(const std::string& message, RuntimeErr err);
+		explicit Exception(const std::string& message, std::shared_ptr<Token> token, Err err);
+		explicit Exception(const std::string& message, Err err);
 
         virtual char const* what() const;
         std::shared_ptr<Token> GetToken() const;
-        ParseErr GetParseErr() const;
-        LexErr GetLexErr() const;
-        BytecodeGenErr GetBytecodeGenErr() const;
-        RuntimeErr GetRuntimeErr() const;
+        Err GetErr() const;
 
     private:
         std::string _message;
         std::shared_ptr<Token> _token;
-        ParseErr _parseErr;
-        LexErr _lexErr;
-        BytecodeGenErr _bytecodeGenErr;
-		RuntimeErr _runtimeErr;
+        Err _err;
     };
 
-    CompilerException CreateLexerEx(LexErr err, std::shared_ptr<Token> token);
-    CompilerException CreateParseEx(ParseErr err, std::shared_ptr<Token> token);
-    CompilerException CreateParseEx(const std::string& message, ParseErr err, std::shared_ptr<Token> token);
-    CompilerException CreateBytecodeGenEx(BytecodeGenErr err, std::shared_ptr<Token> token);
-    CompilerException CreateBytecodeGenEx(const std::string& message, BytecodeGenErr err, std::shared_ptr<Token> token);
-	CompilerException CreateRuntimeEx(const std::string& message, RuntimeErr err);
+    Exception CreateEx(Err err, std::shared_ptr<Token> token);
+    Exception CreateEx(const std::string& message, Err err, std::shared_ptr<Token> token);
+	Exception CreateEx(const std::string& message, Err err);
 }

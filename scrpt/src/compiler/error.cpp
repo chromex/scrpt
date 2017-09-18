@@ -4,123 +4,104 @@
 
 namespace scrpt
 {
-	CompilerException::CompilerException(const std::string& message, std::shared_ptr<Token> token, ParseErr parseErr)
+	Exception::Exception(const std::string& message, std::shared_ptr<Token> token, Err err)
 		: _message(message)
 		, _token(token)
-		, _parseErr(parseErr)
+		, _err(err)
 	{
 	}
 
-	CompilerException::CompilerException(const std::string& message, std::shared_ptr<Token> token, LexErr lexErr)
+	Exception::Exception(const std::string& message, Err err)
 		: _message(message)
-		, _token(token)
-		, _lexErr(lexErr)
+		, _err(err)
 	{
 	}
 
-	CompilerException::CompilerException(const std::string& message, std::shared_ptr<Token> token, BytecodeGenErr bytecodeGenErr)
-		: _message(message)
-		, _token(token)
-		, _bytecodeGenErr(bytecodeGenErr)
-	{
-	}
-
-	CompilerException::CompilerException(const std::string& message, RuntimeErr err)
-		: _message(message)
-		, _runtimeErr(err)
-	{
-	}
-
-	const char* CompilerException::what() const
+	const char* Exception::what() const
     {
         return _message.c_str();
     }
 
-    std::shared_ptr<Token> CompilerException::GetToken() const
+    std::shared_ptr<Token> Exception::GetToken() const
     {
         return _token;
     }
 
-    ParseErr CompilerException::GetParseErr() const
+    Err Exception::GetErr() const
     {
-        return _parseErr;
+        return _err;
     }
 
-    LexErr CompilerException::GetLexErr() const
-    {
-        return _lexErr;
-    }
-
-    BytecodeGenErr CompilerException::GetBytecodeGenErr() const
-    {
-        return _bytecodeGenErr;
-    }
-
-    RuntimeErr CompilerException::GetRuntimeErr() const
-    {
-        return _runtimeErr;
-    }
-
-    CompilerException CreateLexerEx(LexErr err, std::shared_ptr<Token> token)
+    Exception CreateEx(Err err, std::shared_ptr<Token> token)
     {
         AssertNotNull(token);
 
         std::stringstream ss;
-        ss << "Lexical Analysis Failure: " << LexErrToString(err) << std::endl;
+        ss << ErrToString(err) << std::endl;
         ss << token->GetFormattedTokenCode();
 
-        return CompilerException(ss.str(), token, err);
+        return Exception(ss.str(), token, err);
     }
 
-    CompilerException CreateParseEx(ParseErr err, std::shared_ptr<Token> token)
+    Exception CreateEx(const std::string& message, Err err, std::shared_ptr<Token> token)
     {
         AssertNotNull(token);
 
         std::stringstream ss;
-        ss << "Parser Failure: " << ParseErrToString(err) << std::endl;
+        ss << ErrToString(err) << ": " << message << std::endl;
         ss << token->GetFormattedTokenCode();
 
-        return CompilerException(ss.str(), token, err);
+        return Exception(ss.str(), token, err);
     }
 
-    CompilerException CreateParseEx(const std::string& message, ParseErr err, std::shared_ptr<Token> token)
-    {
-        AssertNotNull(token);
-
-        std::stringstream ss;
-        ss << "Parser Failure: " << ParseErrToString(err) << ": " << message << std::endl;
-        ss << token->GetFormattedTokenCode();
-
-        return CompilerException(ss.str(), token, err);
-    }
-
-    CompilerException CreateBytecodeGenEx(BytecodeGenErr err, std::shared_ptr<Token> token)
-    {
-        AssertNotNull(token);
-
-        std::stringstream ss;
-        ss << "Bytecode Gen Failure: " << BytecodeGenErrToString(err) << std::endl;
-        ss << token->GetFormattedTokenCode();
-
-        return CompilerException(ss.str(), token, err);
-    }
-
-    CompilerException CreateBytecodeGenEx(const std::string& message, BytecodeGenErr err, std::shared_ptr<Token> token)
-    {
-        AssertNotNull(token);
-
-        std::stringstream ss;
-        ss << "Bytecode Gen Failure: " << BytecodeGenErrToString(err) << ": " << message << std::endl;
-        ss << token->GetFormattedTokenCode();
-
-        return CompilerException(ss.str(), token, err);
-    }
-
-	CompilerException CreateRuntimeEx(const std::string& message, RuntimeErr err)
+	Exception CreateEx(const std::string& message, Err err)
 	{
 		std::stringstream ss;
-		ss << "Runtime Failure: " << RuntimeErrToString(err) << ": " << message;
+		ss << ErrToString(err) << ": " << message;
 
-		return CompilerException(ss.str(), err);
+		return Exception(ss.str(), err);
 	}
+
+    const char* ErrToString(Err err)
+    {
+        switch (err)
+        {
+            ENUM_CASE_TO_STRING(Err::NoError);
+
+            ENUM_CASE_TO_STRING(Err::Lexer_UnknownSymbol);
+            ENUM_CASE_TO_STRING(Err::Lexer_UnknownStringEscape);
+            ENUM_CASE_TO_STRING(Err::Lexer_NonTerminatedString);
+            ENUM_CASE_TO_STRING(Err::Lexer_InvalidNumber);
+
+            ENUM_CASE_TO_STRING(Err::Parser_UnexpectedSymbol);
+            ENUM_CASE_TO_STRING(Err::Parser_BlockExpected);
+            ENUM_CASE_TO_STRING(Err::Parser_ExpressionExpected);
+            ENUM_CASE_TO_STRING(Err::Parser_StatementExpected);
+
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_UnexpectedToken);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_FunctionRedefinition);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_ParameterCountExceeded);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_UndeclaredFunctionReference);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_IncorrectCallArity);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_UndeclaredIdentifierReference);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_MulipleDeclaration);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_DuplicateParameterName);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_InsufficientRegisters);
+
+            ENUM_CASE_TO_STRING(Err::VM_FailedFunctionLookup);
+            ENUM_CASE_TO_STRING(Err::VM_UnsupportedOperandType);
+            ENUM_CASE_TO_STRING(Err::VM_OperandMismatch);
+            ENUM_CASE_TO_STRING(Err::VM_StackOverflow);
+            ENUM_CASE_TO_STRING(Err::VM_StackUnderflow);
+            ENUM_CASE_TO_STRING(Err::VM_UnexpectedParamType);
+            ENUM_CASE_TO_STRING(Err::VM_BadParamRequest);
+            ENUM_CASE_TO_STRING(Err::VM_NotImplemented);
+            ENUM_CASE_TO_STRING(Err::VM_IncorrectArity);
+
+        default:
+            AssertFail("Missing case for Err");
+        }
+
+        return nullptr;
+    }
 }

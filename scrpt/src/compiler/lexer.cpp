@@ -36,7 +36,7 @@ namespace scrpt
 
         // Starting token properties
         Symbol sym = Symbol::Error;
-        LexErr err = LexErr::UnknownSymbol;
+        Err err = Err::Lexer_UnknownSymbol;
         std::unique_ptr<const char[]> string;
         int integer = 0;
         float fp = nanf(nullptr);
@@ -92,7 +92,7 @@ namespace scrpt
             }
             else
             {
-                err = LexErr::InvalidNumber;
+                err = Err::Lexer_InvalidNumber;
             }
         }
         else if (c == '"')
@@ -109,7 +109,7 @@ namespace scrpt
             }
             else
             {
-                err = LexErr::NonTerminatedString;
+                err = Err::Lexer_NonTerminatedString;
             }
         }
 #define SINGLE_CHAR_SYM(C, Sym) else if (c == C) { sym = Sym; _location += 1; }
@@ -142,13 +142,13 @@ namespace scrpt
         TRIPLE_COMPLEX_SYM('-', '=', '-', Symbol::Minus, Symbol::MinusEq, Symbol::MinusMinus)
         TRIPLE_COMPLEX_SYM('+', '=', '+', Symbol::Plus, Symbol::PlusEq, Symbol::PlusPlus)
 
-        err = sym != Symbol::Error ? LexErr::NoError : err;
+        err = sym != Symbol::Error ? Err::NoError : err;
 
         // Construct token
         _token = std::make_shared<Token>(sym, _sourceData, _location, _lineStart, _line, _position, std::move(string), integer, fp);
-        if (err != LexErr::NoError)
+        if (err != Err::NoError)
         {
-            throw CreateLexerEx(err, _token);
+            throw CreateEx(err, _token);
         }
     }
 
@@ -240,7 +240,7 @@ namespace scrpt
         return len;
     }
 
-    std::unique_ptr<const char[]> Lexer::GetTerm(const char* c, LexErr* err)
+    std::unique_ptr<const char[]> Lexer::GetTerm(const char* c, Err* err)
     {
         size_t len = this->GetTermLength(c);
         char* term(new char[len + 1]);
@@ -259,7 +259,7 @@ namespace scrpt
                 case '"': term[pos] = '\"'; break;
                 default:
                     delete[] term;
-                    *err = LexErr::UnknownStringEscape;
+                    *err = Err::Lexer_UnknownStringEscape;
                     return nullptr;
                 }
             }
@@ -385,23 +385,6 @@ namespace scrpt
 
         default:
             AssertFail("Missing case for symbol");
-        }
-
-        return nullptr;
-    }
-
-    const char* LexErrToString(LexErr err)
-    {
-        switch (err)
-        {
-            ENUM_CASE_TO_STRING(LexErr::NoError);
-            ENUM_CASE_TO_STRING(LexErr::UnknownSymbol);
-            ENUM_CASE_TO_STRING(LexErr::UnknownStringEscape);
-            ENUM_CASE_TO_STRING(LexErr::NonTerminatedString);
-            ENUM_CASE_TO_STRING(LexErr::InvalidNumber);
-
-        default:
-            AssertFail("Missing case for LexErr");
         }
 
         return nullptr;
