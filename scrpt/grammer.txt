@@ -17,6 +17,7 @@ bool = "true" | "false";
 constant = terminal | number | bool | list | dict;
 
 ident = ( letter | "_" ), { letter | digit | "_" };
+new = "new", ident, "(", [ expression, { ",", expression } ], ")";
 
 key_value_pair = terminal, ":", expression;
 dict = "{", [ key_value_pair, { ",", key_value_pair }, [ "," ] ], "}";
@@ -30,17 +31,17 @@ block = "{", { statement }, "}";
 
 do_loop = "do", block, "while", "(", expression, ")", ";"
 while_loop = "while", "(", expression, ")", statement;
-for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
+for_loop = "for", "(", [ ( expression | decl ) ], ";", [ expression ], ";", [ expression ], ")", statement;
 if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
 case = ( "case", constant | "default" ), ":", { statement };
 switch = "switch", "(", expression, ")", "{", { case }, "}";
 return = "return", [ expression ], ";";
 break = "break", ";";
-decl = "var", ident, [ "=", expression ], ";";
+decl = "var", ident, [ "=", expression ];
 
 parens = "(", expression, ")";
 
-ex_term = ident | constant | parens;
+ex_term = ident | constant | parens | new;
 ex_postfix = ex_term, { ( index | call | dot_expand | colon_expand | "++" | "--" ) } | ex_term;
 ex_prefix = ( "!" | "++" | "--" | "-" ), ex_prefix | ex7;
 ex_mul = ex_prefix, ( "*" | "/" | "%" ), ex_mul | ex_prefix;
@@ -52,7 +53,10 @@ ex_and = ex_equals, "&&", ex_and | ex_equals;
 ex_or = ex_and, "||", ex_or | ex_and;
 expression = ex_or, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" | "#=" ), expression | ex_or;
 
-statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break | decl;
+statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break | ( decl , ";" );
+
+ctor = ident, "(", [ ident, { ",", ident } ], ")", block;
+class = "class", ident, "{", { ( ctor | func | ( decl, ";" ) ) }, "}";
 
 func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
-program = { func };
+program = { ( func | class ) };

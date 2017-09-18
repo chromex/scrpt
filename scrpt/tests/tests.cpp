@@ -83,6 +83,51 @@ func main() {
     // VM
     //
 
+    // Inheritance
+    // Properties
+    // Static methods
+    // Methods as first class types
+    // Type testing (e.g. tc2 is TestClass)
+    // Operator overloading
+    // Native classes
+    // Default values
+    // Remove old : syntax
+    // this.
+    // ctor chaining
+
+    ACCUMTEST("Full class", Phase::Lexer, 0, scrpt::Err::NoError, false, false, R"testCode(
+class TestClass
+{
+    TestClass()
+    {
+        a = 7;
+        b = 8;
+    }
+
+    TestClass(p1, p2)
+    {
+        a = p1;
+        b = p2;
+    }
+
+    func Sum()
+    {
+        return a + b;
+    }
+
+    var a;
+    var b;
+}
+
+func main() {
+    var tc1 = new TestClass();
+    var tc2 = new TestClass(15, 9);
+    var sum = tc1.Sum() + tc2.Sum();
+    tc2.b = 0;
+    return sum + tc2.Sum();
+}
+)testCode");
+
     ACCUMTEST("Complex Expansion", Phase::VM, 11, scrpt::Err::NoError, false, false, R"testCode(
 func main() {
     foo()[1][2].blah("hello world");
