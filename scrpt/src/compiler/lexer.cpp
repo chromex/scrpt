@@ -61,6 +61,7 @@ namespace scrpt
             if (strcmp(ident.get(), "do") == 0)				sym = Symbol::Do;
             else if (strcmp(ident.get(), "if") == 0)		sym = Symbol::If;
             else if (strcmp(ident.get(), "for") == 0)		sym = Symbol::For;
+            else if (strcmp(ident.get(), "new") == 0)       sym = Symbol::New;
             else if (strcmp(ident.get(), "var") == 0)       sym = Symbol::Var;
             else if (strcmp(ident.get(), "case") == 0)		sym = Symbol::Case;
             else if (strcmp(ident.get(), "else") == 0)		sym = Symbol::Else;
@@ -68,6 +69,7 @@ namespace scrpt
             else if (strcmp(ident.get(), "func") == 0)		sym = Symbol::Func;
             else if (strcmp(ident.get(), "true") == 0)		sym = Symbol::True;
             else if (strcmp(ident.get(), "break") == 0)		sym = Symbol::Break;
+            else if (strcmp(ident.get(), "class") == 0)     sym = Symbol::Class;
             else if (strcmp(ident.get(), "false") == 0)		sym = Symbol::False;
             else if (strcmp(ident.get(), "while") == 0)		sym = Symbol::While;
             else if (strcmp(ident.get(), "return") == 0)	sym = Symbol::Return;
@@ -381,6 +383,8 @@ namespace scrpt
             ENUM_CASE_TO_STRING(Symbol::SemiColon);
             ENUM_CASE_TO_STRING(Symbol::Func);
             ENUM_CASE_TO_STRING(Symbol::Var);
+            ENUM_CASE_TO_STRING(Symbol::Class);
+            ENUM_CASE_TO_STRING(Symbol::New);
             ENUM_CASE_TO_STRING(Symbol::End);
 
         default:

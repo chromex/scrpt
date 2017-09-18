@@ -60,6 +60,8 @@ namespace scrpt
         SemiColon,
         Func,
         Var,
+        Class,
+        New,
         End,
     };
     const char* SymbolToString(Symbol sym);
