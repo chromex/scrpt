@@ -9,7 +9,7 @@ static const char* validSyntax = R"testCode(
 func main(arg1, arg2)
 {
 	// Values
-	strings = ["", "simple", "new\nline", "\"quote\" of doom", "\ttab\t\tmore"];
+	var strings = ["", "simple", "new\nline", "\"quote\" of doom", "\ttab\t\tmore"];
 	numbers = [0, 1, 0123, 0.1234, 19203.1, -1.23, -0];
 	_bo0leans = [true, false];
 

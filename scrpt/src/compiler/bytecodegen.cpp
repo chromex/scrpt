@@ -151,6 +151,10 @@ namespace scrpt
             this->PopScope();
             break;
 
+        case Symbol::Var:
+            this->CompileDecl(node);
+            break;
+
         default:
             auto result = this->CompileExpression(node);
             if (std::get<0>(result))
@@ -223,7 +227,7 @@ namespace scrpt
                 if (firstChildSym == Symbol::Ident)
                 {
                     char rhsReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
-                    outReg = this->AddLocal(firstChild);
+                    outReg = this->LookupIdentOffset(firstChild);
                     this->AddOp(OpCode::Store, outReg, rhsReg);
                     this->ReleaseRegister(rhsReg);
                 }
@@ -429,8 +433,15 @@ namespace scrpt
         // Begin
         if (!beginExpr.IsEmpty())
         {
-            char reg = GetRegResult(this->CompileExpression(beginExpr));
-            this->ReleaseRegister(reg);
+            if (beginExpr.GetSym() == Symbol::Var)
+            {
+                this->CompileDecl(beginExpr);
+            }
+            else
+            {
+                char reg = GetRegResult(this->CompileExpression(beginExpr));
+                this->ReleaseRegister(reg);
+            }
         }
 
         // Check
@@ -555,6 +566,7 @@ namespace scrpt
 
     void BytecodeGen::CompileReturn(const AstNode& node)
     {
+        Assert(node.GetSym() == Symbol::Return, "Unexpected node");
         Assert(node.GetChildren().size() < 2, "Unexpected number of children");
         char reg;
         if (node.GetChildren().size() > 0)
@@ -568,6 +580,22 @@ namespace scrpt
         }
         this->AddOp(OpCode::Ret, reg);
         this->ReleaseRegister(reg);
+    }
+
+    void BytecodeGen::CompileDecl(const AstNode& node)
+    {
+        Assert(node.GetSym() == Symbol::Var, "Unexpected node");
+        Assert(node.GetChildren().size() > 0 && node.GetChildren().size() < 3, "Unexpected number of children");
+
+        // TODO: Claiming the register before resolving the expression does result in some register
+        // use bloat that isn't necessary.
+        char identReg = this->AddLocal(node.GetFirstChild());
+        if (node.GetChildren().size() == 2)
+        {
+            char rhsReg = GetRegResult(this->CompileExpression(node.GetSecondChild()));
+            this->AddOp(OpCode::Store, identReg, rhsReg);
+            this->ReleaseRegister(rhsReg);
+        }
     }
 
     char BytecodeGen::CompileCall(const AstNode& node)
@@ -876,16 +904,30 @@ namespace scrpt
     {
         Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
 
-        const char* ident = node.GetToken()->GetString();
-        char offset;
-        if (!this->LookupIdentOffset(ident, &offset))
+        // Check for multiple declaration
+        if (!this->IsLocalIdentAvailable(node))
         {
-            offset = this->ClaimRegister(node, true);
-            _scopeStack.back()[ident] = offset; 
-            _fd->localLookup[offset] = ident;
+            throw CreateBytecodeGenEx(BytecodeGenErr::MulipleDeclaration, node.GetToken());
         }
 
-        return offset;
+        // Reserve a register
+        char reg = this->ClaimRegister(node, true);
+
+        // Add data to the scope stack and function debug local lookup
+        const char* ident = node.GetToken()->GetString();
+        _scopeStack.back()[ident] = reg;
+        _fd->localLookup[reg] = ident;
+
+        return reg;
+    }
+
+    bool BytecodeGen::IsLocalIdentAvailable(const AstNode& node) const
+    {
+        Assert(node.GetSym() == Symbol::Ident, "Unexpected symbol");
+        Assert(_scopeStack.size() > 0, "Adding local with an empty scope stack");
+
+        auto& scope = _scopeStack.back();
+        return scope.find(node.GetToken()->GetString()) == scope.end();
     }
 
     char BytecodeGen::LookupIdentOffset(const AstNode& node) const
@@ -950,6 +992,7 @@ namespace scrpt
             ENUM_CASE_TO_STRING(BytecodeGenErr::ParameterCountExceeded);
             ENUM_CASE_TO_STRING(BytecodeGenErr::UndeclaredFunctionReference);
             ENUM_CASE_TO_STRING(BytecodeGenErr::IncorrectCallArity);
+            ENUM_CASE_TO_STRING(BytecodeGenErr::MulipleDeclaration);
             ENUM_CASE_TO_STRING(BytecodeGenErr::UndeclaredIdentifierReference);
             ENUM_CASE_TO_STRING(BytecodeGenErr::DuplicateParameterName);
 

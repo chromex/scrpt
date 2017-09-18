@@ -36,7 +36,7 @@ case = ( "case", constant | "default" ), ":", { statement };
 switch = "switch", "(", expression, ")", "{", { case }, "}";
 return = "return", [ expression ], ";";
 break = "break", ";";
-continue = "continue", ";";
+decl = "var", ident, [ "=", expression ], ";";
 
 parens = "(", expression, ")";
 
@@ -52,7 +52,7 @@ ex_and = ex_equals, "&&", ex_and | ex_equals;
 ex_or = ex_and, "||", ex_or | ex_and;
 expression = ex_or, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" | "#=" ), expression | ex_or;
 
-statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break;
+statement = [ expression ], ";" | block | do_loop | while_loop | for_loop | if | switch | return | break | decl;
 
 func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
 program = { func };

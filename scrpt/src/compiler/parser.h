@@ -71,5 +71,6 @@ namespace scrpt
         bool ParseParens();
         bool ParseList();
         bool ParseDict();
+        bool ParseDecl();
     };
 }
