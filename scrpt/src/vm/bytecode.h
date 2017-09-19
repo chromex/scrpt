@@ -62,8 +62,10 @@ namespace scrpt
     {
         std::string name;
         unsigned int nMembers;
-        // function name -> id mapping?
-        // ctor list?
+        // TODO: unsigned int ident id -> func id mapping
+        // TODO: ctor list: nParam -> func id mapping?
+
+        // TODO: unsigned int ident id -> name? this is only needed for debug...
     };
 
     struct Bytecode

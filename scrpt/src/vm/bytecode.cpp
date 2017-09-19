@@ -82,7 +82,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
     for (unsigned int idx = 0; idx < bytecode.functions.size(); ++idx)
     {
         const FunctionData& func = bytecode.functions[idx];
-        std::cout << func.name << "/" << (int)func.nParam;
+        std::cout << func.name << " nParam: " << (int)func.nParam;
         if (func.external)
             std::cout << " external" << std::endl;
         else

@@ -41,7 +41,14 @@ namespace scrpt
 
         for (const AstNode* node : ast.GetChildren())
         {
-            this->CompileFunction(*node);
+            if (node->GetSym() == Symbol::Func)
+            {
+                this->CompileFunction(*node);
+            }
+            else if (node->GetSym() == Symbol::Class)
+            {
+                this->CompileClass(*node);
+            }
         }
     }
 
@@ -67,21 +74,26 @@ namespace scrpt
         // Get the name
         const AstNode& ident = *children.front();
         this->Verify(ident, Symbol::Ident);
-        std::string name = ident.GetToken()->GetString();
+
+        // Count params
+        size_t nParam = children.size() - 2;
+        this->RegisterFunction(ident.GetToken()->GetString(), nParam, ident);
+    }
+
+    void BytecodeGen::RegisterFunction(const std::string& name, unsigned char nParam, const AstNode& ident)
+    {
+        if (nParam > MAX_PARAM)
+        {
+            CreateEx(Err::BytecodeGen_ParameterCountExceeded, ident.GetToken());
+        }
 
         if (_functionLookup.find(name) != _functionLookup.end())
         {
             CreateEx(Err::BytecodeGen_FunctionRedefinition, ident.GetToken());
         }
 
-        size_t nParam = children.size() - 2;
-        if (nParam > MAX_PARAM)
-        {
-            CreateEx(Err::BytecodeGen_ParameterCountExceeded, ident.GetToken());
-        }
-
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ name, (unsigned char)nParam, 0, 0xFFFFFFFF, false });
+        _functions.push_back(FunctionData{ name, nParam, 0, 0xFFFFFFFF, false });
     }
 
     // TODO: Max classes
@@ -111,18 +123,40 @@ namespace scrpt
             {
                 // Member
                 case Symbol::Var:
+                    // TODO: Detect dupes
                     ++nMembers;
                     break;
 
                 // Method
                 case Symbol::Func:
-                    // TODO
+                {
+                    std::stringstream ss;
+                    ss << name << "." << (*child)->GetFirstChild().GetToken()->GetString();
+                        
+                    size_t nParam = (*child)->GetChildren().size() - 2;
+
+                    this->RegisterFunction(ss.str(), nParam, **child);
+
                     break;
+                }
 
                 // Ctor
                 case Symbol::Ident:
-                    // TODO
+                {
+                    if (!name.compare((*child)->GetToken()->GetString()) != 0)
+                    {
+                        CreateEx(Err::BytecodeGen_BadConstructorName, (*child)->GetToken());
+                    }
+
+                    unsigned char nParam = (*child)->GetChildren().size() - 1;
+
+                    std::stringstream ss;
+                    ss << name << "." << name << "/" << (unsigned int)nParam;
+                    
+                    this->RegisterFunction(ss.str(), nParam, **child);
+                    
                     break;
+                }
 
                 default:
                     AssertFail("Unexpected class level node");
@@ -178,6 +212,15 @@ namespace scrpt
         this->PopScope();
 
         _fd = nullptr;
+    }
+
+    void BytecodeGen::CompileClass(const AstNode& node)
+    {
+        this->Verify(node, Symbol::Class);
+
+        // Compile ctors
+
+        // Compile methods
     }
 
     void BytecodeGen::CompileStatement(const AstNode& node)
@@ -474,7 +517,8 @@ namespace scrpt
             break;
 
         default:
-            AssertFail("Unhandled Symbol in expression compilation: " << SymbolToString(node.GetToken()->GetSym()));
+            // TODO: This isn't effective
+            //AssertFail("Unhandled Symbol in expression compilation: " << SymbolToString(node.GetToken()->GetSym()));
             success = false;
         }
 

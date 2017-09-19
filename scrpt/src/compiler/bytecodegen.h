@@ -13,8 +13,10 @@ namespace scrpt
 
     private:
         void RecordFunction(const AstNode& node);
+        void RegisterFunction(const std::string& name, unsigned char nParam, const AstNode& ident);
         void RecordClass(const AstNode& node);
         void CompileFunction(const AstNode& node);
+        void CompileClass(const AstNode& node);
         void CompileStatement(const AstNode& node);
         std::tuple<bool, char> CompileExpression(const AstNode& node);
         void CompileFor(const AstNode& node);
