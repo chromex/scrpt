@@ -32,6 +32,10 @@ namespace scrpt
         bool Expect(Symbol sym);
 
         void ParseProgram();
+        bool ParseFunction();
+        bool ParseClass();
+        bool ParseConstructor();
+        void ParseIdentList();
         bool ParseBlock(bool expect);
         bool ParseStatement(bool expect);
         bool ParseExpression(bool expect);
@@ -59,6 +63,7 @@ namespace scrpt
         bool ParseCase();
         bool ParseConstant(bool expect);
         bool ParseParens();
+        bool ParseNew();
         bool ParseList();
         bool ParseDict();
         bool ParseDecl();

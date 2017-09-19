@@ -86,7 +86,6 @@ func main() {
     // Inheritance
     // Properties
     // Static methods
-    // Methods as first class types
     // Type testing (e.g. tc2 is TestClass)
     // Operator overloading
     // Native classes
@@ -95,7 +94,7 @@ func main() {
     // this.
     // ctor chaining
 
-    ACCUMTEST("Full class", Phase::Lexer, 0, scrpt::Err::NoError, true, false, R"testCode(
+    ACCUMTEST("Full class", Phase::Parser, 0, scrpt::Err::NoError, true, false, R"testCode(
 class TestClass
 {
     TestClass()
@@ -550,6 +549,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                 if (err != resultErr) ss << ex.what() << std::endl;
             }
 
+            // TODO: This should be added to the stringstream
             if (verbose) parser.DumpAst();
 
             passed = err == resultErr;

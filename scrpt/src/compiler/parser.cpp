@@ -119,38 +119,93 @@ namespace scrpt
 
     void Parser::ParseProgram()
     {
-        while (this->Accept(Symbol::Func))
+        while (this->ParseFunction() || this->ParseClass())
+        {}
+
+        this->Expect(Symbol::End);
+    }
+
+    bool Parser::ParseFunction()
+    {
+        if (this->Accept(Symbol::Func))
         {
-            if (this->Test(Symbol::Ident))
-            {
-                this->AddNode();
-
-                _lexer->Advance();
-                this->Expect(Symbol::LParen);
-
-                while (this->Test(Symbol::Ident))
-                {
-                    this->AddNode();
-
-                    _lexer->Advance();
-                    if (this->Allow(Symbol::Comma) && !this->Test(Symbol::Ident))
-                    {
-                        throw CreateExpectedSymEx(Symbol::Ident, _lexer);
-                    }
-                }
-
-                this->Expect(Symbol::RParen);
-                this->ParseBlock(true);
-            }
-            else
+            if (!this->Accept(Symbol::Ident))
             {
                 throw CreateExpectedSymEx(Symbol::Ident, _lexer);
             }
 
             this->PopNode();
+
+            this->Expect(Symbol::LParen);
+            this->ParseIdentList();
+            this->Expect(Symbol::RParen);
+
+            this->ParseBlock(true);
+
+            this->PopNode();
+            return true;
         }
 
-        this->Expect(Symbol::End);
+        return false;
+    }
+
+    bool Parser::ParseClass()
+    {
+        if (this->Accept(Symbol::Class))
+        {
+            if (!this->Accept(Symbol::Ident))
+            {
+                throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+            }
+
+            this->PopNode();
+            this->Expect(Symbol::LBracket);
+
+            while (
+                this->ParseFunction() ||
+                this->ParseConstructor() ||
+                (this->ParseDecl() && this->Expect(Symbol::SemiColon)))
+            {
+            }
+
+            this->Expect(Symbol::RBracket);
+
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseConstructor()
+    {
+        if (this->Accept(Symbol::Ident))
+        {
+            this->Expect(Symbol::LParen);
+            this->ParseIdentList();
+            this->Expect(Symbol::RParen);
+
+            this->ParseBlock(true);
+
+            this->PopNode();
+            return true;
+        }
+
+        return false;
+    }
+
+    void Parser::ParseIdentList()
+    {
+        while (this->Test(Symbol::Ident))
+        {
+            this->AddNode();
+            _lexer->Advance();
+
+            if (this->Allow(Symbol::Comma) && !this->Test(Symbol::Ident))
+            {
+                throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+            }
+        }
     }
 
     bool Parser::ParseBlock(bool expect)
@@ -425,7 +480,7 @@ namespace scrpt
             return true;
         }
 
-        return this->ParseConstant(false) || this->ParseParens();
+        return this->ParseConstant(false) || this->ParseParens() || this->ParseNew();
     }
 
     bool Parser::ParseCall()
@@ -681,6 +736,37 @@ namespace scrpt
             this->Expect(Symbol::RParen);
             this->PopNode();
             return true;
+        }
+
+        return false;
+    }
+
+    bool Parser::ParseNew()
+    {
+        if (this->Accept(Symbol::New))
+        {
+            // Class name
+            if (!this->Accept(Symbol::Ident))
+            {
+                throw CreateExpectedSymEx(Symbol::Ident, _lexer);
+            }
+            this->PopNode();
+
+            this->Expect(Symbol::LParen);
+
+            // Params
+            bool expectExp = false;
+            while (this->ParseExpression(expectExp))
+            {
+                expectExp = this->Allow(Symbol::Comma);
+                if (!expectExp) break;
+            }
+
+            this->Expect(Symbol::RParen);
+
+            this->PopNode();
+            return true;
+
         }
 
         return false;
