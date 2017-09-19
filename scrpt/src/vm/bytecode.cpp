@@ -90,6 +90,13 @@ void scrpt::Decompile(const Bytecode& bytecode)
         functionEntryMap[func.entry] = idx;
     }
 
+    std::cout << "[CLASSES]" << std::endl;
+    for (unsigned int idx = 0; idx < bytecode.classes.size(); ++idx)
+    {
+        const ClassData& cd = bytecode.classes[idx];
+        std::cout << cd.name << " members: " << cd.nMembers << std::endl;
+    }
+
     std::cout << "[BYTECODE]" << std::endl;
     if (bytecode.data.size() > 0)
     {

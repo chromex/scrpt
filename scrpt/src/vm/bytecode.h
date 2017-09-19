@@ -58,10 +58,19 @@ namespace scrpt
         std::map<int, std::string> localLookup;
     };
 
+    struct ClassData
+    {
+        std::string name;
+        unsigned int nMembers;
+        // function name -> id mapping?
+        // ctor list?
+    };
+
     struct Bytecode
     {
         std::vector<unsigned char> data;
         std::vector<FunctionData> functions;
+        std::vector<ClassData> classes;
         std::vector<std::string> strings;
     };
 

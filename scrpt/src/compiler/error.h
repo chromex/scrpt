@@ -26,6 +26,7 @@ namespace scrpt
         BytecodeGen_MulipleDeclaration,
         BytecodeGen_DuplicateParameterName,
         BytecodeGen_InsufficientRegisters,
+        BytecodeGen_ClassRedefinition,
 
         VM_FailedFunctionLookup = 3000,
         VM_UnsupportedOperandType,

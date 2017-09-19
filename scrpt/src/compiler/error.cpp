@@ -87,6 +87,7 @@ namespace scrpt
             ENUM_CASE_TO_STRING(Err::BytecodeGen_MulipleDeclaration);
             ENUM_CASE_TO_STRING(Err::BytecodeGen_DuplicateParameterName);
             ENUM_CASE_TO_STRING(Err::BytecodeGen_InsufficientRegisters);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_ClassRedefinition);
 
             ENUM_CASE_TO_STRING(Err::VM_FailedFunctionLookup);
             ENUM_CASE_TO_STRING(Err::VM_UnsupportedOperandType);

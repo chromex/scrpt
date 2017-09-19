@@ -94,7 +94,7 @@ func main() {
     // this.
     // ctor chaining
 
-    ACCUMTEST("Full class", Phase::Parser, 0, scrpt::Err::NoError, true, false, R"testCode(
+    ACCUMTEST("Full class", Phase::BytecodeGen, 0, scrpt::Err::NoError, true, false, R"testCode(
 class TestClass
 {
     TestClass()

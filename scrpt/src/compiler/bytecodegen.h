@@ -13,6 +13,7 @@ namespace scrpt
 
     private:
         void RecordFunction(const AstNode& node);
+        void RecordClass(const AstNode& node);
         void CompileFunction(const AstNode& node);
         void CompileStatement(const AstNode& node);
         std::tuple<bool, char> CompileExpression(const AstNode& node);
@@ -55,6 +56,8 @@ namespace scrpt
         std::vector<unsigned char> _byteBuffer;
         std::vector<FunctionData> _functions;
         std::map<std::string, unsigned int> _functionLookup;
+        std::vector<ClassData> _classes;
+        std::map<std::string, unsigned int> _classLookup;
         std::vector<std::string> _strings;
         std::map<std::string, unsigned int> _stringLookup;
         std::vector< std::map<std::string, char> > _scopeStack;

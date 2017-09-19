@@ -25,7 +25,18 @@ namespace scrpt
     {
         for (const AstNode* node : ast.GetChildren())
         {
-            this->RecordFunction(*node);
+            if (node->GetSym() == Symbol::Func)
+            {
+                this->RecordFunction(*node);
+            }
+            else if (node->GetSym() == Symbol::Class)
+            {
+                this->RecordClass(*node);
+            }
+            else
+            {
+                AssertFail("Unexpected top level node");
+            }
         }
 
         for (const AstNode* node : ast.GetChildren())
@@ -40,10 +51,12 @@ namespace scrpt
         Bytecode bytecode;
         bytecode.data = std::move(_byteBuffer);
         bytecode.functions = std::move(_functions);
+        bytecode.classes = std::move(_classes);
         bytecode.strings = std::move(_strings);
         return bytecode;
     }
 
+    // TODO: Max functions
     void BytecodeGen::RecordFunction(const AstNode& node)
     {
         // Check the node
@@ -68,11 +81,61 @@ namespace scrpt
         }
 
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ ident.GetToken()->GetString(), (unsigned char)nParam, 0, 0xFFFFFFFF, false });
+        _functions.push_back(FunctionData{ name, (unsigned char)nParam, 0, 0xFFFFFFFF, false });
+    }
+
+    // TODO: Max classes
+    void BytecodeGen::RecordClass(const AstNode& node)
+    {
+        // Check the node
+        this->Verify(node, Symbol::Class);
+        auto& children = node.GetChildren();
+        Assert(children.size() > 0, "Class node is missing a name");
+         
+        // Get the name
+        const AstNode& ident = *children.front();
+        this->Verify(ident, Symbol::Ident);
+        std::string name = ident.GetToken()->GetString();
+
+        if (_classLookup.find(name) != _classLookup.end())
+        {
+            CreateEx(Err::BytecodeGen_ClassRedefinition, ident.GetToken());
+        }
+
+        unsigned int nMembers = 0;
+
+        // Iterate through children, skipping the first which is the class name
+        for (auto child = ++children.begin(); child != children.end(); ++child)
+        {
+            switch ((*child)->GetSym())
+            {
+                // Member
+                case Symbol::Var:
+                    ++nMembers;
+                    break;
+
+                // Method
+                case Symbol::Func:
+                    // TODO
+                    break;
+
+                // Ctor
+                case Symbol::Ident:
+                    // TODO
+                    break;
+
+                default:
+                    AssertFail("Unexpected class level node");
+            }
+        }
+
+        _classLookup[name] = (unsigned int)_classes.size();
+        _classes.push_back(ClassData{ name, nMembers });
     }
 
     void BytecodeGen::CompileFunction(const AstNode& node)
     {
+        this->Verify(node, Symbol::Func);
         const AstNode& ident = node.GetFirstChild();
 
         // Update function table with bytecode offset
