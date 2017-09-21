@@ -80,7 +80,7 @@ namespace scrpt
         this->RegisterFunction(ident.GetToken()->GetString(), nParam, ident);
     }
 
-    void BytecodeGen::RegisterFunction(const std::string& name, unsigned char nParam, const AstNode& ident)
+    void BytecodeGen::RegisterFunction(const std::string& name, size_t nParam, const AstNode& ident)
     {
         if (nParam > MAX_PARAM)
         {
@@ -93,7 +93,7 @@ namespace scrpt
         }
 
         _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ name, nParam, 0, 0xFFFFFFFF, false });
+        _functions.push_back(FunctionData{ name, (unsigned char)nParam, 0, 0xFFFFFFFF, false });
     }
 
     // TODO: Max classes
@@ -148,7 +148,7 @@ namespace scrpt
                         CreateEx(Err::BytecodeGen_BadConstructorName, (*child)->GetToken());
                     }
 
-                    unsigned char nParam = (*child)->GetChildren().size() - 1;
+                    size_t nParam = (*child)->GetChildren().size() - 1;
 
                     std::stringstream ss;
                     ss << name << "." << name << "/" << (unsigned int)nParam;
