@@ -24,7 +24,7 @@ namespace scrpt
         void AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func);
 		void AddSource(std::shared_ptr<const char> source);
 		void Finalize();
-        void Decompile();
+        void Decompile(std::stringstream& ss);
         StackVal* Execute(const char* funcName);
 
         void SetExternResult(StackType type, int val);

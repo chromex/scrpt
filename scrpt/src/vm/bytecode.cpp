@@ -69,75 +69,84 @@ std::string DisplayRegisterName(const scrpt::FunctionData& fd, char reg)
     return ss.str();
 }
 
-void scrpt::Decompile(const Bytecode& bytecode)
+void scrpt::Decompile(const Bytecode& bytecode, std::stringstream& ss)
 {
-    std::cout << "[STRINGS]" << std::endl;
+    ss << "[STRINGS]" << std::endl;
     for (unsigned int idx = 0; idx < bytecode.strings.size(); ++idx)
     {
-        std::cout << idx << ": " << bytecode.strings[idx] << std::endl;
+        ss << idx << ": " << bytecode.strings[idx] << std::endl;
     }
 
-    std::cout << "[FUNCTIONS]" << std::endl;
-    std::map<unsigned int, unsigned int> functionEntryMap;
-    for (unsigned int idx = 0; idx < bytecode.functions.size(); ++idx)
+#define DISPLAY_FUNC(Func) { ss << "Func: " << Func.name << " nParam: " << (int)Func.nParam; if (Func.external) ss << " external" << std::endl; else ss << " entry: " << Func.entry << std::endl; }
+
+	std::map<unsigned int, const FunctionData*> functionEntryMap;
+
+    ss << "[FUNCTIONS]" << std::endl;
+    for (const FunctionData& func : bytecode.functions)
     {
-        const FunctionData& func = bytecode.functions[idx];
-        std::cout << func.name << " nParam: " << (int)func.nParam;
-        if (func.external)
-            std::cout << " external" << std::endl;
-        else
-            std::cout << " entry: " << func.entry << std::endl;
-        functionEntryMap[func.entry] = idx;
+		DISPLAY_FUNC(func);
+        functionEntryMap[func.entry] = &func;
     }
 
-    std::cout << "[CLASSES]" << std::endl;
-    for (unsigned int idx = 0; idx < bytecode.classes.size(); ++idx)
+    ss << "[CLASSES]" << std::endl;
+    for (const ClassData& cd : bytecode.classes)
     {
-        const ClassData& cd = bytecode.classes[idx];
-        std::cout << cd.name << " members: " << cd.nMembers << std::endl;
+        ss << "Class: " << cd.name << " members: " << cd.nMembers << std::endl;
+
+		for (const FunctionData& func : cd.methods)
+		{
+			DISPLAY_FUNC(func);
+			functionEntryMap[func.entry] = &func;
+		}
+
+		for (std::pair<unsigned int, const FunctionData&> ctorPair : cd.ctors)
+		{
+			const FunctionData& func = ctorPair.second;
+			DISPLAY_FUNC(func);
+			functionEntryMap[func.entry] = &func;
+		}
     }
 
-    std::cout << "[BYTECODE]" << std::endl;
+    ss << "[BYTECODE]" << std::endl;
+	ss << std::setfill('0') << std::setw(4);
     if (bytecode.data.size() > 0)
     {
         const unsigned char* data = &bytecode.data[0];
-        unsigned int currentFunction = -1;
+        const FunctionData* currentFunction = nullptr;
         for (unsigned int idx = 0; idx < bytecode.data.size(); ++idx)
         {
             auto entry = functionEntryMap.find(idx);
             if (entry != functionEntryMap.end())
             {
                 currentFunction = entry->second;
-                std::cout << "; begin " << bytecode.functions[entry->second].name << std::endl;
+                ss << "; begin " << currentFunction->name << std::endl;
             }
 
-            std::cout << std::setfill('0') << std::setw(4) << idx << " ";
+            ss << idx << " ";
 
             if (bytecode.data[idx] >= (unsigned char)OpCode::__Num)
             {
-                std::cout << "<< invalid opcode >>" << std::endl;
+                ss << "<< invalid opcode >>" << std::endl;
                 continue;
             }
 
             OpCode op = (OpCode)(bytecode.data[idx]);
 
-            std::cout << std::string(OpCodeToString(op)).substr(8);
+            ss << std::string(OpCodeToString(op)).substr(8);
 
             char reg0 = *(char*)(data + idx + 1);
             char reg1 = *(char*)(data + idx + 2);
             char reg2 = *(char*)(data + idx + 3);
 
-            const FunctionData& fd = bytecode.functions[currentFunction];
-
-#define DISPLAY_ONE_REG std::cout << " " << DisplayRegisterName(fd, reg0); idx += 1;
-#define DISPLAY_TWO_REG std::cout << " " << DisplayRegisterName(fd, reg0) << " " << DisplayRegisterName(fd, reg1); idx += 2;
-#define DISPLAY_THREE_REG std::cout << " " << DisplayRegisterName(fd, reg0) << " " << DisplayRegisterName(fd, reg1) << " " << DisplayRegisterName(fd, reg2); idx += 3;
-#define DISPLAY_ONE_REG_UINT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(unsigned int *)(data + idx + 2); idx += 5;
-#define DISPLAY_ONE_REG_INT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(int *)(data + idx + 2); idx += 5;
-#define DISPLAY_ONE_REG_FLOAT std::cout << " " << DisplayRegisterName(fd, reg0) << " " << *(float *)(data + idx + 2); idx += 5;
-#define DISPLAY_ONE_REG_CHAR std::cout << " " << DisplayRegisterName(fd, reg0) << " " << (int)*(char *)(data + idx + 2); idx += 2;
-#define DISPLAY_UINT std::cout << " " << *(unsigned int *)(data + idx + 1); idx += 4;
-#define DISPLAY_CHAR std::cout << " " << (int)reg0; idx += 1; 
+#define DISPLAY_ONE_REG ss << " " << DisplayRegisterName(*currentFunction, reg0); idx += 1;
+#define DISPLAY_TWO_REG ss << " " << DisplayRegisterName(*currentFunction, reg0) << " " << DisplayRegisterName(*currentFunction, reg1); idx += 2;
+#define DISPLAY_THREE_REG ss << " " << DisplayRegisterName(*currentFunction, reg0) << " " << DisplayRegisterName(*currentFunction, reg1) << " " << DisplayRegisterName(*currentFunction, reg2); idx += 3;
+#define DISPLAY_ONE_REG_UINT ss << " " << DisplayRegisterName(*currentFunction, reg0) << " " << *(unsigned int *)(data + idx + 2); idx += 5;
+#define DISPLAY_ONE_REG_INT ss << " " << DisplayRegisterName(*currentFunction, reg0) << " " << *(int *)(data + idx + 2); idx += 5;
+#define DISPLAY_ONE_REG_FLOAT ss << " " << DisplayRegisterName(*currentFunction, reg0) << " " << *(float *)(data + idx + 2); idx += 5;
+#define DISPLAY_ONE_REG_CHAR ss << " " << DisplayRegisterName(*currentFunction, reg0) << " " << (int)*(char *)(data + idx + 2); idx += 2;
+#define DISPLAY_UINT ss << " " << *(unsigned int *)(data + idx + 1); idx += 4;
+#define DISPLAY_CHAR ss << " " << (int)reg0; idx += 1; 
 
             switch (op)
             {
@@ -149,7 +158,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::LoadString: DISPLAY_ONE_REG_UINT; break;
             case OpCode::LoadFunc: 
                 DISPLAY_ONE_REG_UINT;
-                std::cout << " ; " << bytecode.functions[*(unsigned int *)(data + idx - 3)].name;
+                ss << " ; " << bytecode.functions[*(unsigned int *)(data + idx - 3)].name;
                 break;
             case OpCode::Store: DISPLAY_TWO_REG; break;
             case OpCode::StoreIdx: DISPLAY_THREE_REG; break;
@@ -184,7 +193,7 @@ void scrpt::Decompile(const Bytecode& bytecode)
             case OpCode::PopN: DISPLAY_CHAR; break;
             }
 
-            std::cout << std::endl;
+            ss << std::endl;
         }
     }
 }

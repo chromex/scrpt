@@ -13,7 +13,7 @@ namespace scrpt
 
     private:
         void RecordFunction(const AstNode& node);
-        void RegisterFunction(const std::string& name, size_t nParam, const AstNode& ident);
+		static void RegisterFunction(std::vector<FunctionData>& functions, std::map<std::string, unsigned int>& functionLookup, const std::string& name, size_t nParam, const AstNode& ident);
         void RecordClass(const AstNode& node);
         void CompileFunction(const AstNode& node);
         void CompileClass(const AstNode& node);

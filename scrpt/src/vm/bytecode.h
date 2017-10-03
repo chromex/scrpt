@@ -62,8 +62,11 @@ namespace scrpt
     {
         std::string name;
         unsigned int nMembers;
-        // TODO: unsigned int ident id -> func id mapping
-        // TODO: ctor list: nParam -> func id mapping?
+
+		std::map<std::string, unsigned int> methodLookup;
+		std::vector<FunctionData> methods;
+
+		std::map<unsigned char, FunctionData> ctors;
 
         // TODO: unsigned int ident id -> name? this is only needed for debug...
     };
@@ -76,5 +79,5 @@ namespace scrpt
         std::vector<std::string> strings;
     };
 
-    void Decompile(const Bytecode& bytecode);
+    void Decompile(const Bytecode& bytecode, std::stringstream& ss);
 }

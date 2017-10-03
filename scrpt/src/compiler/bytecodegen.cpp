@@ -77,24 +77,29 @@ namespace scrpt
 
         // Count params
         size_t nParam = children.size() - 2;
-        this->RegisterFunction(ident.GetToken()->GetString(), nParam, ident);
+        this->RegisterFunction(_functions, _functionLookup, ident.GetToken()->GetString(), nParam, ident);
     }
 
-    void BytecodeGen::RegisterFunction(const std::string& name, size_t nParam, const AstNode& ident)
-    {
-        if (nParam > MAX_PARAM)
-        {
-            CreateEx(Err::BytecodeGen_ParameterCountExceeded, ident.GetToken());
-        }
+	void BytecodeGen::RegisterFunction(
+		std::vector<FunctionData>& functions, 
+		std::map<std::string, unsigned int>& functionLookup, 
+		const std::string& name, 
+		size_t nParam, 
+		const AstNode& ident)
+	{
+		if (nParam > MAX_PARAM)
+		{
+			CreateEx(Err::BytecodeGen_ParameterCountExceeded, ident.GetToken());
+		}
 
-        if (_functionLookup.find(name) != _functionLookup.end())
-        {
-            CreateEx(Err::BytecodeGen_FunctionRedefinition, ident.GetToken());
-        }
+		if (functionLookup.find(name) != functionLookup.end())
+		{
+			CreateEx(Err::BytecodeGen_FunctionRedefinition, ident.GetToken());
+		}
 
-        _functionLookup[name] = (unsigned int)_functions.size();
-        _functions.push_back(FunctionData{ name, (unsigned char)nParam, 0, 0xFFFFFFFF, false });
-    }
+		functionLookup[name] = (unsigned int)functions.size();
+		functions.push_back(FunctionData{ name, (unsigned char)nParam, 0, 0xFFFFFFFF, false });
+	}
 
     // TODO: Max classes
     void BytecodeGen::RecordClass(const AstNode& node)
@@ -114,7 +119,9 @@ namespace scrpt
             CreateEx(Err::BytecodeGen_ClassRedefinition, ident.GetToken());
         }
 
-        unsigned int nMembers = 0;
+		_classLookup[name] = (unsigned int)_classes.size();
+		_classes.push_back(ClassData{ name, 0 });
+		ClassData& cd = _classes.back();
 
         // Iterate through children, skipping the first which is the class name
         for (auto child = ++children.begin(); child != children.end(); ++child)
@@ -124,18 +131,17 @@ namespace scrpt
                 // Member
                 case Symbol::Var:
                     // TODO: Detect dupes
-                    ++nMembers;
+					// TODO: Record name string table ids
+                    ++cd.nMembers;
                     break;
 
                 // Method
                 case Symbol::Func:
                 {
-                    std::stringstream ss;
-                    ss << name << "." << (*child)->GetFirstChild().GetToken()->GetString();
-                        
+					std::string methodName = (*child)->GetFirstChild().GetToken()->GetString();
                     size_t nParam = (*child)->GetChildren().size() - 2;
 
-                    this->RegisterFunction(ss.str(), nParam, **child);
+                    RegisterFunction(cd.methods, cd.methodLookup, methodName, nParam, **child);
 
                     break;
                 }
@@ -150,11 +156,18 @@ namespace scrpt
 
                     size_t nParam = (*child)->GetChildren().size() - 1;
 
-                    std::stringstream ss;
-                    ss << name << "." << name << "/" << (unsigned int)nParam;
-                    
-                    this->RegisterFunction(ss.str(), nParam, **child);
-                    
+					if (nParam > MAX_PARAM)
+					{
+						CreateEx(Err::BytecodeGen_ParameterCountExceeded, (*child)->GetToken());
+					}
+
+					if (cd.ctors.find((unsigned char)nParam) != cd.ctors.end())
+					{
+						CreateEx(Err::BytecodeGen_DuplicateConstructorSize, (*child)->GetToken());
+					}
+
+					cd.ctors[(unsigned char)nParam] = FunctionData{ name, (unsigned char)nParam, 0, 0xFFFFFFFF, false };
+
                     break;
                 }
 
@@ -162,9 +175,6 @@ namespace scrpt
                     AssertFail("Unexpected class level node");
             }
         }
-
-        _classLookup[name] = (unsigned int)_classes.size();
-        _classes.push_back(ClassData{ name, nMembers });
     }
 
     void BytecodeGen::CompileFunction(const AstNode& node)

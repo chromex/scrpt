@@ -573,7 +573,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                 if (err != resultErr) ss << ex.what() << std::endl;
             }
 
-            if (verbose) Decompile(compiler.GetBytecode());
+            if (verbose) Decompile(compiler.GetBytecode(), ss);
 
             passed = err == resultErr;
         }
@@ -592,7 +592,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                 vm.AddExternFunc("randomInt", 0, randomInt);
                 vm.AddSource(DuplicateSource(source));
                 vm.Finalize();
-                if (verbose) vm.Decompile();
+                if (verbose) vm.Decompile(ss);
                 // Run the first, untimed test to validate test and ensure the code path is warm
                 scrpt::StackVal* ret = vm.Execute("main");
                 gotExpectedResult = ret != nullptr && ret->integer == resultValue;

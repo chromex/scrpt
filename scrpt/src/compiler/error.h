@@ -28,6 +28,7 @@ namespace scrpt
         BytecodeGen_InsufficientRegisters,
         BytecodeGen_ClassRedefinition,
         BytecodeGen_BadConstructorName,
+		BytecodeGen_DuplicateConstructorSize,
 
         VM_FailedFunctionLookup = 3000,
         VM_UnsupportedOperandType,

@@ -180,9 +180,9 @@ namespace scrpt
 		}
 	}
 
-    void VM::Decompile()
+    void VM::Decompile(std::stringstream& ss)
     {
-        scrpt::Decompile(_bytecode);
+        scrpt::Decompile(_bytecode, ss);
     }
 
 	StackVal* VM::Execute(const char* funcName)
