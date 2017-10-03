@@ -2,53 +2,53 @@
 
 #define COMPONENTNAME "stdlib"
 
-void ToString(scrpt::VM* vm, scrpt::StackVal* val, std::stringstream& ss)
+void ToString(scrpt::VM* vm, scrpt::StackVal* val, std::ostream& os)
 {
     AssertNotNull(val);
 
     switch (val->type)
     {
-    case scrpt::StackType::Null: ss << "<NULL>"; break;
-    case scrpt::StackType::Boolean: ss << (val->integer == 0 ? "false" : "true"); break;
-    case scrpt::StackType::Int: ss << val->integer; break;
-    case scrpt::StackType::Float: ss << val->fp; break;
+    case scrpt::StackType::Null: os << "<NULL>"; break;
+    case scrpt::StackType::Boolean: os << (val->integer == 0 ? "false" : "true"); break;
+    case scrpt::StackType::Int: os << val->integer; break;
+    case scrpt::StackType::Float: os << val->fp; break;
     case scrpt::StackType::Func:
         {
             auto& fd = vm->GetFunction(val->id);
-            ss << "<" << fd.name << "/" << (int)fd.nParam << ">";
+			os << "<" << fd.name << "/" << (int)fd.nParam << ">";
         }
         break;
-    case scrpt::StackType::DynamicString: ss << *val->ref->string; break;
-    case scrpt::StackType::StaticString: ss << val->staticString; break;
+    case scrpt::StackType::DynamicString: os << *val->ref->string; break;
+    case scrpt::StackType::StaticString: os << val->staticString; break;
     case scrpt::StackType::List:
         {
             scrpt::List* list = val->ref->list;
-            ss << "[";
+			os << "[";
             bool showComma = false;
             for (auto item = list->begin(); item != list->end(); ++item)
             {
                 if (showComma)
-                    ss << ", ";
-                ToString(vm, &item->v, ss);
+					os << ", ";
+                ToString(vm, &item->v, os);
                 showComma = true;
             }
-            ss << "]";
+			os << "]";
         }
         break;
     case scrpt::StackType::Map:
         {
             scrpt::Map* map = val->ref->map;
-            ss << "{";
+			os << "{";
             bool showComma = false;
             for (auto& entry : *map)
             {
                 if (showComma)
-                    ss << ", ";
-                ss << entry.first << ": ";
-                ToString(vm, &entry.second.v, ss);
+					os << ", ";
+				os << entry.first << ": ";
+                ToString(vm, &entry.second.v, os);
                 showComma = true;
             }
-            ss << "}";
+			os << "}";
         }
         break;
 
@@ -61,11 +61,11 @@ void scrpt::RegisterStdLib(VM& vm)
 {
     vm.AddExternFunc("print", 1, [](VM* vm) 
     {
-        std::stringstream ss;
+        std::ostringstream os;
         scrpt::StackVal* val = vm->GetParam<scrpt::StackVal*>(scrpt::ParamId::_0);
-        ss << ">>> ";
-        ToString(vm, val, ss);
-        std::cout << ss.str() << std::endl;
+		os << ">>> ";
+        ToString(vm, val, os);
+        std::cout << os.str() << std::endl;
         vm->SetExternResult(StackType::Null, 0);
     });
 

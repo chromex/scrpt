@@ -6,10 +6,10 @@ void TraceMessage(const char* message);
 // TODO: This should be converted to varargs for perf reasons
 #define __Trace(level, message) \
 { \
-    std::stringstream ss; \
-    ss.precision(3); \
-    ss << std::fixed << "[" #level "] " << COMPONENTNAME ":" << __LINE__ << " " << message; \
-    TraceMessage(ss.str().c_str()); \
+    std::ostringstream os; \
+    os.precision(3); \
+    os << std::fixed << "[" #level "] " << COMPONENTNAME ":" << __LINE__ << " " << message; \
+    TraceMessage(os.str().c_str()); \
 }
 
 #define TraceVerbose(message) __Trace(Verbose, message)

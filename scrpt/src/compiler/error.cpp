@@ -36,30 +36,30 @@ namespace scrpt
     {
         AssertNotNull(token);
 
-        std::stringstream ss;
-        ss << ErrToString(err) << std::endl;
-        ss << token->GetFormattedTokenCode();
+        std::ostringstream os;
+		os << ErrToString(err) << std::endl;
+		os << token->GetFormattedTokenCode();
 
-        return Exception(ss.str(), token, err);
+        return Exception(os.str(), token, err);
     }
 
     Exception CreateEx(const std::string& message, Err err, std::shared_ptr<Token> token)
     {
         AssertNotNull(token);
 
-        std::stringstream ss;
-        ss << ErrToString(err) << ": " << message << std::endl;
-        ss << token->GetFormattedTokenCode();
+        std::ostringstream os;
+		os << ErrToString(err) << ": " << message << std::endl;
+		os << token->GetFormattedTokenCode();
 
-        return Exception(ss.str(), token, err);
+        return Exception(os.str(), token, err);
     }
 
 	Exception CreateEx(const std::string& message, Err err)
 	{
-		std::stringstream ss;
-		ss << ErrToString(err) << ": " << message;
+		std::ostringstream os;
+		os << ErrToString(err) << ": " << message;
 
-		return Exception(ss.str(), err);
+		return Exception(os.str(), err);
 	}
 
     const char* ErrToString(Err err)

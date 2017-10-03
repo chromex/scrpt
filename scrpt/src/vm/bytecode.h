@@ -79,5 +79,5 @@ namespace scrpt
         std::vector<std::string> strings;
     };
 
-    void Decompile(const Bytecode& bytecode, std::stringstream& ss);
+    void Decompile(const Bytecode& bytecode, std::ostream& os);
 }

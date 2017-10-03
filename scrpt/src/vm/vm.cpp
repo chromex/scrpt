@@ -180,9 +180,9 @@ namespace scrpt
 		}
 	}
 
-    void VM::Decompile(std::stringstream& ss)
+    void VM::Decompile(std::ostream& os)
     {
-        scrpt::Decompile(_bytecode, ss);
+        scrpt::Decompile(_bytecode, os);
     }
 
 	StackVal* VM::Execute(const char* funcName)
@@ -540,22 +540,23 @@ namespace scrpt
                 StackType t2 = v2->v.type; 
                 if (t1 == StackType::DynamicString || t1 == StackType::StaticString)
                 {
-                    std::stringstream ss(
+                    std::ostringstream os(
                         t1 == StackType::StaticString ? v1->v.staticString : v1->v.ref->string->c_str(),
                         std::ios_base::ate | std::ios_base::out);
+					// TODO: This should leverage the stdlib tostring impl
                     switch (t2)
                     {
                     case StackType::Boolean:
-                        ss << (v2->v.integer == 0 ? "false" : "true");
+						os << (v2->v.integer == 0 ? "false" : "true");
                         break;
                     case StackType::DynamicString:
-                        ss << *v2->v.ref->string;
+						os << *v2->v.ref->string;
                         break;
                     case StackType::Float:
-                        ss << v2->v.fp;
+						os << v2->v.fp;
                         break;
                     case StackType::Int:
-                        ss << v2->v.integer;
+						os << v2->v.integer;
                         break;
                     case StackType::List:
                         this->ThrowErr(Err::VM_NotImplemented);
@@ -564,15 +565,15 @@ namespace scrpt
                         this->ThrowErr(Err::VM_NotImplemented);
                         break;
                     case StackType::Null:
-                        ss << "null";
+						os << "null";
                         break;
                     case StackType::StaticString:
-                        ss << v2->v.staticString;
+						os << v2->v.staticString;
                         break;
                     default:
                         ThrowErr(Err::VM_NotImplemented);
                     }
-                    this->LoadString(REG2, ss.str().c_str());
+                    this->LoadString(REG2, os.str().c_str());
                 }
                 else if (t1 == StackType::List)
                 {
@@ -990,29 +991,29 @@ namespace scrpt
         return _bytecode.functions.back();
     }
 
-    void VM::FormatCallstackFunction(unsigned int ip, std::stringstream& ss) const
+    void VM::FormatCallstackFunction(unsigned int ip, std::ostream& os) const
     {
         const FunctionData& fd = this->LookupFunction(ip);
-        ss << "> " << fd.name << "(";
+		os << "> " << fd.name << "(";
         for (int idx = 0; idx < fd.nParam; ++idx)
         {
             auto entry = fd.localLookup.find(-1 - fd.nParam + idx);
             Assert(entry != fd.localLookup.end(), "Failed to find param in local lookup");
-            ss << entry->second;
+			os << entry->second;
 
             if (idx + 1 < fd.nParam)
             {
-                ss << ", ";
+				os << ", ";
             }
         }
-        ss << ")" << std::endl;
+		os << ")" << std::endl;
     }
 
     std::string VM::CreateCallstack(unsigned int startingIp)
     {
-        std::stringstream ss;
-        ss << std::endl;
-        this->FormatCallstackFunction(startingIp, ss);
+        std::ostringstream os;
+		os << std::endl;
+        this->FormatCallstackFunction(startingIp, os);
 
         while (_stackPointer > _stackRoot)
         {
@@ -1033,7 +1034,7 @@ namespace scrpt
             POP1
         }
 
-        return ss.str();
+        return os.str();
     }
 
     void VM::ConditionalJump(StackObj* obj, int test, unsigned int dest)

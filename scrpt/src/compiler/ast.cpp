@@ -139,38 +139,38 @@ namespace scrpt
         return *_children.back();
     }
 
-    static void DumpAst(const AstNode* node, unsigned int depth, std::stringstream& ss)
+    static void DumpAst(const AstNode* node, unsigned int depth, std::ostream& os)
     {
         AssertNotNull(node);
 
         for (unsigned int i = 0; i < depth; ++i)
         {
-            ss << "  ";
+			os << "  ";
         }
 
         if (!node->IsEmpty())
         {
             Symbol sym = node->GetToken()->GetSym();
-            ss << SymbolToString(sym);
+			os << SymbolToString(sym);
             switch (sym)
             {
             case Symbol::Ident:
-            case Symbol::Terminal: ss << ": '" << node->GetToken()->GetString() << "' "; break;
-            case Symbol::Int: ss << ": " << node->GetToken()->GetInt(); break;
-            case Symbol::Float: ss << ": " << node->GetToken()->GetFloat(); break;
+            case Symbol::Terminal: os << ": '" << node->GetToken()->GetString() << "' "; break;
+            case Symbol::Int: os << ": " << node->GetToken()->GetInt(); break;
+            case Symbol::Float: os << ": " << node->GetToken()->GetFloat(); break;
             }
-            if (node->IsPostfix()) ss << ": POSTFIX";
-            if (node->IsConstant()) ss << ": CONSTANT";
-            ss << std::endl;
+            if (node->IsPostfix()) os << ": POSTFIX";
+            if (node->IsConstant()) os << ": CONSTANT";
+			os << std::endl;
 
             for (const AstNode* child : node->GetChildren())
             {
-                DumpAst(child, depth + 1, ss);
+                DumpAst(child, depth + 1, os);
             }
         }
         else
         {
-            ss << "EMTPY" << std::endl;
+			os << "EMTPY" << std::endl;
         }
     }
 
@@ -178,11 +178,11 @@ namespace scrpt
     {
         AssertNotNull(node);
 
-        std::stringstream ss;
+        std::ostringstream os;
         for (const AstNode* child : node->GetChildren())
         {
-            DumpAst(child, 0, ss);
+            DumpAst(child, 0, os);
         }
-        std::cout << ss.str();
+        std::cout << os.str();
     }
 }

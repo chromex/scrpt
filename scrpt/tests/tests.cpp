@@ -491,15 +491,15 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
     const int nTimedRuns = 10;
 
     // Setup log line
-    std::stringstream ss;
+    std::ostringstream os;
     switch (phase)
     {
-    case Phase::Lexer: ss << "L"; break;
-    case Phase::Parser: ss << "P"; break;
-    case Phase::BytecodeGen: ss << "B"; break;
-    case Phase::VM: ss << "V"; break;
+    case Phase::Lexer: os << "L"; break;
+    case Phase::Parser: os << "P"; break;
+    case Phase::BytecodeGen: os << "B"; break;
+    case Phase::VM: os << "V"; break;
     }
-    ss << "|" << testName << "> ";
+	os << "|" << testName << "> ";
 
     // Run test
     bool passed = false;
@@ -518,7 +518,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                     token = lexer.Current();
                     if (verbose)
                     {
-                        ss << token->SymToString() << std::endl;
+						os << token->SymToString() << std::endl;
                     }
                 } while (token->GetSym() != scrpt::Symbol::End);
             }
@@ -527,7 +527,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                 token = ex.GetToken();
                 err = ex.GetErr();
                 if (resultErr != err)
-                    ss << std::endl << ex.what() << std::endl;
+					os << std::endl << ex.what() << std::endl;
             }
 
             passed = resultErr == err;
@@ -546,7 +546,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
             catch (scrpt::Exception& ex)
             {
                 err = ex.GetErr();
-                if (err != resultErr) ss << ex.what() << std::endl;
+                if (err != resultErr) os << ex.what() << std::endl;
             }
 
             // TODO: This should be added to the stringstream
@@ -570,10 +570,10 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
             catch (scrpt::Exception& ex)
             {
                 err = ex.GetErr();
-                if (err != resultErr) ss << ex.what() << std::endl;
+                if (err != resultErr) os << ex.what() << std::endl;
             }
 
-            if (verbose) Decompile(compiler.GetBytecode(), ss);
+            if (verbose) Decompile(compiler.GetBytecode(), os);
 
             passed = err == resultErr;
         }
@@ -592,7 +592,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                 vm.AddExternFunc("randomInt", 0, randomInt);
                 vm.AddSource(DuplicateSource(source));
                 vm.Finalize();
-                if (verbose) vm.Decompile(ss);
+                if (verbose) vm.Decompile(os);
                 // Run the first, untimed test to validate test and ensure the code path is warm
                 scrpt::StackVal* ret = vm.Execute("main");
                 gotExpectedResult = ret != nullptr && ret->integer == resultValue;
@@ -606,13 +606,13 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                     }
                     LARGE_INTEGER endTime = GetTime();
                     runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart) / (double)nTimedRuns;
-                    ss << "[" << runtime << "] ";
+					os << "[" << runtime << "] ";
                 }
             }
             catch (scrpt::Exception& ex)
             {
                 err = ex.GetErr();
-                if (err != resultErr) ss << ex.what() << std::endl;
+                if (err != resultErr) os << ex.what() << std::endl;
             }
 
             passed = err == resultErr && gotExpectedResult;
@@ -623,14 +623,14 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
     // Display Status
     if (passed)
     {
-        ss << "Passed" << std::endl;
+		os << "Passed" << std::endl;
     }
     else
     {
-        ss << "<<< Failed >>>" << std::endl;
+		os << "<<< Failed >>>" << std::endl;
     }
 
-    std::cout << ss.str();
+    std::cout << os.str();
 
     return passed;
 }

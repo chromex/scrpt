@@ -24,7 +24,7 @@ namespace scrpt
         void AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func);
 		void AddSource(std::shared_ptr<const char> source);
 		void Finalize();
-        void Decompile(std::stringstream& ss);
+        void Decompile(std::ostream& os);
         StackVal* Execute(const char* funcName);
 
         void SetExternResult(StackType type, int val);
@@ -65,7 +65,7 @@ namespace scrpt
         inline void LoadMap(char reg, Map* map);
         inline void ThrowErr(Err err) const;
         const FunctionData& LookupFunction(unsigned int ip) const;
-        void FormatCallstackFunction(unsigned int ip, std::stringstream& ss) const;
+        void FormatCallstackFunction(unsigned int ip, std::ostream& os) const;
         std::string CreateCallstack(unsigned int startingIp);
         StackObj* GetParamBase(ParamId id);
 
