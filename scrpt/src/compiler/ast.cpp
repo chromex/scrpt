@@ -14,7 +14,7 @@ namespace scrpt
 
     AstNode::AstNode(AstNode* parent)
         : _parent(parent)
-		, _postfix(false)
+        , _postfix(false)
         , _constant(false)
     {
         AssertNotNull(parent);
@@ -23,7 +23,7 @@ namespace scrpt
     AstNode::AstNode(AstNode* parent, std::shared_ptr<Token> token)
         : _token(token)
         , _parent(parent)
-		, _postfix(false)
+        , _postfix(false)
         , _constant(false)
     {
         AssertNotNull(token);
@@ -66,18 +66,18 @@ namespace scrpt
         return _parent;
     }
 
-	AstNode* AstNode::SwapUnaryOp(std::shared_ptr<Token> token, bool postfix)
-	{
-		Assert(_children.size() >= 1, "Must have at least one child to perform unary swap");
+    AstNode* AstNode::SwapUnaryOp(std::shared_ptr<Token> token, bool postfix)
+    {
+        Assert(_children.size() >= 1, "Must have at least one child to perform unary swap");
 
-		AstNode* t1 = _children.back();
-		_children.pop_back();
+        AstNode* t1 = _children.back();
+        _children.pop_back();
 
-		AstNode* newNode = this->AddChild(token);
-		newNode->_postfix = postfix;
-		newNode->AddChild(t1);
-		return newNode;
-	}
+        AstNode* newNode = this->AddChild(token);
+        newNode->_postfix = postfix;
+        newNode->AddChild(t1);
+        return newNode;
+    }
 
     std::shared_ptr<Token> AstNode::GetToken() const
     {
@@ -89,10 +89,10 @@ namespace scrpt
         return _children;
     }
 
-	bool AstNode::IsPostfix() const
-	{
-		return _postfix;
-	}
+    bool AstNode::IsPostfix() const
+    {
+        return _postfix;
+    }
 
     void AstNode::SetConstant()
     {
@@ -145,13 +145,13 @@ namespace scrpt
 
         for (unsigned int i = 0; i < depth; ++i)
         {
-			os << "  ";
+            os << "  ";
         }
 
         if (!node->IsEmpty())
         {
             Symbol sym = node->GetToken()->GetSym();
-			os << SymbolToString(sym);
+            os << SymbolToString(sym);
             switch (sym)
             {
             case Symbol::Ident:
@@ -161,7 +161,7 @@ namespace scrpt
             }
             if (node->IsPostfix()) os << ": POSTFIX";
             if (node->IsConstant()) os << ": CONSTANT";
-			os << std::endl;
+            os << std::endl;
 
             for (const AstNode* child : node->GetChildren())
             {
@@ -170,7 +170,7 @@ namespace scrpt
         }
         else
         {
-			os << "EMTPY" << std::endl;
+            os << "EMTPY" << std::endl;
         }
     }
 

@@ -499,13 +499,13 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
     case Phase::BytecodeGen: os << "B"; break;
     case Phase::VM: os << "V"; break;
     }
-	os << "|" << testName << "> ";
+    os << "|" << testName << "> ";
 
     // Run test
     bool passed = false;
     switch (phase)
     {
-        case Phase::Lexer:
+    case Phase::Lexer:
         {
             scrpt::Lexer lexer(DuplicateSource(source));
             std::shared_ptr<scrpt::Token> token;
@@ -518,7 +518,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                     token = lexer.Current();
                     if (verbose)
                     {
-						os << token->SymToString() << std::endl;
+                        os << token->SymToString() << std::endl;
                     }
                 } while (token->GetSym() != scrpt::Symbol::End);
             }
@@ -527,14 +527,14 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                 token = ex.GetToken();
                 err = ex.GetErr();
                 if (resultErr != err)
-					os << std::endl << ex.what() << std::endl;
+                    os << std::endl << ex.what() << std::endl;
             }
 
             passed = resultErr == err;
         }
         break;
 
-        case Phase::Parser:
+    case Phase::Parser:
         {
             scrpt::Err err = scrpt::Err::NoError;
             scrpt::Parser parser;
@@ -556,7 +556,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
         }
         break;
 
-        case Phase::BytecodeGen:
+    case Phase::BytecodeGen:
         {
             scrpt::Err err = scrpt::Err::NoError;
             scrpt::Lexer lexer(DuplicateSource(source));
@@ -579,7 +579,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
         }
         break;
 
-        case Phase::VM:
+    case Phase::VM:
         {
             scrpt::Err err = scrpt::Err::NoError;
             bool gotExpectedResult = true;
@@ -606,7 +606,7 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
                     }
                     LARGE_INTEGER endTime = GetTime();
                     runtime = ConvertTimeMS(endTime.QuadPart - startTime.QuadPart) / (double)nTimedRuns;
-					os << "[" << runtime << "] ";
+                    os << "[" << runtime << "] ";
                 }
             }
             catch (scrpt::Exception& ex)
@@ -623,11 +623,11 @@ bool ExecuteTest(const char* testName, Phase phase, int resultValue, scrpt::Err 
     // Display Status
     if (passed)
     {
-		os << "Passed" << std::endl;
+        os << "Passed" << std::endl;
     }
     else
     {
-		os << "<<< Failed >>>" << std::endl;
+        os << "<<< Failed >>>" << std::endl;
     }
 
     std::cout << os.str();

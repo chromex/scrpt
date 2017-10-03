@@ -6,41 +6,41 @@ const char* scrpt::OpCodeToString(OpCode code)
 {
     switch (code)
     {
-		ENUM_CASE_TO_STRING(OpCode::Unknown);
-		ENUM_CASE_TO_STRING(OpCode::LoadNull); 
-		ENUM_CASE_TO_STRING(OpCode::LoadTrue); 
-		ENUM_CASE_TO_STRING(OpCode::LoadFalse); 
-		ENUM_CASE_TO_STRING(OpCode::LoadInt);  
-		ENUM_CASE_TO_STRING(OpCode::LoadFloat); 
+        ENUM_CASE_TO_STRING(OpCode::Unknown);
+        ENUM_CASE_TO_STRING(OpCode::LoadNull);
+        ENUM_CASE_TO_STRING(OpCode::LoadTrue);
+        ENUM_CASE_TO_STRING(OpCode::LoadFalse);
+        ENUM_CASE_TO_STRING(OpCode::LoadInt);
+        ENUM_CASE_TO_STRING(OpCode::LoadFloat);
         ENUM_CASE_TO_STRING(OpCode::LoadString);
         ENUM_CASE_TO_STRING(OpCode::LoadFunc);
-		ENUM_CASE_TO_STRING(OpCode::Store); 
-		ENUM_CASE_TO_STRING(OpCode::StoreIdx); 
-		ENUM_CASE_TO_STRING(OpCode::Eq); 
-		ENUM_CASE_TO_STRING(OpCode::Or); 
-		ENUM_CASE_TO_STRING(OpCode::And);
-		ENUM_CASE_TO_STRING(OpCode::Add);
-		ENUM_CASE_TO_STRING(OpCode::Sub);
-		ENUM_CASE_TO_STRING(OpCode::Mul);
-		ENUM_CASE_TO_STRING(OpCode::Div);
-		ENUM_CASE_TO_STRING(OpCode::Mod);
-		ENUM_CASE_TO_STRING(OpCode::Concat);
-		ENUM_CASE_TO_STRING(OpCode::Inc); 
-		ENUM_CASE_TO_STRING(OpCode::Dec); 
-		ENUM_CASE_TO_STRING(OpCode::PostInc);  
-		ENUM_CASE_TO_STRING(OpCode::PostDec);
+        ENUM_CASE_TO_STRING(OpCode::Store);
+        ENUM_CASE_TO_STRING(OpCode::StoreIdx);
+        ENUM_CASE_TO_STRING(OpCode::Eq);
+        ENUM_CASE_TO_STRING(OpCode::Or);
+        ENUM_CASE_TO_STRING(OpCode::And);
+        ENUM_CASE_TO_STRING(OpCode::Add);
+        ENUM_CASE_TO_STRING(OpCode::Sub);
+        ENUM_CASE_TO_STRING(OpCode::Mul);
+        ENUM_CASE_TO_STRING(OpCode::Div);
+        ENUM_CASE_TO_STRING(OpCode::Mod);
+        ENUM_CASE_TO_STRING(OpCode::Concat);
+        ENUM_CASE_TO_STRING(OpCode::Inc);
+        ENUM_CASE_TO_STRING(OpCode::Dec);
+        ENUM_CASE_TO_STRING(OpCode::PostInc);
+        ENUM_CASE_TO_STRING(OpCode::PostDec);
         ENUM_CASE_TO_STRING(OpCode::Neg);
-		ENUM_CASE_TO_STRING(OpCode::LT); 
-		ENUM_CASE_TO_STRING(OpCode::GT); 
-		ENUM_CASE_TO_STRING(OpCode::LTE); 
-		ENUM_CASE_TO_STRING(OpCode::GTE); 
+        ENUM_CASE_TO_STRING(OpCode::LT);
+        ENUM_CASE_TO_STRING(OpCode::GT);
+        ENUM_CASE_TO_STRING(OpCode::LTE);
+        ENUM_CASE_TO_STRING(OpCode::GTE);
         ENUM_CASE_TO_STRING(OpCode::Call);
-		ENUM_CASE_TO_STRING(OpCode::Ret); 
-		ENUM_CASE_TO_STRING(OpCode::RestoreRet); 
-		ENUM_CASE_TO_STRING(OpCode::BrT); 
-		ENUM_CASE_TO_STRING(OpCode::BrF); 
-		ENUM_CASE_TO_STRING(OpCode::Jmp); 
-		ENUM_CASE_TO_STRING(OpCode::Index); 
+        ENUM_CASE_TO_STRING(OpCode::Ret);
+        ENUM_CASE_TO_STRING(OpCode::RestoreRet);
+        ENUM_CASE_TO_STRING(OpCode::BrT);
+        ENUM_CASE_TO_STRING(OpCode::BrF);
+        ENUM_CASE_TO_STRING(OpCode::Jmp);
+        ENUM_CASE_TO_STRING(OpCode::Index);
         ENUM_CASE_TO_STRING(OpCode::MakeList);
         ENUM_CASE_TO_STRING(OpCode::MakeMap);
         ENUM_CASE_TO_STRING(OpCode::Push);
@@ -59,11 +59,11 @@ std::string DisplayRegisterName(const scrpt::FunctionData& fd, char reg)
     auto entry = fd.localLookup.find(reg);
     if (entry != fd.localLookup.end())
     {
-		os << entry->second << ":" << (int)reg;
+        os << entry->second << ":" << (int)reg;
     }
     else
     {
-		os << (int)reg;
+        os << (int)reg;
     }
 
     return os.str();
@@ -71,44 +71,44 @@ std::string DisplayRegisterName(const scrpt::FunctionData& fd, char reg)
 
 void scrpt::Decompile(const Bytecode& bytecode, std::ostream& os)
 {
-	os << "[STRINGS]" << std::endl;
+    os << "[STRINGS]" << std::endl;
     for (unsigned int idx = 0; idx < bytecode.strings.size(); ++idx)
     {
-		os << idx << ": " << bytecode.strings[idx] << std::endl;
+        os << idx << ": " << bytecode.strings[idx] << std::endl;
     }
 
 #define DISPLAY_FUNC(Func) { os << "Func: " << Func.name << " nParam: " << (int)Func.nParam; if (Func.external) os << " external" << std::endl; else os << " entry: " << Func.entry << std::endl; }
 
-	std::map<unsigned int, const FunctionData*> functionEntryMap;
+    std::map<unsigned int, const FunctionData*> functionEntryMap;
 
-	os << "[FUNCTIONS]" << std::endl;
+    os << "[FUNCTIONS]" << std::endl;
     for (const FunctionData& func : bytecode.functions)
     {
-		DISPLAY_FUNC(func);
+        DISPLAY_FUNC(func);
         functionEntryMap[func.entry] = &func;
     }
 
-	os << "[CLASSES]" << std::endl;
+    os << "[CLASSES]" << std::endl;
     for (const ClassData& cd : bytecode.classes)
     {
-		os << "Class: " << cd.name << " members: " << cd.nMembers << std::endl;
+        os << "Class: " << cd.name << " members: " << cd.nMembers << std::endl;
 
-		for (const FunctionData& func : cd.methods)
-		{
-			DISPLAY_FUNC(func);
-			functionEntryMap[func.entry] = &func;
-		}
+        for (const FunctionData& func : cd.methods)
+        {
+            DISPLAY_FUNC(func);
+            functionEntryMap[func.entry] = &func;
+        }
 
-		for (std::pair<unsigned int, const FunctionData&> ctorPair : cd.ctors)
-		{
-			const FunctionData& func = ctorPair.second;
-			DISPLAY_FUNC(func);
-			functionEntryMap[func.entry] = &func;
-		}
+        for (std::pair<unsigned int, const FunctionData&> ctorPair : cd.ctors)
+        {
+            const FunctionData& func = ctorPair.second;
+            DISPLAY_FUNC(func);
+            functionEntryMap[func.entry] = &func;
+        }
     }
 
-	os << "[BYTECODE]" << std::endl;
-	os << std::setfill('0') << std::setw(4);
+    os << "[BYTECODE]" << std::endl;
+    os << std::setfill('0') << std::setw(4);
     if (bytecode.data.size() > 0)
     {
         const unsigned char* data = &bytecode.data[0];
@@ -119,20 +119,20 @@ void scrpt::Decompile(const Bytecode& bytecode, std::ostream& os)
             if (entry != functionEntryMap.end())
             {
                 currentFunction = entry->second;
-				os << "; begin " << currentFunction->name << std::endl;
+                os << "; begin " << currentFunction->name << std::endl;
             }
 
-			os << idx << " ";
+            os << idx << " ";
 
             if (bytecode.data[idx] >= (unsigned char)OpCode::__Num)
             {
-				os << "<< invalid opcode >>" << std::endl;
+                os << "<< invalid opcode >>" << std::endl;
                 continue;
             }
 
             OpCode op = (OpCode)(bytecode.data[idx]);
 
-			os << std::string(OpCodeToString(op)).substr(8);
+            os << std::string(OpCodeToString(op)).substr(8);
 
             char reg0 = *(char*)(data + idx + 1);
             char reg1 = *(char*)(data + idx + 2);
@@ -156,9 +156,9 @@ void scrpt::Decompile(const Bytecode& bytecode, std::ostream& os)
             case OpCode::LoadInt: DISPLAY_ONE_REG_INT; break;
             case OpCode::LoadFloat: DISPLAY_ONE_REG_FLOAT; break;
             case OpCode::LoadString: DISPLAY_ONE_REG_UINT; break;
-            case OpCode::LoadFunc: 
+            case OpCode::LoadFunc:
                 DISPLAY_ONE_REG_UINT;
-				os << " ; " << bytecode.functions[*(unsigned int *)(data + idx - 3)].name;
+                os << " ; " << bytecode.functions[*(unsigned int *)(data + idx - 3)].name;
                 break;
             case OpCode::Store: DISPLAY_TWO_REG; break;
             case OpCode::StoreIdx: DISPLAY_THREE_REG; break;
@@ -193,7 +193,7 @@ void scrpt::Decompile(const Bytecode& bytecode, std::ostream& os)
             case OpCode::PopN: DISPLAY_CHAR; break;
             }
 
-			os << std::endl;
+            os << std::endl;
         }
     }
 }

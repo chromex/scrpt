@@ -8,12 +8,12 @@ namespace scrpt
         LoadNull, // reg0 
         LoadTrue, // reg0 
         LoadFalse, // reg0
-		LoadInt, // reg0, int
-		LoadFloat, // reg0, float
-		LoadString, // reg0, unsigned int string id
+        LoadInt, // reg0, int
+        LoadFloat, // reg0, float
+        LoadString, // reg0, unsigned int string id
         LoadFunc, // reg0, unsigned int function id
-		Store, // reg0, reg1
-		StoreIdx, // reg0, reg1, reg2
+        Store, // reg0, reg1
+        StoreIdx, // reg0, reg1, reg2
         Eq, // reg0, reg1, reg2
         Or, // reg0, reg1, reg2
         And, // reg0, reg1, reg2
@@ -23,10 +23,10 @@ namespace scrpt
         Div, // reg0, reg1, reg2
         Mod, // reg0, reg1, reg2
         Concat, // reg0, reg1, reg2
-		Inc, // reg0
-		Dec, // reg0
-		PostInc, // reg0
-		PostDec, // reg0
+        Inc, // reg0
+        Dec, // reg0
+        PostInc, // reg0
+        PostDec, // reg0
         Neg, // reg0, reg1
         LT, // reg0, reg1, reg2
         GT, // reg0, reg1, reg2
@@ -35,10 +35,10 @@ namespace scrpt
         Call, // reg0, char num params
         Ret, // reg0
         RestoreRet, // reg0
-		BrT, // reg0, unsigned int bytecode location
-		BrF, // reg0, unsigned int bytecode location
-		Jmp, // unsigned int bytecode location
-		Index, // reg0, reg1, reg2
+        BrT, // reg0, unsigned int bytecode location
+        BrF, // reg0, unsigned int bytecode location
+        Jmp, // unsigned int bytecode location
+        Index, // reg0, reg1, reg2
         MakeList, // reg0, unsigned int number of items
         MakeMap, // reg0, unsigned int number of items
         Push, // reg0
@@ -63,10 +63,10 @@ namespace scrpt
         std::string name;
         unsigned int nMembers;
 
-		std::map<std::string, unsigned int> methodLookup;
-		std::vector<FunctionData> methods;
+        std::map<std::string, unsigned int> methodLookup;
+        std::vector<FunctionData> methods;
 
-		std::map<unsigned char, FunctionData> ctors;
+        std::map<unsigned char, FunctionData> ctors;
 
         // TODO: unsigned int ident id -> name? this is only needed for debug...
     };

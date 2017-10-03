@@ -22,8 +22,8 @@ namespace scrpt
         ~VM();
 
         void AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func);
-		void AddSource(std::shared_ptr<const char> source);
-		void Finalize();
+        void AddSource(std::shared_ptr<const char> source);
+        void Finalize();
         void Decompile(std::ostream& os);
         StackVal* Execute(const char* funcName);
 
@@ -44,14 +44,14 @@ namespace scrpt
         const FunctionData& GetFunction(unsigned int id) const;
 
     private:
-		std::unique_ptr<Parser> _parser;
+        std::unique_ptr<Parser> _parser;
         std::unique_ptr<BytecodeGen> _compiler;
         Bytecode _bytecode;
         std::map<std::string, unsigned int> _functionMap;
 
         unsigned int _ip;
         std::vector<StackObj> _stack;
-		StackObj* _stackRoot;
+        StackObj* _stackRoot;
         StackObj* _stackPointer;
         StackObj* _framePointer;
         StackObj _returnValue;

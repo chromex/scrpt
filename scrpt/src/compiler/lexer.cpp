@@ -434,7 +434,7 @@ namespace scrpt
         }
 
         std::ostringstream os;
-		os << _lineNumber << ":" << _linePosition << "> ";
+        os << _lineNumber << ":" << _linePosition << "> ";
 
         // Trim leading whitespace
         const char* start = _symLineStart;
@@ -451,20 +451,20 @@ namespace scrpt
 
         // And add source
         if (end == NULL)
-			os << start;
+            os << start;
         else
-			os << std::string(start, end);
+            os << std::string(start, end);
 
         // Start pointer line
-		os << std::endl << _lineNumber << ":" << _linePosition << "> ";
+        os << std::endl << _lineNumber << ":" << _linePosition << "> ";
         for (size_t pos = start - _symLineStart; pos < _linePosition - 1; ++pos)
         {
             if (isspace(_symLineStart[pos]))
-				os << _symLineStart[pos];
+                os << _symLineStart[pos];
             else
-				os << ' ';
+                os << ' ';
         }
-		os << '^';
+        os << '^';
 
         return os.str();
     }

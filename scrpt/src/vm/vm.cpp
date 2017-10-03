@@ -7,27 +7,27 @@ using namespace scrpt;
 
 __forceinline bool IsRefCounted(StackType t)
 {
-	return (t == StackType::DynamicString || t == StackType::List || t == StackType::Map);
+    return (t == StackType::DynamicString || t == StackType::List || t == StackType::Map);
 }
 
 __forceinline void Deref(StackVal* val)
 {
-	AssertNotNull(val);
-	StackType type = val->type;
-	if (IsRefCounted(type))
-	{
-		StackRef* ref = val->ref;
-		ref->refCount -= 1;
-		if (ref->refCount == 0)
-		{
-			switch (type)
-			{
-			case StackType::DynamicString: 
-                delete ref->string; 
+    AssertNotNull(val);
+    StackType type = val->type;
+    if (IsRefCounted(type))
+    {
+        StackRef* ref = val->ref;
+        ref->refCount -= 1;
+        if (ref->refCount == 0)
+        {
+            switch (type)
+            {
+            case StackType::DynamicString:
+                delete ref->string;
                 break;
-			case StackType::List: 
+            case StackType::List:
                 for (auto& entry : *ref->list) Deref(&entry.v);
-                delete ref->list; 
+                delete ref->list;
                 break;
             case StackType::Map:
                 for (auto& entry : *ref->map) Deref(&entry.second.v);
@@ -35,45 +35,45 @@ __forceinline void Deref(StackVal* val)
                 break;
             default:
                 AssertFail("Unhandled ref type");
-			}
-			delete ref;
-			val->ref = nullptr;
-			val->type = StackType::Null;
-		}
-	}
+            }
+            delete ref;
+            val->ref = nullptr;
+            val->type = StackType::Null;
+        }
+    }
 }
 
 // Does not dereference the destination location
 __forceinline void BlindCopy(StackObj* src, StackObj* dest)
 {
-	AssertNotNull(src);
-	AssertNotNull(dest);
+    AssertNotNull(src);
+    AssertNotNull(dest);
 
-	StackVal& destVal = dest->v;
-	StackVal& srcVal = src->v;
-	destVal.type = srcVal.type;
-	destVal.ref = srcVal.ref;
-	if (IsRefCounted(destVal.type))
-	{
-		++destVal.ref->refCount;
-	}
+    StackVal& destVal = dest->v;
+    StackVal& srcVal = src->v;
+    destVal.type = srcVal.type;
+    destVal.ref = srcVal.ref;
+    if (IsRefCounted(destVal.type))
+    {
+        ++destVal.ref->refCount;
+    }
 }
 
 // Does dereference the destination location
 __forceinline void Copy(StackObj* src, StackObj* dest)
 {
-	AssertNotNull(src);
-	AssertNotNull(dest);
+    AssertNotNull(src);
+    AssertNotNull(dest);
 
-	StackVal& destVal = dest->v;
-	StackVal& srcVal = src->v;
-	Deref(&destVal);
-	destVal.type = srcVal.type;
-	destVal.ref = srcVal.ref;
-	if (IsRefCounted(destVal.type))
-	{
-		++destVal.ref->refCount;
-	}
+    StackVal& destVal = dest->v;
+    StackVal& srcVal = src->v;
+    Deref(&destVal);
+    destVal.type = srcVal.type;
+    destVal.ref = srcVal.ref;
+    if (IsRefCounted(destVal.type))
+    {
+        ++destVal.ref->refCount;
+    }
 }
 
 __forceinline void BlindMove(StackObj* src, StackObj* dest)
@@ -89,14 +89,14 @@ __forceinline void BlindMove(StackObj* src, StackObj* dest)
 
 __forceinline void Move(StackObj* src, StackObj* dest)
 {
-	AssertNotNull(src);
-	AssertNotNull(dest);
+    AssertNotNull(src);
+    AssertNotNull(dest);
 
-	Deref(&dest->v);
-	dest->v.type = src->v.type;
-	dest->v.ref = src->v.ref;
-	src->v.type = StackType::Null;
-	src->v.ref = nullptr;
+    Deref(&dest->v);
+    dest->v.type = src->v.type;
+    dest->v.ref = src->v.ref;
+    src->v.type = StackType::Null;
+    src->v.ref = nullptr;
 }
 
 #define POP1 \
@@ -135,17 +135,17 @@ namespace scrpt
         , _compiler(new BytecodeGen())
         , _ip(0)
         , _stack(STACKSIZE)
-		, _stackRoot(nullptr)
+        , _stackRoot(nullptr)
         , _stackPointer(nullptr)
         , _framePointer(nullptr)
         , _currentExternArgN(0)
     {
-		_stackRoot = &_stack[0];
+        _stackRoot = &_stack[0];
     }
 
     VM::~VM()
     {
-		Deref(&_returnValue.v);
+        Deref(&_returnValue.v);
     }
 
     void VM::AddExternFunc(const char* name, unsigned char nParam, const std::function<void(VM*)>& func)
@@ -157,45 +157,45 @@ namespace scrpt
     }
 
     void VM::AddSource(std::shared_ptr<const char> source)
-	{
-		AssertNotNull(_parser.get());
-		AssertNotNull(source);
+    {
+        AssertNotNull(_parser.get());
+        AssertNotNull(source);
 
-		Lexer lexer(source);
-		_parser.get()->Consume(&lexer);
-	}
+        Lexer lexer(source);
+        _parser.get()->Consume(&lexer);
+    }
 
-	void VM::Finalize()
-	{
-		AssertNotNull(_parser.get());
+    void VM::Finalize()
+    {
+        AssertNotNull(_parser.get());
 
-		_compiler.get()->Consume(*(_parser.get()->GetAst()));
-		_bytecode = _compiler.get()->GetBytecode();
-		_parser.reset(nullptr);
+        _compiler.get()->Consume(*(_parser.get()->GetAst()));
+        _bytecode = _compiler.get()->GetBytecode();
+        _parser.reset(nullptr);
         _compiler.reset(nullptr);
 
-		for (unsigned int id = 0; id < _bytecode.functions.size(); ++id)
-		{
-			_functionMap[_bytecode.functions[id].name] = id;
-		}
-	}
+        for (unsigned int id = 0; id < _bytecode.functions.size(); ++id)
+        {
+            _functionMap[_bytecode.functions[id].name] = id;
+        }
+    }
 
     void VM::Decompile(std::ostream& os)
     {
         scrpt::Decompile(_bytecode, os);
     }
 
-	StackVal* VM::Execute(const char* funcName)
+    StackVal* VM::Execute(const char* funcName)
     {
         AssertNotNull(funcName);
 
-		if (_parser.get() != nullptr)
-		{
-			this->Finalize();
-		}
+        if (_parser.get() != nullptr)
+        {
+            this->Finalize();
+        }
 
         // Clear out any previous return value
-		Deref(&_returnValue.v);
+        Deref(&_returnValue.v);
 
         auto funcIter = _functionMap.find(funcName);
         if (funcIter != _functionMap.end())
@@ -224,7 +224,7 @@ namespace scrpt
         }
         else
         {
-			throw CreateEx(funcName, Err::VM_FailedFunctionLookup);
+            throw CreateEx(funcName, Err::VM_FailedFunctionLookup);
         }
     }
 
@@ -395,92 +395,92 @@ namespace scrpt
             /// Indexed Identifier Assignment
             ///
             case OpCode::StoreIdx:
-            {
-                StackObj* target = _framePointer + REG0;
-                StackObj* indexObj = _framePointer + REG1;
-                StackObj* value = _framePointer + REG2;
-                StackType targetType = target->v.type;
-                StackType indexType = indexObj->v.type;
-                if (targetType == StackType::List)
                 {
-                    if (indexType != StackType::Int) this->ThrowErr(Err::VM_UnsupportedOperandType);
-                    int index = indexObj->v.integer;
+                    StackObj* target = _framePointer + REG0;
+                    StackObj* indexObj = _framePointer + REG1;
+                    StackObj* value = _framePointer + REG2;
+                    StackType targetType = target->v.type;
+                    StackType indexType = indexObj->v.type;
+                    if (targetType == StackType::List)
+                    {
+                        if (indexType != StackType::Int) this->ThrowErr(Err::VM_UnsupportedOperandType);
+                        int index = indexObj->v.integer;
 
-                    List* list = target->v.ref->list;
-                    if (index < 0)
-                    {
-                        this->ThrowErr(Err::VM_NotImplemented);
-                    }
+                        List* list = target->v.ref->list;
+                        if (index < 0)
+                        {
+                            this->ThrowErr(Err::VM_NotImplemented);
+                        }
 
-                    if (index >= list->size())
-                    {
-                        list->resize(index + 1, StackObj());
-                    }
+                        if (index >= list->size())
+                        {
+                            list->resize(index + 1, StackObj());
+                        }
 
-                    StackObj* targetVal = &list->at(index);
-                    Copy(value, targetVal);
-                }
-                else if (targetType == StackType::Map)
-                {
-                    Map* map = target->v.ref->map;
-                    if (indexType == StackType::StaticString)
-                    {
-                        Copy(value, &(*map)[indexObj->v.staticString]);
+                        StackObj* targetVal = &list->at(index);
+                        Copy(value, targetVal);
                     }
-                    else if (indexType == StackType::DynamicString)
+                    else if (targetType == StackType::Map)
                     {
-                        Copy(value, &(*map)[*indexObj->v.ref->string]);
+                        Map* map = target->v.ref->map;
+                        if (indexType == StackType::StaticString)
+                        {
+                            Copy(value, &(*map)[indexObj->v.staticString]);
+                        }
+                        else if (indexType == StackType::DynamicString)
+                        {
+                            Copy(value, &(*map)[*indexObj->v.ref->string]);
+                        }
+                        else
+                        {
+                            this->ThrowErr(Err::VM_UnsupportedOperandType);
+                        }
                     }
                     else
                     {
                         this->ThrowErr(Err::VM_UnsupportedOperandType);
                     }
-                }
-                else
-                {
-                    this->ThrowErr(Err::VM_UnsupportedOperandType);
-                }
 
-                _ip += 3;
-            }
-            break;
+                    _ip += 3;
+                }
+                break;
 
             /// 
             /// Equals
             ///
             case OpCode::Eq:
-            {
-                bool result;
-                StackObj* v1 = (_framePointer + REG0);
-                StackObj* v2 = (_framePointer + REG1);
-                StackType t1 = v1->v.type;
-                StackType t2 = v2->v.type;
-
-                if (t1 == t2)
                 {
-                    switch (t1)
+                    bool result;
+                    StackObj* v1 = (_framePointer + REG0);
+                    StackObj* v2 = (_framePointer + REG1);
+                    StackType t1 = v1->v.type;
+                    StackType t2 = v2->v.type;
+
+                    if (t1 == t2)
                     {
-                    case StackType::Boolean:
-                    case StackType::Int:
-                        result = v1->v.integer == v2->v.integer;
-                        break;
-                    case StackType::Float:
-                        result = v1->v.fp == v2->v.fp;
-                        break;
-                    default:
-                        this->ThrowErr(Err::VM_UnsupportedOperandType);
-                        break;
+                        switch (t1)
+                        {
+                        case StackType::Boolean:
+                        case StackType::Int:
+                            result = v1->v.integer == v2->v.integer;
+                            break;
+                        case StackType::Float:
+                            result = v1->v.fp == v2->v.fp;
+                            break;
+                        default:
+                            this->ThrowErr(Err::VM_UnsupportedOperandType);
+                            break;
+                        }
                     }
-                }
-                else
-                {
-                    this->ThrowErr(Err::VM_OperandMismatch);
-                }
+                    else
+                    {
+                        this->ThrowErr(Err::VM_OperandMismatch);
+                    }
 
-                this->LoadInt(REG2, StackType::Boolean, result);
-                _ip += 3;
-            }
-            break;
+                    this->LoadInt(REG2, StackType::Boolean, result);
+                    _ip += 3;
+                }
+                break;
 
             /// 
             /// Or
@@ -533,64 +533,64 @@ namespace scrpt
             /// Concat
             ///
             case OpCode::Concat:
-            {
-                StackObj* v1 = _framePointer + REG0; 
-                StackObj* v2 = _framePointer + REG1;
-                StackType t1 = v1->v.type; 
-                StackType t2 = v2->v.type; 
-                if (t1 == StackType::DynamicString || t1 == StackType::StaticString)
                 {
-                    std::ostringstream os(
-                        t1 == StackType::StaticString ? v1->v.staticString : v1->v.ref->string->c_str(),
-                        std::ios_base::ate | std::ios_base::out);
-					// TODO: This should leverage the stdlib tostring impl
-                    switch (t2)
+                    StackObj* v1 = _framePointer + REG0;
+                    StackObj* v2 = _framePointer + REG1;
+                    StackType t1 = v1->v.type;
+                    StackType t2 = v2->v.type;
+                    if (t1 == StackType::DynamicString || t1 == StackType::StaticString)
                     {
-                    case StackType::Boolean:
-						os << (v2->v.integer == 0 ? "false" : "true");
-                        break;
-                    case StackType::DynamicString:
-						os << *v2->v.ref->string;
-                        break;
-                    case StackType::Float:
-						os << v2->v.fp;
-                        break;
-                    case StackType::Int:
-						os << v2->v.integer;
-                        break;
-                    case StackType::List:
-                        this->ThrowErr(Err::VM_NotImplemented);
-                        break;
-                    case StackType::Map:
-                        this->ThrowErr(Err::VM_NotImplemented);
-                        break;
-                    case StackType::Null:
-						os << "null";
-                        break;
-                    case StackType::StaticString:
-						os << v2->v.staticString;
-                        break;
-                    default:
-                        ThrowErr(Err::VM_NotImplemented);
+                        std::ostringstream os(
+                            t1 == StackType::StaticString ? v1->v.staticString : v1->v.ref->string->c_str(),
+                            std::ios_base::ate | std::ios_base::out);
+                        // TODO: This should leverage the stdlib tostring impl
+                        switch (t2)
+                        {
+                        case StackType::Boolean:
+                            os << (v2->v.integer == 0 ? "false" : "true");
+                            break;
+                        case StackType::DynamicString:
+                            os << *v2->v.ref->string;
+                            break;
+                        case StackType::Float:
+                            os << v2->v.fp;
+                            break;
+                        case StackType::Int:
+                            os << v2->v.integer;
+                            break;
+                        case StackType::List:
+                            this->ThrowErr(Err::VM_NotImplemented);
+                            break;
+                        case StackType::Map:
+                            this->ThrowErr(Err::VM_NotImplemented);
+                            break;
+                        case StackType::Null:
+                            os << "null";
+                            break;
+                        case StackType::StaticString:
+                            os << v2->v.staticString;
+                            break;
+                        default:
+                            ThrowErr(Err::VM_NotImplemented);
+                        }
+                        this->LoadString(REG2, os.str().c_str());
                     }
-                    this->LoadString(REG2, os.str().c_str());
+                    else if (t1 == StackType::List)
+                    {
+                        // TODO: This doesn't properly concat lists, rather it would append the list as a unit
+                        StackObj* target = _framePointer + REG2;
+                        StackObj obj(StackType::Null, nullptr);
+                        Copy(v2, &obj);
+                        v1->v.ref->list->push_back(obj);
+                        Copy(v1, target);
+                    }
+                    else
+                    {
+                        this->ThrowErr(Err::VM_UnsupportedOperandType);
+                    }
+                    _ip += 3;
                 }
-                else if (t1 == StackType::List)
-                {
-                    // TODO: This doesn't properly concat lists, rather it would append the list as a unit
-                    StackObj* target = _framePointer + REG2;
-                    StackObj obj(StackType::Null, nullptr);
-                    Copy(v2, &obj);
-                    v1->v.ref->list->push_back(obj);
-                    Copy(v1, target);
-                }
-                else
-                {
-                    this->ThrowErr(Err::VM_UnsupportedOperandType);
-                }
-                _ip += 3;
-            }
-            break;
+                break;
 
             /// 
             /// Prefix Increment Identifier
@@ -994,25 +994,25 @@ namespace scrpt
     void VM::FormatCallstackFunction(unsigned int ip, std::ostream& os) const
     {
         const FunctionData& fd = this->LookupFunction(ip);
-		os << "> " << fd.name << "(";
+        os << "> " << fd.name << "(";
         for (int idx = 0; idx < fd.nParam; ++idx)
         {
             auto entry = fd.localLookup.find(-1 - fd.nParam + idx);
             Assert(entry != fd.localLookup.end(), "Failed to find param in local lookup");
-			os << entry->second;
+            os << entry->second;
 
             if (idx + 1 < fd.nParam)
             {
-				os << ", ";
+                os << ", ";
             }
         }
-		os << ")" << std::endl;
+        os << ")" << std::endl;
     }
 
     std::string VM::CreateCallstack(unsigned int startingIp)
     {
         std::ostringstream os;
-		os << std::endl;
+        os << std::endl;
         this->FormatCallstackFunction(startingIp, os);
 
         while (_stackPointer > _stackRoot)
@@ -1050,24 +1050,24 @@ namespace scrpt
         }
     }
 
-	const char* StackTypeToString(StackType type)
-	{
-		switch (type)
-		{
-			ENUM_CASE_TO_STRING(StackType::Null);
-			ENUM_CASE_TO_STRING(StackType::Boolean);
-			ENUM_CASE_TO_STRING(StackType::Int);
+    const char* StackTypeToString(StackType type)
+    {
+        switch (type)
+        {
+            ENUM_CASE_TO_STRING(StackType::Null);
+            ENUM_CASE_TO_STRING(StackType::Boolean);
+            ENUM_CASE_TO_STRING(StackType::Int);
             ENUM_CASE_TO_STRING(StackType::Float);
             ENUM_CASE_TO_STRING(StackType::Func);
-			ENUM_CASE_TO_STRING(StackType::StaticString);
-			ENUM_CASE_TO_STRING(StackType::DynamicString);
-			ENUM_CASE_TO_STRING(StackType::List);
-			ENUM_CASE_TO_STRING(StackType::Map);
+            ENUM_CASE_TO_STRING(StackType::StaticString);
+            ENUM_CASE_TO_STRING(StackType::DynamicString);
+            ENUM_CASE_TO_STRING(StackType::List);
+            ENUM_CASE_TO_STRING(StackType::Map);
 
-		default: 
-			AssertFail("Mising case for StackType");
-		}
+        default:
+            AssertFail("Mising case for StackType");
+        }
 
-		return nullptr;
-	}
+        return nullptr;
+    }
 }

@@ -4,20 +4,20 @@
 
 namespace scrpt
 {
-	Exception::Exception(const std::string& message, std::shared_ptr<Token> token, Err err)
-		: _message(message)
-		, _token(token)
-		, _err(err)
-	{
-	}
+    Exception::Exception(const std::string& message, std::shared_ptr<Token> token, Err err)
+        : _message(message)
+        , _token(token)
+        , _err(err)
+    {
+    }
 
-	Exception::Exception(const std::string& message, Err err)
-		: _message(message)
-		, _err(err)
-	{
-	}
+    Exception::Exception(const std::string& message, Err err)
+        : _message(message)
+        , _err(err)
+    {
+    }
 
-	const char* Exception::what() const
+    const char* Exception::what() const
     {
         return _message.c_str();
     }
@@ -37,8 +37,8 @@ namespace scrpt
         AssertNotNull(token);
 
         std::ostringstream os;
-		os << ErrToString(err) << std::endl;
-		os << token->GetFormattedTokenCode();
+        os << ErrToString(err) << std::endl;
+        os << token->GetFormattedTokenCode();
 
         return Exception(os.str(), token, err);
     }
@@ -48,19 +48,19 @@ namespace scrpt
         AssertNotNull(token);
 
         std::ostringstream os;
-		os << ErrToString(err) << ": " << message << std::endl;
-		os << token->GetFormattedTokenCode();
+        os << ErrToString(err) << ": " << message << std::endl;
+        os << token->GetFormattedTokenCode();
 
         return Exception(os.str(), token, err);
     }
 
-	Exception CreateEx(const std::string& message, Err err)
-	{
-		std::ostringstream os;
-		os << ErrToString(err) << ": " << message;
+    Exception CreateEx(const std::string& message, Err err)
+    {
+        std::ostringstream os;
+        os << ErrToString(err) << ": " << message;
 
-		return Exception(os.str(), err);
-	}
+        return Exception(os.str(), err);
+    }
 
     const char* ErrToString(Err err)
     {
@@ -89,7 +89,7 @@ namespace scrpt
             ENUM_CASE_TO_STRING(Err::BytecodeGen_InsufficientRegisters);
             ENUM_CASE_TO_STRING(Err::BytecodeGen_ClassRedefinition);
             ENUM_CASE_TO_STRING(Err::BytecodeGen_BadConstructorName);
-			ENUM_CASE_TO_STRING(Err::BytecodeGen_DuplicateConstructorSize);
+            ENUM_CASE_TO_STRING(Err::BytecodeGen_DuplicateConstructorSize);
 
             ENUM_CASE_TO_STRING(Err::VM_FailedFunctionLookup);
             ENUM_CASE_TO_STRING(Err::VM_UnsupportedOperandType);
